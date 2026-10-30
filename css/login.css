@@ -1,0 +1,246 @@
+/* LOGIN PAGE */
+.login-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background: var(--gray-50);
+}
+
+.login-left {
+    flex: 1;
+    background: linear-gradient(135deg, var(--brand-purple-dark) 0%, var(--brand-purple) 60%, var(--brand-purple-light) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-brand {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+}
+
+.brand-logo-big {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.brand-name-big {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.brand-tagline {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.brand-slogan {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-style: italic;
+    margin-top: 8px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+}
+
+.login-left-decoration {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deco-circle.c1 {
+    width: 320px;
+    height: 320px;
+    top: -80px;
+    right: -80px;
+}
+
+.deco-circle.c2 {
+    width: 200px;
+    height: 200px;
+    bottom: 40px;
+    left: -60px;
+}
+
+.deco-circle.c3 {
+    width: 120px;
+    height: 120px;
+    bottom: 200px;
+    right: 40px;
+}
+
+.login-right {
+    width: 440px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    background: var(--white);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+}
+
+.login-card-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.login-card-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.login-card-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+}
+
+.login-card-header p {
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.input-password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-password-wrap input {
+    padding-right: 40px;
+}
+
+.btn-eye {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.btn-eye:hover {
+    color: var(--gray-600);
+}
+
+.login-error {
+    background: var(--danger-bg);
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* DEMO BOX */
+.login-demo-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--brand-purple-ultra-light);
+    border: 1px solid rgba(75, 37, 99, 0.15);
+    border-radius: var(--border-radius-lg);
+}
+
+.demo-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--brand-purple);
+    margin-bottom: 10px;
+}
+
+.demo-accounts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.demo-acc-btn {
+    padding: 7px 10px;
+    border: 1px solid rgba(75, 37, 99, 0.2);
+    border-radius: var(--border-radius);
+    background: var(--white);
+    color: var(--brand-purple-dark);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font-family);
+    text-align: left;
+}
+
+.demo-acc-btn:hover {
+    background: var(--brand-purple);
+    color: var(--white);
+    border-color: var(--brand-purple);
+}
+
+.demo-note {
+    font-size: 11px;
+    color: var(--gray-500);
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .login-left {
+        display: none;
+    }
+
+    .login-right {
+        width: 100%;
+    }
+}
