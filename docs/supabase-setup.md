@@ -29,3 +29,7 @@ Key yang ditulis oleh script adalah publishable/anon key, yang memang dipakai br
 - Pastikan URL/key aktif hanya ada di `.env.local`, tidak dalam commit.
 
 Sebelum project tersedia, aplikasi lokal berjalan pada **mode demo**: alur UI dan aturan dasar disimulasikan di localStorage browser, bukan Supabase atau buku besar resmi.
+
+## Laptop baru untuk database yang sudah ada
+
+Jika project Supabase bersama sudah disiapkan, jangan jalankan `setup.sql`, `seed.sql`, atau `apply-transactions.sql` lagi. Clone repository, jalankan `npm ci`, buat `.env.local` dari `.env.example`, isi URL dan publishable/anon key, lalu jalankan `npm run dev` dan login dengan user yang sudah ada. Detail langkah dan hasil verifikasi tersedia di [panduan handoff](./handoff.md).

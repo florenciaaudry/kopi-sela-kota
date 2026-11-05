@@ -44,11 +44,10 @@ export default async function DashboardPage() {
           <p className="eyebrow">KOPI SELA KOTA / OVERVIEW</p>
           <h1>Ringkasan operasional</h1>
           <p className="muted-copy">
-            Data stok dibaca langsung dari database. Belum ada transaksi
-            operasional baru yang diposting.
+            Ringkasan stok dan saldo keuangan terkini dibaca langsung dari Supabase.
           </p>
         </div>
-        <span className="date-chip">Baseline · 20 Okt 2026</span>
+        <span className="date-chip">Supabase · live</span>
       </div>
 
       {!snapshot ? (

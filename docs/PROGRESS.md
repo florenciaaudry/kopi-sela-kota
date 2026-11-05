@@ -30,18 +30,25 @@
 - [x] Dashboard Owner berhasil memanggil `get_owner_dashboard`: AR Rp220.000, AP Rp300.000, Kas Rp500.000, Bank Rp10.000.000; stok 15 SKU, 2 lokasi, 480 unit, 10 reserved/470 available, nilai Rp4.290.000.
 - [x] Modul Sales, CRM, Purchase, Inventory, Accounting, Invoicing, POS, dan Returns berhasil dibaca dari Supabase. Data baseline Sales S00001, Lead L00001, PO00001, POS/00001 dan opening journal tampil.
 - [ ] Pengguna melaporkan bundle migrasi transaksi 002–003 telah dijalankan. `get_owner_dashboard` serta query baca modul berhasil dipakai, tetapi eksekusi keseluruhan bundle dan seluruh object migrasi belum diverifikasi independen; jangan mengulang setup/seed atau menganggap semua workflow sudah teruji.
+- [x] Verifikasi ulang login Owner dan dashboard; sesi Owner bertahan setelah reload.
+- [x] Alur Sales live: S00002 → DN00001 → INV00001 → CP00002, C05, 1 CBW-250, invoice Rp33.000 lunas via Bank. Stok turun 1 saat delivery; jurnal delivery, invoice, dan pembayaran seimbang.
+- [x] Alur Purchase live: PO00002 → GR00001 → BILL00001 → VP00002, V01, 1 CBW-250 seharga Rp15.000, lunas via Bank. Receipt menaikkan stok 1; jurnal receipt, bill, dan pembayaran seimbang.
+- [x] Sesudah kedua alur, dashboard menunjukkan stok kembali ke baseline 480 unit (10 reserved/470 available), nilai Rp4.290.000; AR Rp220.000, AP Rp300.000, Kas Rp500.000, Bank Rp10.018.000. Opening AR/AP tidak berubah.
+- [x] Catatan instalasi laptop baru dan kondisi handoff dibuat di [Panduan Handoff](./handoff.md); README yang sebelumnya stale diperbarui.
+- [ ] SO untuk C06 (Pelanggan Tunai, limit Rp0) ditolak RPC dengan eksposur Rp33.000; skenario Sales sampai pembayaran berhasil dengan C05 ber-limit kredit. Alur COD melalui Sales perlu diperbaiki atau dijelaskan sebagai POS.
 - [ ] T-01–T-36 belum dijalankan penuh. Hasil aktual: T-04 penolakan limit kredit diuji lewat RPC; T-08 Lost tanpa alasan ditolak di server action; T-14 transfer melebihi Available ditolak; T-18 penerimaan melebihi sisa PO ditolak. T-10 belum dapat dipenuhi karena approval diskon >5% belum tersedia.
-- [ ] Tes mutasi sukses akan membuat dokumen, reservasi, mutasi stok, dan jurnal persisten. Jalankan di project/fixture uji terisolasi, atau setelah pengguna menyetujui transaksi uji persisten pada project aktif; jangan reset atau menghapus data project tanpa izin.
+- [ ] Tes sukses yang tercatat di atas menulis data persisten pada Supabase bersama atas permintaan pengguna. Jangan ulangi seed, reset, atau hapus transaksi; alur sukses lain harus diuji di project/fixture terisolasi atau dengan persetujuan yang sesuai.
 
 ## Sisa pekerjaan / batas verifikasi
 
-- Modul POS memiliki RPC hold multi-item, expiry/cancel, split tender, dan penyelesaian; migrasi sudah diterapkan tetapi alur-alur tersebut belum diuji lewat transaksi nyata. Expiry saat ini dilepas saat RPC expiry dipanggil (tersedia tombol UI), belum ada scheduler otomatis.
+- Modul POS memiliki RPC hold multi-item, expiry/cancel, split tender, dan penyelesaian; migrasi dilaporkan telah diterapkan tetapi alur-alur tersebut belum diuji lewat transaksi nyata. Expiry saat ini dilepas saat RPC expiry dipanggil (tersedia tombol UI), belum ada scheduler otomatis.
 - UI hold POS menyediakan paling banyak dua baris SKU; dukungan cart dengan jumlah baris bebas belum dibuat.
 - Pengeditan katalog/harga dan fitur ekspor F-21 belum dibangun.
 - T-01–T-36 belum dijalankan penuh terhadap database. Build dan parse SQL bukan bukti transaksi nyata; beberapa penolakan telah diuji langsung melalui aplikasi/database dan dicatat terpisah.
-- Tes perlu memakai fixture PDF yang bersih dan role/akun yang sesuai. Transaksi sukses mengubah data permanen; jangan menandai tes yang belum dijalankan sebagai lulus atau reset project aktif.
+- Tes tersisa perlu memakai fixture PDF yang bersih dan role/akun yang sesuai. Transaksi sukses mengubah data permanen; jangan menandai tes yang belum dijalankan sebagai lulus atau reset project aktif.
 
 ## Langkah manual minimum
 
 1. Tidak ada SQL tambahan yang perlu dijalankan untuk migrasi transaksi 002–003 yang sudah diterapkan. Jangan jalankan ulang `setup.sql`, seed, atau bundle incremental.
-2. Tes role selain Owner memerlukan akun/profil uji role terkait. Tes transaksi sukses end-to-end memerlukan project uji terisolasi atau persetujuan untuk membuat data uji persisten di project aktif.
+2. Laptop baru mengikuti [Panduan Handoff](./handoff.md). Jangan menjalankan SQL/seed pada project bersama yang sudah dipakai.
+3. Tes role selain Owner memerlukan akun/profil uji role terkait. Sisa tes mutasi sebaiknya dilakukan pada project uji terisolasi agar saldo baseline bersama tidak tercampur.

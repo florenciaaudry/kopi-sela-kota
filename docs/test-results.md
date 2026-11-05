@@ -1,6 +1,29 @@
 # Test Results
 
-Kasus T-01–T-36 belum dijalankan penuh sesuai fixture PDF. Pengguna melaporkan migrasi 002–003 telah dijalankan; akses dashboard Owner melalui `get_owner_dashboard` dan pembacaan modul terverifikasi, tetapi seluruh object dan keberhasilan eksekusi bundle tidak diverifikasi independen. T-04, T-08, T-14, dan T-18 telah dicoba sebagai skenario penolakan tanpa membuat transaksi sukses. T-10 belum dapat dipenuhi karena fitur approval diskon di atas 5% belum tersedia. Tes transaksi sukses tetap memerlukan fixture/project uji terisolasi atau izin untuk membuat data persisten pada project aktif.
+T-01–T-36 belum dijalankan penuh sesuai fixture PDF. Pada 5 Nov 2026 login Owner/dashboard dan satu siklus Sales serta Purchase sampai lunas berhasil diuji live; transaksi tersebut persisten di database bersama. Pengguna melaporkan migrasi 002–003 telah dijalankan. RPC yang dibutuhkan oleh alur-alur tersebut terbukti dapat digunakan, tetapi seluruh object migrasi belum diaudit independen. Jangan jalankan ulang seed atau reset data bersama.
+
+## Handoff verification — 5 Nov 2026
+
+| Pemeriksaan | Hasil aktual | Status |
+|---|---|---|
+| Login Owner dan reload | Header menampilkan Florencia Audry · Owner; sesi bertahan setelah reload `/`; dashboard tetap dari Supabase. | Lulus |
+| Dashboard awal | 15 SKU, 2 lokasi; 480 unit on hand, 10 reserved/470 available; nilai persediaan Rp4.290.000; AR Rp220.000; AP Rp300.000; Kas Rp500.000; Bank Rp10.000.000. | Lulus baca live |
+| Sales order | C05, CBW-250 qty 1, total Rp33.000 → `S00002`. | Lulus |
+| Delivery | `S00002`, qty 1 → `DN00001`; stok WH berkurang satu. | Lulus |
+| Customer invoice | `S00002` → `INV00001`, Rp33.000 (net Rp30.000 + PBJT Rp3.000). | Lulus |
+| Customer payment | `INV00001` lunas Rp33.000 via Bank → `CP00002`; saldo invoice menjadi Rp0. | Lulus |
+| Purchase order | V01, CBW-250 qty 1 × Rp15.000 → `PO00002`. | Lulus |
+| Goods receipt | `PO00002`, accepted 1/rejected 0 → `GR00001`; stok WH bertambah satu. | Lulus |
+| Vendor bill | `PO00002` → `BILL00001` Rp15.000. | Lulus |
+| Vendor payment | `BILL00001` lunas Rp15.000 via Bank → `VP00002`; saldo bill menjadi Rp0. | Lulus |
+| Efek stok setelah kedua alur | Sales mengurangi 1 unit dan receipt menambah 1 unit CBW-250; total stok kembali 480, reserved 10, available 470, nilai persediaan Rp4.290.000. | Lulus; dashboard dan per lokasi konsisten |
+| Efek saldo setelah kedua alur | AR tetap Rp220.000 dan AP tetap Rp300.000 karena invoice/bill baru dibayar penuh; Kas Rp500.000; Bank naik bersih Rp18.000 menjadi Rp10.018.000. | Lulus baca live |
+| Efek jurnal | Enam jurnal baru seimbang: `JRN/20261105/00001` delivery (HPP/inventory Rp15.000), `00002` invoice (AR Rp33.000 = pendapatan Rp30.000 + PBJT Rp3.000), `00003` customer payment (Bank/AR Rp33.000), `00004` receipt (inventory/GRNI Rp15.000), `00005` vendor bill (GRNI/AP Rp15.000), `00006` vendor payment (AP/Bank Rp15.000). | Lulus baca live |
+| SO untuk C06 COD/limit Rp0 | Percobaan 1 CBW-250 ditolak RPC dengan eksposur Rp33.000 vs limit Rp0; tidak membuat SO. Alur sukses memakai C05 dengan limit memadai. | Gap implementasi, bukan alur sukses |
+| Persistensi setelah refresh | Dashboard tetap menunjukkan saldo akhir; daftar invoice/payment dan vendor bill/payment menampilkan dokumen lunas. | Lulus |
+| Migrasi database | `setup.sql`/seed dan bundle 002–003 dilaporkan pengguna telah dijalankan. Dashboard dan RPC yang dipakai dalam seluruh alur di atas berhasil. Seluruh katalog object/fungsi migrasi tidak diperiksa independen. | Alur inti terverifikasi; audit migrasi penuh belum |
+
+Tes live di atas menulis transaksi persisten ke database bersama. Tidak ada seed/reset yang dijalankan.
 
 ## Pemeriksaan integrasi transaksi — 5 Nov 2026
 
@@ -23,7 +46,7 @@ Kasus T-01–T-36 belum dijalankan penuh sesuai fixture PDF. Pengguna melaporkan
 | T-10 | Diskon 6% ditolak oleh batas validasi 0–5%; alur approval Owner belum tersedia. | Belum didukung; T-10 tidak lulus |
 | T-14 | Transfer 31 CBW-250 dari WH-TBT ditolak karena Available hanya 30. Sesudahnya WH tetap 40 unit/10 reserved/30 available dan CAFE tetap 20 unit/0 reserved/20 available. | Lulus penolakan; saldo tidak berubah |
 | T-18 | Penerimaan 21 unit untuk PO00001 ditolak karena melebihi sisa kuantitas PO; PO tetap Rp300.000 dan tidak ada Goods Receipt baru. | Lulus penolakan; saldo tidak berubah |
-| Tes transaksi sukses, persistensi stok/jurnal, dan rollback | Belum diuji pada project live; mutasi sukses akan membuat data keuangan/inventori permanen. | Belum diuji |
+| Tes transaksi sukses, persistensi stok/jurnal, dan rollback | Alur Sales/Purchase sampai lunas dan efek stok/jurnal live telah diverifikasi; rollback transaksi gagal belum diaudit penuh. | Sukses persistensi teruji untuk dua alur; rollback penuh belum diuji |
 | T-01 | Owner, 15 SKU, 2 lokasi, dan stok terverifikasi; aplikasi aktual berjumlah 8, sedangkan fixture mengharapkan 7. | Parsial |
 
 ## Pemeriksaan pondasi dan mode demo sebelumnya — 5 Nov 2026

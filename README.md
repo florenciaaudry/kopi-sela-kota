@@ -4,7 +4,7 @@ Pondasi aplikasi ERP pembelajaran untuk Sales/CRM, Purchase/Inventory, Accountin
 
 ## Status
 
-Pondasi Next.js, login Supabase, shell peran, Inventory database, dan tampilan/logika simulasi lokal untuk modul ERP sudah dibuat. Demo bukan transaksi database. RPC production, alur transaksi terhubung Supabase, akun uji, dan deployment belum tersedia. Baca [docs/PROGRESS.md](./docs/PROGRESS.md) untuk status rinci.
+Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran sudah diverifikasi terhadap database bersama; efek stok dan jurnal dicatat di [hasil pengujian](./docs/test-results.md). Aplikasi **belum dinyatakan lengkap**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md) dan [panduan handoff](./docs/handoff.md).
 
 ## Stack sasaran
 
@@ -13,13 +13,11 @@ Pondasi Next.js, login Supabase, shell peran, Inventory database, dan tampilan/l
 - Supabase Auth + PostgreSQL/RLS
 - npm; deployment Vercel
 
-## Menjalankan aplikasi
+## Menjalankan aplikasi di laptop baru
 
-Prasyarat: Node.js LTS/npm. Tanpa kredensial Supabase, server development akan menampilkan **mode demo lokal** dengan data fixture yang disimpan di localStorage browser; ini bukan integrasi database.
+Gunakan Node.js `>=20.9` dan npm. Clone branch `main`, jalankan `npm ci`, salin `.env.example` menjadi `.env.local`, lalu isi Project URL dan publishable/anon key. Sesudah itu jalankan `npm run dev` dan buka `http://localhost:3000/login`. Panduan langkah demi langkah, termasuk peringatan agar tidak menjalankan ulang seed pada database bersama, ada di [docs/handoff.md](./docs/handoff.md).
 
-Untuk setup Supabase satu kali, ikuti checklist di [docs/supabase-setup.md](./docs/supabase-setup.md). Setelah membuat project, jalankan `npm run supabase:prepare`, jalankan berkas gabungan `supabase/setup.sql` sekali lewat SQL Editor, lalu buat user Auth dan profil role.
-
-Jalankan `npm run dev` untuk membuka workspace. Jika Supabase belum dikonfigurasi, semua modul yang sudah tersedia dapat dicoba melalui mode demo yang selalu diberi label; data demo tidak mengaktifkan autentikasi dan tidak dianggap transaksi resmi. Setelah Supabase dikonfigurasi, mode demo lokal dinonaktifkan dan route modul yang belum terhubung ke database akan menampilkan statusnya secara eksplisit.
+Mode demo hanya untuk lingkungan lokal tanpa konfigurasi Supabase dan selalu diberi label. Jika Supabase telah dikonfigurasi, error database tidak dialihkan diam-diam ke demo.
 
 ## Environment
 
@@ -36,6 +34,7 @@ Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan 
 - [AI disclosure (draft)](./docs/ai-disclosure.md)
 - [Progress](./docs/PROGRESS.md)
 - [Supabase setup checklist](./docs/supabase-setup.md)
+- [Panduan handoff dan laptop baru](./docs/handoff.md)
 - [Role Assignment Sheet (draft)](./docs/role-assignment.md)
 - [Team Agreement (draft)](./docs/team-agreement.md)
 
