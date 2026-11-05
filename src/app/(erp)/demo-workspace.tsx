@@ -11,6 +11,7 @@ import {
   type DemoState,
 } from "@/lib/demo-data";
 import { formatRupiah } from "@/lib/format";
+import { applicationAccess } from "@/lib/roles";
 
 export type DemoModule =
   | "dashboard"
@@ -588,20 +589,31 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
 
       {module === "dashboard" ? (
         <>
-          <div className="metric-grid">
+          <div className="metric-grid" id="reporting">
             <article className="metric-card"><span>SKU / stok</span><strong>{state.products.length} SKU · {stockUnits} unit</strong><p>Nilai persediaan {formatRupiah(inventoryValue)}</p></article>
             <article className="metric-card"><span>Piutang terbuka</span><strong>{formatRupiah(receivables)}</strong><p>Saldo awal dan invoice demo</p></article>
             <article className="metric-card"><span>Utang terbuka</span><strong>{formatRupiah(payables)}</strong><p>Saldo awal dan bill demo</p></article>
             <article className="metric-card"><span>Kas / Bank</span><strong>{formatRupiah(state.cash)} / {formatRupiah(state.bank)}</strong><p>Laci kas {formatRupiah(state.drawer)}</p></article>
           </div>
-          <Panel title="Aplikasi demo">
-            <div className="demo-module-grid">
-              {[
-                ["Sales", "/sales"], ["CRM", "/crm"], ["Purchase", "/purchase"],
-                ["Inventory", "/inventory"], ["Accounting", "/accounting"],
-                ["Invoicing", "/invoicing"], ["Point of Sale", "/pos"], ["Retur", "/returns"],
-              ].map(([label, href]) => <Link className="demo-module-card" href={href} key={href}><strong>{label}</strong><span>Buka workspace →</span></Link>)}
-            </div>
+          <Panel title="Aplikasi demo · 7 aplikasi / 4 modul">
+            {(["Komersial", "Rantai pasok", "Keuangan", "Kasir"] as const).map((group) => (
+              <div className="application-group" key={group}>
+                <h3>{group}</h3>
+                <div className="demo-module-grid">
+                  {applicationAccess.filter((app) => app.group === group).map((app) => (
+                    app.href ? (
+                      <Link className="demo-module-card" href={app.href} key={app.name}>
+                        <strong>{app.name}</strong><span>Buka workspace →</span>
+                      </Link>
+                    ) : null
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Panel>
+          <Panel title="Kapabilitas lintas modul">
+            <p className="muted-copy">Retur dan Credit Note menghubungkan pemeriksaan Inventory dengan koreksi Invoicing.</p>
+            <Link className="secondary-button" href="/returns">Buka Retur &amp; Credit Note</Link>
           </Panel>
           <Panel title="Aktivitas demo terbaru">
             <ul className="demo-event-list">{state.events.map((event, index) => <li key={`${event}-${index}`}>{event}</li>)}</ul>

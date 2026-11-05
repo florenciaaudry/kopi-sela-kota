@@ -319,6 +319,7 @@ export type Database = {
         sold_at: string;
         created_by: string;
         hold_number: string | null;
+        customer_id: string | null;
       }>;
       pos_holds: Table<{
         number: string;
@@ -451,6 +452,13 @@ export type Database = {
         p_quantity: number;
         p_payment_method: string;
         p_idempotency_key: string;
+      }, string>;
+      create_pos_sale_for_customer: Rpc<{
+        p_sku: string;
+        p_quantity: number;
+        p_payment_method: string;
+        p_idempotency_key: string;
+        p_customer_id?: string | null;
       }, string>;
       close_pos_session: Rpc<{
         p_session_number: string;

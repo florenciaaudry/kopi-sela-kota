@@ -213,7 +213,7 @@ export async function ModulePage({
     accounting: ["finance", "owner"],
     invoicing: ["finance", "owner"],
     pos: ["cashier", "owner"],
-    returns: ["sales", "finance", "owner"],
+    returns: ["warehouse", "finance", "owner"],
   } as const;
   await requireRole([...roleMap[module]]);
   const supabase = await createSupabaseServerClient();
@@ -462,21 +462,34 @@ export async function ModulePage({
   }
 
   if (module === "pos") {
-    const [configuration, sessions, products, methods, receipts, holds, holdLines, receiptLines, tenders] = await Promise.all([
+    const [configuration, sessions, products, customers, methods, receiptResult, holds, holdLines, receiptLines, tenders] = await Promise.all([
       supabase.from("pos_configuration").select("location_code, opening_cash").eq("id", "POS-TBT").single(),
       supabase.from("pos_sessions").select("number, cashier_label, status, opening_cash, expected_cash, counted_cash, cash_difference, variance_reason").order("opened_at", { ascending: false }),
       supabase.from("products").select("sku, name, sales_price").order("sku"),
+      supabase.from("customers").select("id, name, credit_limit").order("id"),
       supabase.from("pos_payment_methods").select("id, name").order("id"),
-      supabase.from("pos_receipts").select("number, session_number, sku, quantity, total, payment_method, sold_at").order("sold_at", { ascending: false }),
+      supabase.from("pos_receipts").select("number, session_number, sku, quantity, total, payment_method, customer_id, sold_at").order("sold_at", { ascending: false }),
       supabase.from("pos_holds").select("number, session_number, status, expires_at").order("created_at", { ascending: false }),
       supabase.from("pos_hold_lines").select("hold_number, sku, quantity, subtotal, tax_amount").order("sku"),
       supabase.from("pos_receipt_lines").select("receipt_number, sku, quantity, subtotal, tax_amount").order("sku"),
       supabase.from("pos_receipt_tenders").select("receipt_number, payment_method, amount"),
     ]);
-    const error = configuration.error ?? sessions.error ?? products.error ?? methods.error ??
-      receipts.error ?? holds.error ?? holdLines.error ?? receiptLines.error ?? tenders.error;
+    let receipts = receiptResult.data;
+    let customerLinkMigrationPending = false;
+    if (receiptResult.error?.message.includes("column pos_receipts.customer_id does not exist")) {
+      customerLinkMigrationPending = true;
+      const legacyReceiptResult = await supabase.from("pos_receipts")
+        .select("number, session_number, sku, quantity, total, payment_method, sold_at")
+        .order("sold_at", { ascending: false });
+      if (legacyReceiptResult.error) return <DataLoadError error={legacyReceiptResult.error.message} />;
+      receipts = legacyReceiptResult.data?.map((receipt) => ({ ...receipt, customer_id: null })) ?? null;
+    } else if (receiptResult.error) {
+      return <DataLoadError error={receiptResult.error.message} />;
+    }
+    const error = configuration.error ?? sessions.error ?? products.error ?? customers.error ?? methods.error ??
+      holds.error ?? holdLines.error ?? receiptLines.error ?? tenders.error;
     if (error) return <DataLoadError error={error.message} />;
-    if (!configuration.data || !sessions.data || !products.data || !methods.data || !receipts.data ||
+    if (!configuration.data || !sessions.data || !products.data || !customers.data || !methods.data || !receipts ||
         !holds.data || !holdLines.data || !receiptLines.data || !tenders.data) {
       return <DataLoadError error="Database mengembalikan data POS yang tidak lengkap." />;
     }
@@ -496,6 +509,11 @@ export async function ModulePage({
     return (
       <div className="page-stack">
         <PageTitle module={module} /><MessageBanner message={message} />
+        {customerLinkMigrationPending ? (
+          <section className="notice notice-warning" role="status">
+            Skema database belum menerapkan migrasi POS pelanggan 005. Penjualan tanpa pelanggan tetap tersedia; untuk menautkan pelanggan pada struk, jalankan migrasi `202611050005_pos_customer_link.sql` setelah migrasi 004. Data historis tidak diubah.
+          </section>
+        ) : null}
         <Panel title="Buka sesi kasir">
           <Form action={openPosSessionAction} submitLabel="Buka sesi">
             <NumberInput label="Kas awal dari konfigurasi POS" name="opening_cash" min={0} step={0.01} defaultValue={configuration.data.opening_cash} />
@@ -506,6 +524,8 @@ export async function ModulePage({
             <Select label="Produk" name="sku" options={products.data.map((item) => option(item.sku, `${item.sku} · ${item.name} · ${money(item.sales_price)}`))} />
             <NumberInput label="Kuantitas" name="quantity" />
             <Select label="Metode pembayaran" name="payment_method" options={methods.data.map((item) => option(item.id, item.name))} />
+            <Select label="Pelanggan (opsional)" name="customer_id" options={[option("", "Pembeli umum"), ...customers.data.map((item) => option(item.id, `${item.id} · ${item.name} · limit ${money(item.credit_limit)}`))]} required={false} />
+            <p className="muted-copy">Penjualan POS langsung lunas dan tidak menambah piutang atau memakai batas kredit. Pilih pelanggan untuk mencatatnya pada struk.</p>
           </Form>
         </Panel>
         <Panel title="Hold pesanan POS">
@@ -514,9 +534,8 @@ export async function ModulePage({
             <NumberInput label="Kuantitas baris 1" name="quantity_1" />
             <Select label="SKU baris 2 (opsional)" name="sku_2" options={[option("", "Tidak ada"), ...products.data.map((item) => option(item.sku, `${item.sku} · ${item.name}`))]} required={false} />
             <NumberInput label="Kuantitas baris 2 (opsional)" min={0} name="quantity_2" defaultValue={0} required={false} />
-            <NumberInput label="Masa berlaku (menit)" min={1} name="expires_in_minutes" defaultValue={10} />
           </Form>
-          <p className="muted-copy">Hold mengunci Available per SKU hingga dibayar, dibatalkan, atau kedaluwarsa.</p>
+          <p className="muted-copy">Hold kedaluwarsa 10 menit setelah dibuat oleh server; stok dilepas saat dibayar, dibatalkan, atau kedaluwarsa.</p>
         </Panel>
         {openHolds.length > 0 ? (
           <>
@@ -570,8 +589,9 @@ export async function ModulePage({
           ])} />
         </Panel>
         <Panel title="Struk">
-          <DataTable headers={["Nomor", "Sesi", "Baris", "Total", "Tender", "Waktu"]} rows={receipts.data.map((item) => [
+          <DataTable headers={["Nomor", "Sesi", "Pelanggan", "Baris", "Total", "Tender", "Waktu"]} rows={receipts.map((item) => [
             item.number, item.session_number,
+            item.customer_id ? `${item.customer_id} · ${customers.data.find((customer) => customer.id === item.customer_id)?.name ?? "Pelanggan"}` : "Pembeli umum",
             receiptLines.data.filter((line) => line.receipt_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || `${item.sku} × ${item.quantity}`,
             money(item.total), receiptTenderLabels.get(item.number)?.join(" + ") ?? item.payment_method,
             new Date(item.sold_at).toLocaleString("id-ID"),

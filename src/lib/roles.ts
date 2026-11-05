@@ -11,21 +11,22 @@ export const roleLabels: Record<AppRole, string> = {
 
 export const applicationAccess: {
   name: string;
+  group: "Komersial" | "Rantai pasok" | "Keuangan" | "Kasir";
   roles: AppRole[];
   href?: string;
   available: boolean;
 }[] = [
-  { name: "Sales", roles: ["sales", "warehouse", "owner"], href: "/sales", available: true },
-  { name: "CRM", roles: ["sales", "owner"], href: "/crm", available: true },
-  { name: "Purchase", roles: ["procurement", "warehouse", "owner"], href: "/purchase", available: true },
+  { name: "Sales", group: "Komersial", roles: ["sales", "warehouse", "owner"], href: "/sales", available: true },
+  { name: "CRM", group: "Komersial", roles: ["sales", "owner"], href: "/crm", available: true },
+  { name: "Purchase", group: "Rantai pasok", roles: ["procurement", "warehouse", "owner"], href: "/purchase", available: true },
   {
     name: "Inventory",
+    group: "Rantai pasok",
     roles: ["warehouse", "procurement", "owner"],
     href: "/inventory",
     available: true,
   },
-  { name: "Accounting", roles: ["finance", "owner"], href: "/accounting", available: true },
-  { name: "Invoicing", roles: ["finance", "owner"], href: "/invoicing", available: true },
-  { name: "Point of Sale", roles: ["cashier", "owner"], href: "/pos", available: true },
-  { name: "Retur", roles: ["sales", "finance", "owner"], href: "/returns", available: true },
+  { name: "Accounting", group: "Keuangan", roles: ["finance", "owner"], href: "/accounting", available: true },
+  { name: "Invoicing", group: "Keuangan", roles: ["finance", "owner"], href: "/invoicing", available: true },
+  { name: "Point of Sale", group: "Kasir", roles: ["cashier", "owner"], href: "/pos", available: true },
 ];

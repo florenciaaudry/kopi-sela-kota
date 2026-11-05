@@ -286,13 +286,25 @@ export async function createPosSaleAction(form: FormData) {
   const sku = required(form, "sku", "SKU", path);
   const quantity = positiveInteger(form, "quantity", "Kuantitas", path);
   const paymentMethod = required(form, "payment_method", "Metode pembayaran", path);
+  const customerId = text(form, "customer_id");
   const key = idempotencyKey(form, path);
+  if (!customerId) {
+    return submitRpc(path, ["cashier", "owner"], (client) =>
+      client.rpc("create_pos_sale", {
+        p_sku: sku,
+        p_quantity: quantity,
+        p_payment_method: paymentMethod,
+        p_idempotency_key: key,
+      }),
+    );
+  }
   return submitRpc(path, ["cashier", "owner"], (client) =>
-    client.rpc("create_pos_sale", {
+    client.rpc("create_pos_sale_for_customer", {
       p_sku: sku,
       p_quantity: quantity,
       p_payment_method: paymentMethod,
       p_idempotency_key: key,
+      p_customer_id: customerId || null,
     }),
   );
 }
@@ -315,14 +327,12 @@ export async function createPosHoldAction(form: FormData) {
   if (new Set(lines.map((line) => line.sku)).size !== lines.length) {
     showMessage(path, "error", "Gabungkan kuantitas jika SKU sama.");
   }
-  const expiresInMinutes = positiveInteger(form, "expires_in_minutes", "Durasi hold", path);
-  if (expiresInMinutes > 1440) showMessage(path, "error", "Durasi hold maksimal 1440 menit.");
   const key = idempotencyKey(form, path);
   const jsonLines: Json = lines.map((line) => ({ sku: line.sku, quantity: line.quantity }));
   return submitRpc(path, ["cashier", "owner"], (client) =>
     client.rpc("create_pos_hold", {
       p_lines: jsonLines,
-      p_expires_in_minutes: expiresInMinutes,
+      p_expires_in_minutes: 10,
       p_idempotency_key: key,
     }),
   );
@@ -396,7 +406,7 @@ export async function createCreditNoteAction(form: FormData) {
   const quantity = positiveInteger(form, "quantity", "Kuantitas", path);
   const condition = required(form, "item_condition", "Kondisi barang", path);
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["sales", "finance", "owner"], (client) =>
+  return submitRpc(path, ["warehouse", "finance", "owner"], (client) =>
     client.rpc("create_customer_credit_note", {
       p_invoice_number: invoice,
       p_sku: sku,

@@ -49,6 +49,8 @@ export default async function ErpLayout({
             {demoApplications.map((app) => app.href ? (
               <Link className="sidebar-link" href={app.href} key={app.name}>{app.name}</Link>
             ) : null)}
+            <Link className="sidebar-link" href="/returns">Retur &amp; Credit Note</Link>
+            <Link className="sidebar-link" href="/#reporting">Reporting</Link>
             <div className="sidebar-note">Simulasi lokal untuk mencoba alur. Tidak ada perubahan ke database.</div>
           </aside>
           <main className="main-content">{children}</main>
@@ -163,8 +165,18 @@ export default async function ErpLayout({
               Produk &amp; stok
             </Link>
           ) : null}
+          {["warehouse", "finance", "owner"].includes(role) ? (
+            <Link className="sidebar-link" href="/returns">
+              Retur &amp; pemeriksaan
+            </Link>
+          ) : null}
+          {["finance", "owner"].includes(role) ? (
+            <Link className="sidebar-link" href="/#reporting">
+              Reporting
+            </Link>
+          ) : null}
           <div className="sidebar-note">
-            Menu modul yang belum aktif ditampilkan tanpa tautan transaksi.
+            Retur terhubung ke Inventory dan Invoicing; laporan diringkas di beranda.
           </div>
         </aside>
         <main className="main-content">{children}</main>

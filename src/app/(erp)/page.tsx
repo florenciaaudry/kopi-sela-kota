@@ -103,24 +103,26 @@ export default async function DashboardPage() {
           )}
 
           {financialSummary ? (
-            financialSummary.error ? (
-              <section className="notice notice-error" role="alert">
-                <strong>Ringkasan keuangan gagal dimuat.</strong>
-                <p>{financialSummary.error}</p>
-                <p>Pastikan migrasi transaksi sudah diterapkan. Data demo tidak digunakan sebagai pengganti.</p>
-              </section>
-            ) : financialSummary.data ? (
-              <section aria-label="Ringkasan keuangan" className="metric-grid">
-                <article className="metric-card"><span>Piutang</span><strong>{formatRupiah(financialSummary.data.receivables)}</strong><p>Sisa invoice posted</p></article>
-                <article className="metric-card"><span>Utang</span><strong>{formatRupiah(financialSummary.data.payables)}</strong><p>Sisa vendor bill posted</p></article>
-                <article className="metric-card"><span>Kas</span><strong>{formatRupiah(financialSummary.data.cash)}</strong><p>Dari jurnal posted</p></article>
-                <article className="metric-card"><span>Bank</span><strong>{formatRupiah(financialSummary.data.bank)}</strong><p>Dari jurnal posted</p></article>
-              </section>
-            ) : (
-              <section className="notice notice-error" role="alert">
-                Database tidak mengembalikan ringkasan keuangan.
-              </section>
-            )
+            <div id="reporting">
+              {financialSummary.error ? (
+                <section className="notice notice-error" role="alert">
+                  <strong>Ringkasan keuangan gagal dimuat.</strong>
+                  <p>{financialSummary.error}</p>
+                  <p>Pastikan migrasi transaksi sudah diterapkan. Data demo tidak digunakan sebagai pengganti.</p>
+                </section>
+              ) : financialSummary.data ? (
+                <section aria-label="Reporting keuangan" className="metric-grid">
+                  <article className="metric-card"><span>Piutang</span><strong>{formatRupiah(financialSummary.data.receivables)}</strong><p>Sisa invoice posted</p></article>
+                  <article className="metric-card"><span>Utang</span><strong>{formatRupiah(financialSummary.data.payables)}</strong><p>Sisa vendor bill posted</p></article>
+                  <article className="metric-card"><span>Kas</span><strong>{formatRupiah(financialSummary.data.cash)}</strong><p>Dari jurnal posted</p></article>
+                  <article className="metric-card"><span>Bank</span><strong>{formatRupiah(financialSummary.data.bank)}</strong><p>Dari jurnal posted</p></article>
+                </section>
+              ) : (
+                <section className="notice notice-error" role="alert">
+                  Database tidak mengembalikan ringkasan keuangan.
+                </section>
+              )}
+            </div>
           ) : null}
         </>
       )}
@@ -132,27 +134,24 @@ export default async function DashboardPage() {
             <h2>Ruang kerja sesuai peran</h2>
           </div>
         </div>
-        <div className="application-grid">
-          {visibleApplications.map((app) =>
-            app.available && app.href ? (
-              <Link className="application-card" href={app.href} key={app.name}>
-                <span className="application-icon" aria-hidden="true">
-                  {app.name.slice(0, 1)}
-                </span>
-                <span className="application-name">{app.name}</span>
-                <span className="application-state state-ready">Tersedia</span>
-              </Link>
-            ) : (
-              <div className="application-card application-card-pending" key={app.name}>
-                <span className="application-icon" aria-hidden="true">
-                  {app.name.slice(0, 1)}
-                </span>
-                <span className="application-name">{app.name}</span>
-                <span className="application-state">Dalam pengerjaan</span>
+        {(["Komersial", "Rantai pasok", "Keuangan", "Kasir"] as const).map((group) => {
+          const groupApplications = visibleApplications.filter((app) => app.group === group);
+          if (groupApplications.length === 0) return null;
+          return (
+            <div className="application-group" key={group}>
+              <h3>{group}</h3>
+              <div className="application-grid">
+                {groupApplications.map((app) => (
+                  <Link className="application-card" href={app.href ?? "/"} key={app.name}>
+                    <span className="application-icon" aria-hidden="true">{app.name.slice(0, 1)}</span>
+                    <span className="application-name">{app.name}</span>
+                    <span className="application-state state-ready">Tersedia</span>
+                  </Link>
+                ))}
               </div>
-            ),
-          )}
-        </div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="notice notice-info">
