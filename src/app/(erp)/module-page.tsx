@@ -1,4 +1,10 @@
-import type { ReactNode } from "react";
+import { Children, Fragment, isValidElement, type ReactNode } from "react";
+import type { AppRole } from "@/lib/supabase/database.types";
+import { WorkspaceViews, type WorkspaceSection } from "./workspace-views";
+import { DataTable } from "./data-table";
+import { PosCart } from "./pos-cart";
+import { CrmPipeline } from "./crm-pipeline";
+import { SubmitButton } from "./submit-button";
 
 import { requireRole } from "@/lib/auth";
 import { formatRupiah } from "@/lib/format";
@@ -34,12 +40,12 @@ type Message = { error?: string; success?: string };
 
 function PageTitle({ module }: { module: Module }) {
   const title: Record<Module, string> = {
-    sales: "Sales",
-    crm: "CRM",
-    purchase: "Purchase & Receiving",
-    accounting: "Accounting",
-    invoicing: "Invoicing",
-    pos: "Point of Sale",
+    sales: "Penjualan",
+    crm: "Peluang Pelanggan",
+    purchase: "Pembelian",
+    accounting: "Akuntansi",
+    invoicing: "Tagihan & Pembayaran",
+    pos: "Kasir",
     returns: "Retur & Credit Note",
   };
   return (
@@ -47,9 +53,9 @@ function PageTitle({ module }: { module: Module }) {
       <div>
         <p className="eyebrow">KOPI SELA KOTA / {module.toUpperCase()}</p>
         <h1>{title[module]}</h1>
-        <p className="muted-copy">Transaksi dan status dibaca dari Supabase; perubahan diposting melalui RPC atomik.</p>
+        <p className="muted-copy">{({ sales: "Pantau pesanan pelanggan, lalu catat pengirimannya.", crm: "Ikuti peluang pelanggan dari kontak awal sampai berhasil.", purchase: "Kelola pesanan pemasok dan penerimaan barang.", accounting: "Telusuri pencatatan dan keseimbangan keuangan usaha.", invoicing: "Terbitkan tagihan dan catat pembayaran sesuai dokumen asal.", pos: "Buka sesi, layani pelanggan, lalu cocokkan kas saat tutup.", returns: "Periksa kondisi barang dan koreksi tagihan asal." })[module]}</p>
       </div>
-      <span className="date-chip">Supabase · live</span>
+      <span className="date-chip"><span className="connection-dot" aria-hidden="true" /> Data tersimpan online</span>
     </div>
   );
 }
@@ -61,6 +67,45 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
       {children}
     </section>
   );
+}
+
+const actionLabels: Record<string, string> = {
+  "Buat Sales Order": "Pesanan baru", "Pengiriman dari Sales Order": "Catat pengiriman",
+  "Buat Lead": "Peluang baru", "Perbarui tahap": "Ubah tahap peluang",
+  "Buat Purchase Order": "Pesanan pembelian baru", "Penerimaan barang": "Terima barang",
+  "Terbitkan invoice untuk delivery": "Buat invoice pelanggan", "Catat pembayaran pelanggan": "Terima pembayaran",
+  "Buat Vendor Bill dari barang diterima": "Buat tagihan pemasok", "Bayar Vendor Bill": "Bayar pemasok",
+  "Buka sesi kasir": "Buka sesi kasir", "Penjualan POS": "Penjualan langsung",
+  "Hold pesanan POS": "Buat keranjang tertahan", "Selesaikan hold · tender lunas": "Bayar keranjang",
+  "Batalkan hold": "Batalkan keranjang", "Pelepasan hold kedaluwarsa": "Periksa keranjang kedaluwarsa",
+  "Buat Credit Note": "Catat retur & Credit Note",
+};
+
+function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRole }) {
+  const actions: WorkspaceSection[] = [];
+  const views: WorkspaceSection[] = [];
+  const intro: ReactNode[] = [];
+  const add = (nodes: ReactNode) => Children.forEach(nodes, (node) => {
+    if (!isValidElement<{ children?: ReactNode; title?: string }>(node)) { if (node) intro.push(node); return; }
+    if (node.type === Fragment) { add(node.props.children); return; }
+    if (node.type !== Panel) { intro.push(node); return; }
+    const title = node.props.title ?? "Dokumen";
+    const isAction = Boolean(actionLabels[title]) || title.startsWith("Tutup sesi ") || title.startsWith("Persetujuan selisih ");
+    if (isAction) {
+      let roles: AppRole[] = ["owner"];
+      if (["Buat Sales Order", "Buat Lead", "Perbarui tahap"].includes(title)) roles = ["sales", "owner"];
+      else if (["Pengiriman dari Sales Order", "Penerimaan barang"].includes(title)) roles = ["warehouse", "owner"];
+      else if (title === "Buat Purchase Order") roles = ["procurement", "owner"];
+      else if (["Terbitkan invoice untuk delivery", "Catat pembayaran pelanggan", "Buat Vendor Bill dari barang diterima", "Bayar Vendor Bill"].includes(title)) roles = ["finance", "owner"];
+      else if (title === "Buat Credit Note") roles = ["warehouse", "finance", "owner"];
+      else if (!title.startsWith("Persetujuan selisih ")) roles = ["cashier", "owner"];
+      if (!roles.includes(role)) return;
+    }
+    const section = { id: `section-${views.length + actions.length}`, title: actionLabels[title] ?? title, content: node };
+    (isAction ? actions : views).push(section);
+  });
+  add(children);
+  return <div className="page-stack module-workspace">{Children.toArray(intro)}<WorkspaceViews actions={actions} views={views} /></div>;
 }
 
 function Form({
@@ -78,7 +123,7 @@ function Form({
     <form action={action} className="demo-form">
       {idempotent ? <input name="idempotency_key" type="hidden" value={crypto.randomUUID()} /> : null}
       {children}
-      <button className="primary-button" type="submit">{submitLabel}</button>
+      <SubmitButton label={submitLabel} />
     </form>
   );
 }
@@ -144,30 +189,6 @@ function TextInput({ label, name, required = true }: { label: string; name: stri
   );
 }
 
-function DataTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: (string | number)[][];
-}) {
-  if (rows.length === 0) return <p className="muted-copy">Belum ada data.</p>;
-  return (
-    <div className="table-scroll">
-      <table>
-        <thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={`${String(row[0])}-${index}`}>
-              {row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function MessageBanner({ message }: { message?: Message }) {
   if (message?.error) {
     return <section className="notice notice-error" role="alert"><strong>Transaksi gagal.</strong><p>{message.error}</p></section>;
@@ -215,7 +236,7 @@ export async function ModulePage({
     pos: ["cashier", "owner"],
     returns: ["warehouse", "finance", "owner"],
   } as const;
-  await requireRole([...roleMap[module]]);
+  const profile = await requireRole([...roleMap[module]]);
   const supabase = await createSupabaseServerClient();
 
   if (module === "sales") {
@@ -235,7 +256,7 @@ export async function ModulePage({
       .filter((item) => ["Sales Order", "Partial Delivery"].includes(item.status))
       .map((item) => option(item.number, `${item.number} · ${item.status}`));
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Buat Sales Order">
           <Form action={createSalesOrderAction} submitLabel="Simpan Sales Order">
@@ -258,9 +279,9 @@ export async function ModulePage({
           ])} />
         </Panel>
         <Panel title="Delivery">
-          <DataTable headers={["Nomor", "Sales Order", "Dibuat"]} rows={deliveries.data.map((item) => [item.number, item.sales_order_number, new Date(item.delivered_at).toLocaleString("id-ID")])} />
+          <DataTable headers={["Nomor", "Sales Order", "Dibuat"]} rows={deliveries.data.map((item) => [item.number, item.sales_order_number, new Date(item.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
         </Panel>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -279,7 +300,7 @@ export async function ModulePage({
     const productNames = new Map(products.data.map((item) => [item.sku, item.name]));
     const leadOptions = leads.data.map((item) => option(item.number, `${item.number} · ${item.stage}`));
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Buat Lead">
           <Form action={createLeadAction} submitLabel="Simpan Lead">
@@ -296,14 +317,26 @@ export async function ModulePage({
             <TextInput label="Alasan Lost (wajib saat Lost)" name="lost_reason" required={false} />
           </Form>
         </Panel>
-        <Panel title="Pipeline Lead">
+        <Panel title="Pipeline peluang · Kanban">
+          <CrmPipeline opportunities={leads.data.map((item) => ({
+            number: item.number,
+            customer: `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
+            product: `${item.sku} · ${productNames.get(item.sku) ?? "—"}`,
+            quantity: item.quantity,
+            stage: item.stage,
+            revenue: Number(item.expected_revenue),
+            probability: Number(item.probability_percent),
+            lostReason: item.lost_reason,
+          }))} />
+        </Panel>
+        <Panel title="Daftar peluang">
           <DataTable headers={["Nomor", "Pelanggan", "Produk", "Qty", "Tahap", "Revenue", "Probabilitas", "Alasan Lost"]} rows={leads.data.map((item) => [
             item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
             `${item.sku} · ${productNames.get(item.sku) ?? "—"}`, item.quantity, item.stage,
             money(item.expected_revenue), `${item.probability_percent}%`, item.lost_reason ?? "—",
           ])} />
         </Panel>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -323,7 +356,7 @@ export async function ModulePage({
     const vendorNames = new Map(vendors.data.map((item) => [item.id, item.name]));
     const productNames = new Map(products.data.map((item) => [item.sku, item.name]));
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
@@ -345,10 +378,10 @@ export async function ModulePage({
           ])} />
         </Panel>
         <Panel title="Goods Receipt">
-          <DataTable headers={["Nomor", "Purchase Order", "Diterima"]} rows={receipts.data.map((item) => [item.number, item.purchase_order_number, new Date(item.received_at).toLocaleString("id-ID")])} />
+          <DataTable headers={["Nomor", "Purchase Order", "Diterima"]} rows={receipts.data.map((item) => [item.number, item.purchase_order_number, new Date(item.received_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
           <p className="muted-copy">Produk referensi: {products.data.map((item) => `${item.sku} ${productNames.get(item.sku) ?? ""}`).join(" · ")}</p>
         </Panel>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -373,7 +406,7 @@ export async function ModulePage({
       linesByJournal.set(line.journal_entry_id, current);
     }
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <section className="metric-grid">
           {[
@@ -393,7 +426,7 @@ export async function ModulePage({
           ])} />
         </Panel>
         <p className="muted-copy">Jurnal dibaca saja dari alur transaksi; pencatatan manual belum dibuka.</p>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -414,7 +447,7 @@ export async function ModulePage({
     const openInvoices = invoices.data.filter((item) => item.total - item.amount_paid - item.amount_credited > 0);
     const openBills = bills.data.filter((item) => item.total - item.amount_paid > 0);
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Terbitkan invoice untuk delivery">
           <Form action={createInvoiceAction} submitLabel="Posting invoice">
@@ -453,11 +486,11 @@ export async function ModulePage({
         </Panel>
         <Panel title="Riwayat pembayaran">
           <DataTable headers={["Nomor", "Dokumen", "Jenis", "Jumlah", "Akun", "Waktu"]} rows={[
-            ...customerPayments.data.map((item) => [item.number, item.invoice_number, "Pelanggan", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID")]),
-            ...vendorPayments.data.map((item) => [item.number, item.bill_number, "Pemasok", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID")]),
+            ...customerPayments.data.map((item) => [item.number, item.invoice_number, "Pelanggan", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
+            ...vendorPayments.data.map((item) => [item.number, item.bill_number, "Pemasok", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
           ]} />
         </Panel>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -507,7 +540,7 @@ export async function ModulePage({
       receiptTenderLabels.set(tender.receipt_number, current);
     }
     return (
-      <div className="page-stack">
+      <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
         {customerLinkMigrationPending ? (
           <section className="notice notice-warning" role="status">
@@ -529,12 +562,7 @@ export async function ModulePage({
           </Form>
         </Panel>
         <Panel title="Hold pesanan POS">
-          <Form action={createPosHoldAction} submitLabel="Simpan hold">
-            <Select label="SKU baris 1" name="sku_1" options={products.data.map((item) => option(item.sku, `${item.sku} · ${item.name}`))} />
-            <NumberInput label="Kuantitas baris 1" name="quantity_1" />
-            <Select label="SKU baris 2 (opsional)" name="sku_2" options={[option("", "Tidak ada"), ...products.data.map((item) => option(item.sku, `${item.sku} · ${item.name}`))]} required={false} />
-            <NumberInput label="Kuantitas baris 2 (opsional)" min={0} name="quantity_2" defaultValue={0} required={false} />
-          </Form>
+          <PosCart products={products.data} action={createPosHoldAction} transactionKey={crypto.randomUUID()} />
           <p className="muted-copy">Hold kedaluwarsa 10 menit setelah dibuat oleh server; stok dilepas saat dibayar, dibatalkan, atau kedaluwarsa.</p>
         </Panel>
         {openHolds.length > 0 ? (
@@ -583,21 +611,21 @@ export async function ModulePage({
         </Panel>
         <Panel title="Hold dan baris pesanan">
           <DataTable headers={["Hold", "Sesi", "Status", "Kedaluwarsa", "Baris barang", "Total"]} rows={holds.data.map((item) => [
-            item.number, item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID"),
+            item.number, item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
             holdLines.data.filter((line) => line.hold_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || "—",
             money(holdTotals.get(item.number) ?? 0),
           ])} />
         </Panel>
         <Panel title="Struk">
-          <DataTable headers={["Nomor", "Sesi", "Pelanggan", "Baris", "Total", "Tender", "Waktu"]} rows={receipts.map((item) => [
+          <DataTable linkColumn={{ index: 0, prefix: "/pos/receipt/" }} headers={["Nomor", "Sesi", "Pelanggan", "Baris", "Total", "Tender", "Waktu"]} rows={receipts.map((item) => [
             item.number, item.session_number,
             item.customer_id ? `${item.customer_id} · ${customers.data.find((customer) => customer.id === item.customer_id)?.name ?? "Pelanggan"}` : "Pembeli umum",
             receiptLines.data.filter((line) => line.receipt_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || `${item.sku} × ${item.quantity}`,
             money(item.total), receiptTenderLabels.get(item.number)?.join(" + ") ?? item.payment_method,
-            new Date(item.sold_at).toLocaleString("id-ID"),
+            new Date(item.sold_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
           ])} />
         </Panel>
-      </div>
+      </ModuleWorkspace>
     );
   }
 
@@ -616,7 +644,7 @@ export async function ModulePage({
     .filter((line) => returnableInvoices.some((invoice) => invoice.number === line.invoice_number))
     .map((line) => option(`${line.invoice_number}|${line.sku}`, `${line.invoice_number} · ${line.sku} · max ${line.quantity}`));
   return (
-    <div className="page-stack">
+    <ModuleWorkspace role={profile.role}>
       <PageTitle module={module} /><MessageBanner message={message} />
       <Panel title="Buat Credit Note">
         <Form action={createCreditNoteAction} submitLabel="Posting Credit Note">
@@ -638,9 +666,9 @@ export async function ModulePage({
       </Panel>
       <Panel title="Credit Note">
         <DataTable headers={["Nomor", "Invoice", "Subtotal", "PBJT", "Total", "Dibuat"]} rows={creditNotes.data.map((item) => [
-          item.number, item.invoice_number, money(item.subtotal), money(item.tax_amount), money(item.total), new Date(item.created_at).toLocaleString("id-ID"),
+          item.number, item.invoice_number, money(item.subtotal), money(item.tax_amount), money(item.total), new Date(item.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
         ])} />
       </Panel>
-    </div>
+    </ModuleWorkspace>
   );
 }

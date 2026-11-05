@@ -6,6 +6,9 @@ import { getInventorySnapshot } from "@/lib/inventory";
 import { isDemoMode } from "@/lib/runtime-mode";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DemoWorkspace } from "../demo-workspace";
+import { WorkspaceViews } from "../workspace-views";
+import { DataTable } from "../data-table";
+import { SubmitButton } from "../submit-button";
 import { transferInventoryAction } from "../module-actions";
 
 export const metadata: Metadata = {
@@ -65,24 +68,18 @@ export default async function InventoryPage({
   }
 
   return (
-    <div className="page-stack">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">INVENTORY / MASTER DATA</p>
-          <h1>Produk &amp; stok</h1>
-          <p className="muted-copy">
-            Stok ditampilkan per SKU dan lokasi; ukuran produk tidak saling
-            menggantikan.
-          </p>
-        </div>
-        <span className="date-chip">List · Baseline</span>
-      </div>
-
+    <div className="page-stack module-workspace">
+      <div className="page-heading"><div><p className="eyebrow">KOPI SELA KOTA / INVENTORY</p><h1>Produk &amp; Stok</h1><p className="muted-copy">Periksa stok tiap lokasi dan pindahkan barang sesuai ketersediaannya.</p></div><span className="date-chip"><span className="connection-dot" aria-hidden="true" /> Data tersimpan online</span></div>
       {message.error ? <section className="notice notice-error" role="alert">{message.error}</section> : null}
       {message.success ? <section className="notice notice-info" role="status">{message.success}</section> : null}
-      {profile.role === "warehouse" || profile.role === "owner" ? (
-        <section className="section-card demo-panel">
-          <div className="section-heading"><h2>Transfer antar lokasi</h2></div>
+      <section className="inventory-summary" aria-label="Ringkasan stok">
+        <div><span>Produk</span><strong>{snapshot.productCount} SKU</strong></div>
+        <div><span>Lokasi</span><strong>{snapshot.locationCount}</strong></div>
+        <div><span>Stok fisik · On Hand</span><strong>{snapshot.onHand.toLocaleString("id-ID")} unit</strong></div>
+        <div><span>Nilai persediaan</span><strong>{formatRupiah(snapshot.inventoryValue)}</strong></div>
+      </section>
+      <WorkspaceViews actions={profile.role === "warehouse" || profile.role === "owner" ? [{
+        id: "transfer", title: "Transfer antar lokasi", content: (
           <form action={transferInventoryAction} className="demo-form">
             <input name="idempotency_key" type="hidden" value={crypto.randomUUID()} />
             <label className="demo-field">
@@ -112,76 +109,13 @@ export default async function InventoryPage({
               <span>Kuantitas</span>
               <input min={1} name="quantity" required step={1} type="number" />
             </label>
-            <button className="primary-button" type="submit">Posting transfer</button>
+            <SubmitButton label="Simpan transfer" />
           </form>
-        </section>
-      ) : null}
-
-      {snapshot.rows.length === 0 ? (
-        <section className="empty-state">
-          <h2>Belum ada saldo stok</h2>
-          <p>Pastikan seed baseline sudah diterapkan ke database.</p>
-        </section>
-      ) : (
-        <section className="table-card">
-          <div className="table-summary">
-            <span>
-              {snapshot.productCount} SKU · {snapshot.locationCount} lokasi
-            </span>
-            <span>
-              {snapshot.onHand.toLocaleString("id-ID")} unit ·{" "}
-              {formatRupiah(snapshot.inventoryValue)}
-            </span>
-          </div>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">SKU</th>
-                  <th scope="col">Produk</th>
-                  <th scope="col">Ukuran</th>
-                  <th scope="col">Lokasi</th>
-                  <th className="numeric" scope="col">On Hand</th>
-                  <th className="numeric" scope="col">Reserved</th>
-                  <th className="numeric" scope="col">Available</th>
-                  <th className="numeric" scope="col">Biaya standar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.rows.map((row) => (
-                  <tr key={`${row.sku}-${row.locationCode}`}>
-                    <td className="sku-cell">{row.sku}</td>
-                    <td>{row.name}</td>
-                    <td>{row.size}</td>
-                    <td>{row.locationCode}</td>
-                    <td className="numeric">{row.onHand}</td>
-                    <td className="numeric">{row.reserved}</td>
-                    <td className="numeric">{row.available}</td>
-                    <td className="numeric">{formatRupiah(row.standardCost)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-      <section className="section-card demo-panel">
-        <div className="section-heading"><h2>Riwayat transfer</h2></div>
-        {transfers.data.length === 0 ? <p className="muted-copy">Belum ada transfer.</p> : (
-          <div className="table-scroll">
-            <table>
-              <thead><tr><th>Nomor</th><th>SKU</th><th>Sumber</th><th>Tujuan</th><th>Kuantitas</th><th>Waktu</th></tr></thead>
-              <tbody>{transfers.data.map((transfer) => (
-                <tr key={transfer.number}>
-                  <td>{transfer.number}</td><td>{transfer.sku}</td><td>{transfer.source_location}</td>
-                  <td>{transfer.destination_location}</td><td>{transfer.quantity}</td>
-                  <td>{new Date(transfer.transferred_at).toLocaleString("id-ID")}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-        )}
-      </section>
+        ),
+      }] : []} views={[
+        { id: "stock", title: "Stok per lokasi", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Ketersediaan produk</h2></div><p className="muted-copy">On Hand = stok fisik · Reserved = sudah dipesan · Available = stok yang masih bisa digunakan.</p><DataTable headers={["SKU", "Produk", "Ukuran", "Lokasi", "On Hand", "Reserved", "Available", "Biaya standar"]} rows={snapshot.rows.map((row) => [row.sku, row.name, row.size, row.locationCode, row.onHand, row.reserved, row.available, formatRupiah(row.standardCost)])} /></section> },
+        { id: "transfers", title: "Riwayat transfer", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Perpindahan barang</h2></div><DataTable headers={["Nomor", "SKU", "Sumber", "Tujuan", "Kuantitas", "Waktu"]} rows={transfers.data.map((transfer) => [transfer.number, transfer.sku, transfer.source_location, transfer.destination_location, transfer.quantity, new Date(transfer.transferred_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} /></section> },
+      ]} />
     </div>
   );
 }

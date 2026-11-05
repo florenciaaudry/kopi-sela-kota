@@ -1,5 +1,7 @@
 "use server";
 
+import { parseCartLines } from "@/lib/pos-cart";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -311,21 +313,11 @@ export async function createPosSaleAction(form: FormData) {
 
 export async function createPosHoldAction(form: FormData) {
   const path = "/pos";
-  const lines: { sku: string; quantity: number }[] = [];
-  const sku1 = required(form, "sku_1", "SKU baris pertama", path);
-  lines.push({ sku: sku1, quantity: positiveInteger(form, "quantity_1", "Kuantitas baris pertama", path) });
-  const sku2 = text(form, "sku_2");
-  const quantity2Raw = text(form, "quantity_2");
-  const quantity2 = Number(quantity2Raw || "0");
-  if (!Number.isSafeInteger(quantity2) || quantity2 < 0) {
-    showMessage(path, "error", "Kuantitas baris kedua harus bilangan bulat nol atau lebih.");
-  }
-  if (sku2 || quantity2 > 0) {
-    if (!sku2 || quantity2 === 0) showMessage(path, "error", "SKU dan kuantitas baris kedua harus diisi bersama.");
-    lines.push({ sku: sku2, quantity: quantity2 });
-  }
-  if (new Set(lines.map((line) => line.sku)).size !== lines.length) {
-    showMessage(path, "error", "Gabungkan kuantitas jika SKU sama.");
+  let lines;
+  try {
+    lines = parseCartLines(form.getAll("cart_sku"), form.getAll("cart_quantity"));
+  } catch (error) {
+    showMessage(path, "error", error instanceof Error ? error.message : "Keranjang tidak valid.");
   }
   const key = idempotencyKey(form, path);
   const jsonLines: Json = lines.map((line) => ({ sku: line.sku, quantity: line.quantity }));

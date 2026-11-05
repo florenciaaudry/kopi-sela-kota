@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NavigationLink } from "./navigation-link";
 import { redirect } from "next/navigation";
 
 import { applicationAccess, roleLabels } from "@/lib/roles";
@@ -34,23 +35,23 @@ export default async function ErpLayout({
           MODE DEMO AKTIF · Data fixture dan perubahan hanya berada di browser ini; belum tersambung ke Supabase.
         </div>
         <div className="app-switcher">
-          <Link className="switcher-home" href="/">Beranda</Link>
+          <NavigationLink className="switcher-home" href="/">▦ Beranda</NavigationLink>
           <span className="switcher-divider" aria-hidden="true">/</span>
           <nav aria-label="Aplikasi">
             {demoApplications.map((app) => (
-              app.href ? <Link className="app-link" href={app.href} key={app.name}>{app.name}</Link> : null
+              app.href ? <NavigationLink className="app-link" href={app.href} key={app.name}>{app.name}</NavigationLink> : null
             ))}
           </nav>
         </div>
         <div className="workspace">
           <aside className="sidebar">
-            <p className="sidebar-label">WORKSPACE DEMO</p>
-            <Link className="sidebar-link" href="/">Ringkasan</Link>
+            <p className="sidebar-label">RUANG KERJA DEMO</p>
+            <NavigationLink className="sidebar-link" href="/">Ringkasan</NavigationLink>
             {demoApplications.map((app) => app.href ? (
-              <Link className="sidebar-link" href={app.href} key={app.name}>{app.name}</Link>
+              <NavigationLink className="sidebar-link" href={app.href} key={app.name}>{app.name}</NavigationLink>
             ) : null)}
-            <Link className="sidebar-link" href="/returns">Retur &amp; Credit Note</Link>
-            <Link className="sidebar-link" href="/#reporting">Reporting</Link>
+            <NavigationLink className="sidebar-link" href="/returns">Retur &amp; Credit Note</NavigationLink>
+            <NavigationLink className="sidebar-link" href="/#reporting">Reporting</NavigationLink>
             <div className="sidebar-note">Simulasi lokal untuk mencoba alur. Tidak ada perubahan ke database.</div>
           </aside>
           <main className="main-content">{children}</main>
@@ -127,18 +128,18 @@ export default async function ErpLayout({
       </header>
 
       <div className="app-switcher">
-        <Link className="switcher-home" href="/">
+        <NavigationLink className="switcher-home" href="/">
           Beranda
-        </Link>
+        </NavigationLink>
         <span className="switcher-divider" aria-hidden="true">
           /
         </span>
         <nav aria-label="Aplikasi">
           {applications.map((app) =>
             app.available && app.href ? (
-              <Link className="app-link" href={app.href} key={app.name}>
+              <NavigationLink className="app-link" href={app.href} key={app.name}>
                 {app.name}
-              </Link>
+              </NavigationLink>
             ) : (
               <span
                 aria-disabled="true"
@@ -156,27 +157,27 @@ export default async function ErpLayout({
 
       <div className="workspace">
         <aside className="sidebar">
-          <p className="sidebar-label">WORKSPACE</p>
-          <Link className="sidebar-link" href="/">
+          <p className="sidebar-label">RUANG KERJA</p>
+          <NavigationLink className="sidebar-link" href="/">
             Ringkasan
-          </Link>
+          </NavigationLink>
           {applications.some((app) => app.name === "Inventory") ? (
-            <Link className="sidebar-link" href="/inventory">
+            <NavigationLink className="sidebar-link" href="/inventory">
               Produk &amp; stok
-            </Link>
+            </NavigationLink>
           ) : null}
           {["warehouse", "finance", "owner"].includes(role) ? (
-            <Link className="sidebar-link" href="/returns">
+            <NavigationLink className="sidebar-link" href="/returns">
               Retur &amp; pemeriksaan
-            </Link>
+            </NavigationLink>
           ) : null}
           {["finance", "owner"].includes(role) ? (
-            <Link className="sidebar-link" href="/#reporting">
+            <NavigationLink className="sidebar-link" href="/#reporting">
               Reporting
-            </Link>
+            </NavigationLink>
           ) : null}
           <div className="sidebar-note">
-            Retur terhubung ke Inventory dan Invoicing; laporan diringkas di beranda.
+            Pilih aplikasi di atas untuk mulai. Retur dan laporan tersedia sesuai akses Anda.
           </div>
         </aside>
         <main className="main-content">{children}</main>

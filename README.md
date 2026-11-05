@@ -41,3 +41,9 @@ Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan 
 ## Seed safety
 
 `supabase/seed.sql` memuat nama dan saldo fiktif dari dataset tugas. Jalankan hanya pada database development/test baru. Jangan gunakan untuk menghapus atau menimpa data produksi.
+
+### Catatan runtime terbaru
+
+Script dev/build menggunakan Webpack untuk menghindari crash child-process Turbopack pada mesin pengembangan saat ini. Cache preview berada di `.next-preview`. Build verifikasi terpisah dapat dijalankan pada PowerShell dengan `$env:ERP_VERIFY_BUILD="1"` lalu `npm run build`; hasilnya berada di `.next-check`. Hapus variabel tersebut dari sesi terminal (`Remove-Item Env:ERP_VERIFY_BUILD`) sebelum kembali menjalankan preview normal. Jangan jalankan build default bersamaan dengan dev pada folder output yang sama.
+
+Validasi keranjang: `npm run test:pos-cart`. Halaman CRM memiliki Kanban, dan nomor struk pada POS membuka detail yang bisa dicetak melalui browser. Pengujian transaksi live penuh masih harus mengikuti fixture terisolasi dalam PDF.

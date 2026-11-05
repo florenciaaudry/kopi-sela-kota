@@ -53,7 +53,7 @@
 ## Sisa pekerjaan / batas verifikasi
 
 - Modul POS memiliki RPC hold multi-item, expiry/cancel, split tender, dan penyelesaian; workflow belum diuji lewat transaksi nyata. Pengguna mengonfirmasi migrasi 004/005, dan UI membuktikan schema customer link terbaca. Hold checkout belum mencatat customer. POS/00001 berstatus Opening Control, bukan sesi Open, dan saat pemeriksaan tidak ada hold aktif; checkout belum diuji agar tidak menambah receipt/jurnal permanen ke database bersama. Expiry dihitung server, tetapi pelepasan status kedaluwarsa dipicu manual melalui RPC/UI; tidak ada scheduler otomatis.
-- UI hold POS menyediakan paling banyak dua baris SKU; dukungan cart dengan jumlah baris bebas belum dibuat.
+- UI hold POS sekarang mendukung tambah/hapus baris sampai jumlah SKU katalog, estimasi subtotal/PBJT, dan validasi server. Transaksi live keranjang baru belum diuji.
 - Kontak pelanggan tidak memiliki halaman Form untuk termin/limit/eksposur; pengaitan pelanggan pada checkout hold belum dibuat.
 - Pengeditan katalog/harga, approval diskon Owner >5–10%, laporan periode/drill-down, smart button/Log Notes, dan fitur ekspor F-21 belum lengkap.
 - Tampilan List/Kanban/Form serta Search/Filters/Group By belum konsisten di semua modul; kebanyakan halaman transaksi masih form dan tabel.
@@ -73,3 +73,38 @@
 - Visual desktop telah diperiksa pada dashboard dan delapan route ERP. Pemeriksaan 390px menemukan navigasi aplikasi/workspace yang semula memakai strip scroll horizontal; CSS telah diperbaiki agar semua tautan membungkus beberapa baris. Pengukuran POS setelah perbaikan: lebar dokumen 375px pada viewport 390px, semua tautan terlihat. Halaman login dalam keadaan anonim belum diperiksa.
 - Setelah perubahan navigasi, `npm run typecheck`, `npm run lint`, dan `npm run build` lulus. Server preview lokal tetap aktif pada `http://127.0.0.1:3000` (PID 32336); itu bukan pekerjaan coding yang berjalan.
 - Pengujian T-01–T-36 belum lengkap; gap implementasi pada daftar di atas tetap berlaku. Prioritas lanjutan adalah membuat/menggunakan Supabase uji terisolasi untuk POS dan fixture bersih, kemudian menguji transaksi beserta persistensi stok/jurnal tanpa mengubah project bersama.
+
+## Pengerjaan langsung — 6 November 2026
+
+- Mempertahankan perubahan lokal sebelumnya pada demo-workspace.tsx dan demo-data.ts.
+- Mengganti form hold POS dua baris dengan keranjang dinamis, tombol tambah/hapus produk, estimasi subtotal/PBJT, pending state, dan validasi server atas semua baris (SKU duplikat, jumlah kosong/pecahan/negatif, field tidak seimbang). RPC serta idempotency key tetap dipakai. Tidak ada migrasi atau mutasi database.
+- Menambahkan komponen tabel bersama dengan pencarian, filter Status/Tahap, pengelompokan, reset tampilan, jumlah hasil, dan empty state pada tabel live module-page. Pencarian mencakup data yang sudah dimuat, bukan pencarian server atas seluruh database.
+- Mengubah waktu transaksi module-page menjadi eksplisit Asia/Jakarta/WIB dan mengganti deskripsi teknis header dengan instruksi pengguna.
+- Menambahkan ERP_VERIFY_BUILD=1 untuk folder build terpisah (.next-verify), serta ignore Git/ESLint.
+- Verifikasi: TypeScript lulus; ESLint src + test runner + next.config lulus; scripts/test-pos-cart.cjs lulus untuk keranjang 3 produk dan input tidak valid. git diff --check lulus.
+- Build BELUM lulus pada sesi ini: build default mengalami EPERM pada folder .next-local; build terpisah mengalami Turbopack child-process failure; percobaan webpack mengalami EPERM pada .next-verify/server. Tidak melakukan penghapusan rekursif untuk memaksa build. OneDrive menampilkan konfirmasi penghapusan file hasil build; pengguna diarahkan memilih Keep karena daftar penuh belum ditinjau.
+- Preview pengguna ERR_CONNECTION_RESET. Percobaan start port 3000 ditolak Next karena server lama PID 41716 terdaftar; proses itu tidak terlihat dari lingkungan shell ini. Restart preview perlu diselesaikan dari terminal VS Code pengguna atau sesi dengan akses proses yang sesuai. Jangan menganggap preview baru sudah terverifikasi.
+- Tidak melakukan pengujian browser/transaksi live, tidak menjalankan ulang seed/SQL, dan tidak push. Seluruh gap bisnis sebelumnya tetap terbuka.
+
+## Lanjutan langsung — pemulihan preview dan UI
+
+- Preview pulih: GET /login memberi HTTP 200 dan browser menampilkan formulir login Kopi Sela Kota. Tidak meminta/menggunakan password pengguna; halaman terautentikasi baru belum diperiksa visual pada sesi ini.
+- Mengganti default script dev/build ke Webpack karena Turbopack gagal membuat child process compiler CSS. Folder preview .next-preview dan build verifikasi .next-check dipisahkan; tidak menghapus folder cache lama. Folder .next-* diabaikan Git/ESLint.
+- Build Webpack penuh lulus setelah penambahan Kanban CRM dan route /pos/receipt/[number]. TypeScript dan ESLint juga lulus.
+- Kanban CRM menampilkan peluang menurut tahap, pencarian/filter, jumlah dan nilai per tahap, probabilitas, serta alasan Lost. Mutasi tahap tetap memakai form/server action yang ada.
+- Detail struk POS ditambahkan: nomor struk pada tabel dapat diklik, data baris/tender/PBJT dibaca dari database, role Cashier/Owner ditegakkan server, tersedia cetak/simpan PDF browser. Belum diverifikasi dengan struk live pada sesi ini.
+- Tombol form transaksi menampilkan pending state dan dinonaktifkan selama pengiriman.
+- Keranjang POS dinamis dan shared data table dari tahap sebelumnya dipertahankan; script npm run test:pos-cart tersedia.
+- Tidak ada migrasi baru, seed/reset, perubahan saldo, atau push GitHub. Semua gap bisnis yang belum ditutup pada matriks tetap berlaku; ini belum penyelesaian seluruh UAS.
+
+## Penyempurnaan UX berbasis Odoo — 6 November 2026
+
+- Mengganti susunan seluruh form/tabel live module-page dengan workspace aksi + tab daftar dokumen. Form dibuka dalam dialog native, ada batal/Escape dan pengembalian fokus. Tab mendukung panah/Home/End, dan konten tetap mounted agar filter tidak hilang.
+- Aksi disaring sesuai role pada server; kontrol keamanan action/database tetap dipertahankan. Header memakai judul/deskripsi operasional dan tidak lagi menjelaskan RPC kepada pengguna.
+- Menambahkan penanda menu aktif dan aria-current pada app switcher/sidebar.
+- Menyatukan Inventory ke pola workspace: ringkasan stok, tab Stok per lokasi/Riwayat, form transfer dialog, pencarian/filter/group by, dan waktu WIB.
+- Menyederhanakan toolbar tabel: pencarian utama, disclosure Filter & Group By, reset saat filter aktif; mengurangi panjang toolbar di layar kecil.
+- Memperbaiki allowedDevOrigins hanya untuk localhost/127.0.0.1 agar aset pengembangan dan interaksi preview loopback tersedia.
+- Menguji komponen dengan halaman contoh sementara terpisah dari Supabase: modal buka/tutup/Escape/return focus, pencarian, tab klik/keyboard, filter status, reset berhasil. Desktop, dialog, dan 390x844 diperiksa. Halaman/launcher sementara dihapus dan server uji ditutup.
+- Panduan desain dan bukti uji dicatat di ui-ux-guidelines.md. Tidak menjalankan seed, migrasi, posting transaksi, atau push GitHub pada tahap ini.
+- Pemeriksaan visual pada sesi Owner aktual dan pengujian seluruh role/transaksi tetap belum lengkap; jangan menyamakan uji komponen dengan T-01–T-36.

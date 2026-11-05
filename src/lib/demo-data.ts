@@ -64,6 +64,15 @@ export type DemoJournal = {
   credit: number;
 };
 
+export type DemoReceipt = {
+  number: string;
+  customerId?: string;
+  total: number;
+  method: string;
+  sku: string;
+  quantity: number;
+};
+
 export type DemoState = {
   products: DemoProduct[];
   salesOrders: DemoOrder[];
@@ -73,7 +82,7 @@ export type DemoState = {
   journals: DemoJournal[];
   leads: { number: string; customerId: string; sku: string; quantity: number; stage: string; expected: number; probability: number; lostReason?: string }[];
   returns: { number: string; source: string; sku: string; quantity: number; condition: string; total: number }[];
-  receipts: { number: string; total: number; method: string; sku: string; quantity: number }[];
+  receipts: DemoReceipt[];
   transfers: { number: string; sku: string; quantity: number }[];
   cash: number;
   bank: number;
@@ -179,7 +188,7 @@ export function isDemoState(value: unknown): value is DemoState {
     ["journals", isDemoJournal],
     ["leads", (item) => isRecord(item) && typeof item.number === "string" && typeof item.customerId === "string" && typeof item.sku === "string" && isFiniteNumber(item.quantity) && typeof item.stage === "string" && isFiniteNumber(item.expected) && isFiniteNumber(item.probability)],
     ["returns", (item) => isRecord(item) && typeof item.number === "string" && typeof item.source === "string" && typeof item.sku === "string" && isFiniteNumber(item.quantity) && typeof item.condition === "string" && isFiniteNumber(item.total)],
-    ["receipts", (item) => isRecord(item) && typeof item.number === "string" && isFiniteNumber(item.total) && typeof item.method === "string" && typeof item.sku === "string" && isFiniteNumber(item.quantity)],
+    ["receipts", (item) => isRecord(item) && typeof item.number === "string" && (item.customerId === undefined || typeof item.customerId === "string") && isFiniteNumber(item.total) && typeof item.method === "string" && typeof item.sku === "string" && isFiniteNumber(item.quantity)],
     ["transfers", (item) => isRecord(item) && typeof item.number === "string" && typeof item.sku === "string" && isFiniteNumber(item.quantity)],
     ["events", (item) => typeof item === "string"],
   ];

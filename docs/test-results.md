@@ -136,3 +136,33 @@ Status tes di tabel tetap **Belum diuji**; daftar ini mencatat fitur yang memang
 | T-31–T-32 | RPC penyelesaian hold dan split tender Cash/Bank tersedia di migrasi 003; validasi mensyaratkan pelunasan dan replay struk idempoten. Migrasi 005 menambah customer link untuk penjualan langsung saja; partial tender dan cart dengan jumlah baris bebas belum tersedia. Belum diuji pada DB. |
 | T-35–T-36 | Dashboard berisi saldo persediaan, piutang, utang, Kas, dan Bank; laporan periode, net sales/COGS/margin, drill-down, dan ekspor belum lengkap. |
 | F-21 | Ekspor tetap ditunda sampai kebutuhan Must lulus. |
+
+## Pemeriksaan perubahan keranjang/tabel — 6 November 2026
+
+- TypeScript: PASS.
+- ESLint (src, scripts/test-pos-cart.cjs, next.config.ts): PASS.
+- node scripts/test-pos-cart.cjs: PASS; 3 SKU diterima, duplikat/field tidak seimbang/jumlah tidak valid ditolak. Ini uji validasi input, bukan T-29/T-30 atau bukti RPC live.
+- git diff --check: PASS.
+- Production build: BLOCKED oleh EPERM OneDrive dan kegagalan child process Turbopack; belum lulus pada perubahan terbaru.
+- Visual/browser dan T-01–T-36: belum dijalankan untuk perubahan ini. Preview pengguna menampilkan ERR_CONNECTION_RESET.
+
+### Pemulihan dan pemeriksaan lanjutan
+
+- Build Webpack menggunakan ERP_VERIFY_BUILD=1: PASS, termasuk route baru /pos/receipt/[number].
+- TypeScript dan ESLint src/test runner/config: PASS.
+- GET http://127.0.0.1:3000/login: HTTP 200. Browser menampilkan form login aktual; screenshot login diperiksa.
+- Kanban, receipt live/print preview, mutasi hold/cart, dan T-01–T-36: belum diuji pada sesi autentikasi baru ini. Tidak ada pengujian transaksi yang menulis database bersama.
+
+## UI/UX workspace — 6 November 2026
+
+Uji pada komponen sebenarnya melalui harness sementara dengan data contoh, tanpa koneksi Supabase:
+- Buka form Pesanan baru: PASS.
+- Escape menutup dialog dan fokus kembali ke pembuka: PASS.
+- Pencarian S00002 menyaring 2 menjadi 1: PASS.
+- Tab Delivery lewat klik lalu Sales Order lewat Left: PASS.
+- Menu Filter & Group By terbuka: PASS.
+- Status Partial Delivery menyaring 2 menjadi 1: PASS.
+- Reset mengembalikan 2 hasil: PASS.
+- Screenshot desktop/form dan viewport 390x844 diperiksa; viewport direset.
+- Harness dan launcher sementara dihapus setelah uji, server uji dihentikan.
+- Bukan pengujian mutasi database atau fixture T-01–T-36. Pemeriksaan live Owner/role lainnya masih perlu.

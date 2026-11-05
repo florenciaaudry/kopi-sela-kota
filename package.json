@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:pos-cart": "node scripts/test-pos-cart.cjs",
     "supabase:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-supabase.ps1"
   },
   "dependencies": {

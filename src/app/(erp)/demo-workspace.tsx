@@ -470,6 +470,9 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
     const sku = field(form, "sku");
     const quantity = quantityField(form);
     const method = field(form, "method");
+    const customerId = field(form, "customer") || "C06";
+    const customer = demoCustomers.find((item) => item.id === customerId);
+    if (!customer) throw new Error("Pelanggan POS tidak valid.");
     const product = getProduct(draft, sku);
     if (product.cafe < quantity) throw new Error("Available CAFE-TBT tidak mencukupi; POS menolak stok negatif.");
     const amount = lineAmounts(quantity, product.price, 0);
@@ -482,10 +485,11 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
       draft.bank += total;
     }
     const number = `POS/${String(draft.nextReceipt++).padStart(5, "0")}`;
-    draft.receipts.unshift({ number, total, method, sku, quantity });
+    const receiptNumber = `STRUK-${number.replace("/", "-")}`;
+    draft.receipts.unshift({ number, customerId, total, method, sku, quantity });
     draft.invoices.unshift({
-      number: `STRUK-${number.replace("/", "-")}`,
-      customerId: "C06",
+      number: receiptNumber,
+      customerId,
       source: number,
       sku,
       quantity,
@@ -494,7 +498,7 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
       paid: total,
     });
     addJournal(draft, number, `Penjualan POS ${method}; pendapatan, PBJT, dan COGS`, total + quantity * product.cost);
-    recordEvent(draft, `${number} lunas ${formatRupiah(total)} via ${method}`);
+    recordEvent(draft, `${number} lunas ${formatRupiah(total)} via ${method} untuk ${customer.name}`);
   }
 
   function transferStock(draft: DemoState, form: FormData) {
@@ -758,14 +762,15 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
           </div>
           <Panel title="Penjualan tunai">
             <DemoForm onSubmit={(form) => perform((draft) => createPosReceipt(draft, form), "Struk lunas demo dibuat; stok CAFE-TBT dan kas/bank diperbarui.")} submitLabel="Bayar & buat struk">
+              <SelectField label="Pelanggan" name="customer"><option value="">Pilih pelanggan</option>{demoCustomers.map((customer) => <option key={customer.id} value={customer.id}>{customer.id} · {customer.name}{customer.limit === 0 ? " · cash" : ""}</option>)}</SelectField>
               <SelectField label="Produk" name="sku"><option value="">Pilih produk</option>{productOptions}</SelectField>
               <NumberField label="Jumlah" />
               <SelectField label="Metode" name="method"><option value="">Pilih metode</option><option>Cash</option><option>Bank</option></SelectField>
             </DemoForm>
           </Panel>
           <Panel title="Struk POS demo">
-            <DataTable headers={["Struk", "SKU", "Qty", "Metode", "Total lunas"]} rows={state.receipts.map((receipt) => [
-              <strong className="sku-cell" key="no">{receipt.number}</strong>, receipt.sku, receipt.quantity, receipt.method, formatRupiah(receipt.total),
+            <DataTable headers={["Struk", "Pelanggan", "SKU", "Qty", "Metode", "Total lunas"]} rows={state.receipts.map((receipt) => [
+              <strong className="sku-cell" key="no">{receipt.number}</strong>, customerName(receipt.customerId || "C06"), receipt.sku, receipt.quantity, receipt.method, formatRupiah(receipt.total),
             ])} />
           </Panel>
         </>
