@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-06",
+  "project": "tswkkutgqayvxwzepqfs",
+  "role_access": { "passed": 114, "failed": 0, "report": "docs/role-test-results.json" },
+  "database_patch": {
+    "function": "public.complete_pos_hold(text,jsonb,text)",
+    "migration": "202611060008_fix_complete_pos_hold_tender_record.sql",
+    "applied": true,
+    "body_matches_local_ignoring_whitespace": true,
+    "normalized_body_md5": "bf051c46b6a0942d294dcda30a913379",
+    "historical_payment_migration_007": "Retired; no historical payment or journal is overwritten",
+    "migration_009": "Applied: direct-sale details trigger and journal-verified legacy detail backfill"
+  },
+  "transaction_regression": {
+    "actor": "First QA Owner; repeated with QA Sales claims for CRM/SO, Warehouse for delivery, Finance for invoice/payment, Owner for POS, through role-guarded RPCs from SQL Editor",
+    "fixture": "Current shared data; new rollback-only documents, not isolated PDF baseline",
+    "error": null,
+    "checks": [
+      "PASS CRM Qualified and Lost reason validation/persistence",
+      "PASS zero credit limit, SO replay, undelivered invoice rejection, partial delivery, overdelivery rejection, invoice 33000, partial payment 10000/remainder23000, replay, overpayment rejection",
+      "PASS incomplete tender leaves stock/receipt unchanged, closed session rejected, mixed tender6600, drawer+3300, stock-1, holdCompleted, replay returns same receipt, changed replay rejected, balanced journal",
+      "PASS direct BANK sale creates real line/tender and replay does not duplicate details"
+    ],
+    "stock_unchanged_after_rollback": true,
+    "sales_count_unchanged_after_rollback": true,
+    "journal_count_unchanged_after_rollback": true,
+    "persistent_qa_review_orders": 0,
+    "sequence_numbers_can_skip": true,
+    "initial_attempt": "Found ambiguous receipt_number in new replay guard; corrected, redeployed, and repeated successfully"
+  },
+  "browser_checks": {
+    "role": "Sales",
+    "checks": ["Password login successful", "Only Sales/CRM apps shown", "Sales list loaded", "New order dialog opened", "Customer dropdown opened and C05 selected"],
+    "business_posting_through_browser": false
+  },
+  "legacy_records": {
+    "CP00004_amount": 330,
+    "INV00003_total": 330000,
+    "payment_intent_confirmed": false,
+    "POSR00001": "One receipt line and CASH tender 38500 backfilled after posted-ledger verification; one repair audit",
+    "POSR00002": "One receipt line and CASH tender 35200 backfilled after posted-ledger verification; one repair audit",
+    "HOLD/00001": "Expired retained: POSR00002 was sold after expiry; not relabelled as successful in-time checkout",
+    "financial_amounts_or_stock_changed_by_backfill": false
+  },
+  "limitations": [
+    "Does not establish completion of member 1 or all PDF requirements",
+    "SQL Editor role claims exercise RPC guards, not an end-to-end authenticated browser workflow for every staff role; Cashier POS success path not separately exercised",
+    "Full T-01 through T-36 fixtures not executed",
+    "Quotation lifecycle, discount approvals over 5 percent, full Contacts form and other documented gaps remain"
+  ]
+}

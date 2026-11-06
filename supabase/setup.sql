@@ -2471,58 +2471,11 @@ $migration$;
 
 
 -- MIGRATION: 202611060007_fix_cp00004_payment_nominal.sql
--- Correct legacy thousand-separator truncation on CP00004 for INV00003 (330 -> 330000).
--- Idempotent and strictly scoped to CP00004 / INV00003 without creating duplicate payments.
-do $migration$
-declare
-  v_journal_id uuid;
-begin
-  if exists (
-    select 1
-    from public.customer_payments cp
-    join public.customer_invoices ci on ci.number = cp.invoice_number
-    where cp.number = 'CP00004'
-      and cp.invoice_number = 'INV00003'
-      and cp.amount = 330
-      and ci.total = 330000
-      and ci.amount_paid = 330
-  ) then
-    update public.customer_payments
-    set amount = 330000
-    where number = 'CP00004'
-      and invoice_number = 'INV00003'
-      and amount = 330;
-
-    update public.customer_invoices
-    set amount_paid = 330000
-    where number = 'INV00003'
-      and total = 330000
-      and amount_paid = 330;
-
-    select je.id into v_journal_id
-    from public.journal_entries je
-    where je.source_type = 'customer_payment'
-      and je.source_reference = 'CP00004';
-
-    if v_journal_id is not null then
-      update public.journal_lines
-      set debit = 330000
-      where journal_entry_id = v_journal_id
-        and account_code = '1102'
-        and debit = 330
-        and credit = 0;
-
-      update public.journal_lines
-      set credit = 330000
-      where journal_entry_id = v_journal_id
-        and account_code = '1201'
-        and debit = 0
-        and credit = 330;
-    end if;
-  end if;
-end;
-$migration$;
-
+-- Retired before deployment: never infer a payment from an invoice's total.
+-- CP00004 is recorded as Rp330. Whether Rp330 or Rp330000 was intended
+-- requires confirmation. Posted payments and journals must retain their history.
+-- Any confirmed correction needs a separately reviewed, auditable transaction.
+select '007 retired: no historical payment or journal changed' as migration_note;
 
 
 -- MIGRATION: 202611060008_fix_complete_pos_hold_tender_record.sql
@@ -2559,13 +2512,18 @@ declare
   journal_lines jsonb := '[]'::jsonb;
   existing_hold text;
 begin
-  if p_hold_number is null or p_idempotency_key is null or p_tenders is null
+  if nullif(trim(p_hold_number), '') is null or p_idempotency_key is null
+     or length(trim(p_idempotency_key)) < 8 or p_tenders is null
      or jsonb_typeof(p_tenders) <> 'array' or jsonb_array_length(p_tenders) = 0 then
     raise exception 'Hold, tender, dan idempotency key wajib diisi';
   end if;
   if exists (
     select 1 from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
-    where requested_tender.payment_method not in ('CASH', 'BANK') or requested_tender.amount is null or requested_tender.amount <= 0
+    where requested_tender.payment_method is null
+      or requested_tender.payment_method not in ('CASH', 'BANK')
+      or requested_tender.amount is null or requested_tender.amount <= 0
+      or requested_tender.amount::text in ('NaN', 'Infinity', '-Infinity')
+      or requested_tender.amount <> trunc(requested_tender.amount)
   ) then raise exception 'Tender hanya menerima Cash/Bank dengan nominal positif'; end if;
   if (select count(*) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
      <> (select count(distinct requested_tender.payment_method) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)) then
@@ -2579,6 +2537,17 @@ begin
       select 1 from public.pos_receipts pr where pr.number = receipt_number
         and pr.hold_number = p_hold_number and pr.created_by = actor_id
     ) then raise exception 'Idempotency key sudah digunakan untuk transaksi POS berbeda'; end if;
+    if exists (
+      (select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+       except select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key))
+      union all
+      (select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key)
+       except select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
+    ) then raise exception 'Idempotency key sudah digunakan dengan tender berbeda'; end if;
     return receipt_number;
   end if;
   perform public.expire_pos_holds();
@@ -2587,6 +2556,10 @@ begin
     raise exception 'Hold POS tidak aktif atau sudah kedaluwarsa';
   end if;
   if hold_row.created_by <> actor_id then raise exception 'Hold POS bukan milik sesi kasir ini'; end if;
+  perform 1 from public.pos_sessions ps
+    where ps.number = hold_row.session_number and ps.opened_by = actor_id
+      and ps.status = 'Open' for update;
+  if not found then raise exception 'Sesi POS sudah ditutup atau bukan milik kasir ini'; end if;
   select * into configuration from public.pos_configuration where id = 'POS-TBT';
   select coalesce(sum(phl.quantity), 0)::integer,
          coalesce(sum(phl.subtotal), 0), coalesce(sum(phl.tax_amount), 0),
@@ -2671,6 +2644,74 @@ begin
 end;
 $$;
 
+
+
+-- MIGRATION: 202611060009_pos_single_payment_details.sql
+-- Direct single-SKU Cash/Bank sales predate the normalized receipt tables.
+-- Populate their details atomically; hold checkout already writes its own lines.
+create or replace function public.fill_direct_pos_receipt_details()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  if new.hold_number is null and new.payment_method in ('CASH', 'BANK') then
+    insert into public.pos_receipt_lines(receipt_number,sku,quantity,unit_price,subtotal,tax_amount)
+    values(new.number,new.sku,new.quantity,new.subtotal/new.quantity,new.subtotal,new.tax_amount);
+    insert into public.pos_receipt_tenders(receipt_number,payment_method,amount)
+    values(new.number,new.payment_method,new.total);
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.fill_direct_pos_receipt_details() from public,anon,authenticated;
+drop trigger if exists direct_pos_receipt_details on public.pos_receipts;
+create trigger direct_pos_receipt_details after insert on public.pos_receipts
+for each row execute function public.fill_direct_pos_receipt_details();
+
+-- Backfill only where the posted journal independently confirms the receipt.
+-- No amounts, stock, session balances, expiry times or posted journals change.
+do $repair$
+declare r record; inserted_count integer; changed boolean;
+begin
+  for r in select pr.* from public.pos_receipts pr
+    where pr.hold_number is null and pr.payment_method in ('CASH','BANK')
+      and (not exists(select 1 from public.pos_receipt_lines l where l.receipt_number=pr.number)
+        or not exists(select 1 from public.pos_receipt_tenders t where t.receipt_number=pr.number))
+    for update
+  loop
+    if r.subtotal+r.tax_amount<>r.total or r.quantity<=0 then
+      raise exception 'Legacy receipt % has inconsistent totals',r.number;
+    end if;
+    if (select count(*) from public.journal_entries je where je.source_type='pos_sale'
+      and je.source_reference=r.number and je.status='posted')<>1 then
+      raise exception 'Legacy receipt % requires one posted journal',r.number;
+    end if;
+    if not exists(
+      select 1 from public.journal_entries je join public.journal_lines jl on jl.journal_entry_id=je.id
+      where je.source_type='pos_sale' and je.source_reference=r.number and je.status='posted'
+      group by je.id having sum(jl.debit)=sum(jl.credit)
+        and coalesce(sum(jl.debit-jl.credit) filter(where jl.account_code=case when r.payment_method='CASH' then '1101' else '1102' end),0)=r.total
+        and coalesce(sum(jl.debit-jl.credit) filter(where jl.account_code=case when r.payment_method='CASH' then '1102' else '1101' end),0)=0
+        and coalesce(sum(jl.credit-jl.debit) filter(where jl.account_code='4101'),0)=r.subtotal
+        and coalesce(sum(jl.credit-jl.debit) filter(where jl.account_code='2102'),0)=r.tax_amount
+    ) then raise exception 'Legacy receipt % does not match posted ledger',r.number; end if;
+    changed:=false;
+    insert into public.pos_receipt_lines(receipt_number,sku,quantity,unit_price,subtotal,tax_amount)
+    select r.number,r.sku,r.quantity,r.subtotal/r.quantity,r.subtotal,r.tax_amount
+    where not exists(select 1 from public.pos_receipt_lines l where l.receipt_number=r.number);
+    get diagnostics inserted_count=row_count;
+    changed:=inserted_count>0;
+    insert into public.pos_receipt_tenders(receipt_number,payment_method,amount)
+    select r.number,r.payment_method,r.total
+    where not exists(select 1 from public.pos_receipt_tenders t where t.receipt_number=r.number);
+    get diagnostics inserted_count=row_count;
+    if changed or inserted_count>0 then
+      insert into public.audit_events(actor_id,actor_label,action,document_type,document_number,details)
+      values(auth.uid(),'Perbaikan data legacy POS (migrasi 009)','repair_receipt_details','pos_receipt',r.number,
+        jsonb_build_object('migration','009','basis','Receipt snapshot verified against posted ledger',
+          'financial_amounts_changed',false,'stock_changed',false,'hold_status_changed',false));
+    end if;
+  end loop;
+end;
+$repair$;
 
 
 -- DATASET SEED

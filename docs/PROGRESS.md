@@ -129,3 +129,15 @@
 - Eksekusi akhir: 114 PASS, 0 FAIL. Login/profil keenam role, 48 akses URL, RLS jurnal/akun/biaya, larangan mengubah profil/biaya langsung, larangan insert jurnal langsung, RPC lintas-role, logout dan redirect diperiksa nyata.
 - Laporan utama: docs/role-test-results.json. Histori: role-test-results-before-parser-fix.json, role-test-results-owner-transient.json, role-test-results-network-timeout.json. Tidak ada password/token pada laporan.
 - Tidak mem-posting transaksi bisnis. Cakupan ini tidak membuktikan semua workflow transaksi, tombol UI, atau T-01–T-36.
+
+## Review teman dan regresi ulang 6 November 2026
+
+- Versi teman 77ca12e disinkronkan; review awal b117a98 sudah di main. Koreksi angka laporan sintetis dan jalur checkout POS nonatomik dihapus.
+- Tes akses keenam role diulang pada versi terkini: 114 PASS, 0 FAIL, termasuk 19 pemeriksaan Sales. Ini bukan penyelesaian seluruh tugas anggota 1.
+- Migrasi 007 yang menimpa pembayaran/jurnal historis dinonaktifkan. CP00004 tetap Rp330 sampai nominal yang dimaksud dikonfirmasi.
+- Migrasi 008 diperketat dan fungsi complete_pos_hold dipasang pada database aktif. MD5 badan fungsi setelah whitespace diabaikan cocok dengan file lokal: bf051c46b6a0942d294dcda30a913379. Tidak ada perluasan hold 24 jam.
+- Regresi CRM, Sales, partial delivery, invoice dan partial payment/overpayment serta mixed-tender POS lulus melalui RPC SQL Editor. Pertama QA Owner, lalu klaim Sales/Warehouse/Finance untuk alur terkait; POS QA Owner. Semua perubahan dokumen uji rollback; jumlah stok, SO dan jurnal tetap. Sequence bisa melompat.
+- Percobaan pertama menemukan nama receipt_number ambigu pada guard replay baru; diperbaiki dan pengulangan lulus. Hasil final: docs/review-regression-results.json. Script reproduksi: scripts/verify-review-rollback.sql (cakupan saat ini, bukan baseline PDF).
+- Login Sales dan pemilihan dropdown pelanggan di browser berhasil; formulir ditutup tanpa mencatat transaksi. Fitur Quotation, approval diskon >5%, Contacts dan gap PDF lainnya belum lengkap. Status rinci: docs/status-anggota-1.md.
+- Tambahan final: migrasi 009 dipasang. Trigger mengisi detail baris/tender penjualan langsung secara atomik; backfill POSR00001 (Rp38.500) dan POSR00002 (Rp35.200) diverifikasi terhadap jurnal posted dan masing-masing menghasilkan satu audit perbaikan. Tidak mengubah saldo, stok, waktu atau jurnal. HOLD/00001 tetap Expired karena struk lama dijual sesudah expiry.
+- Regresi setelah 009: empat kelompok uji CRM/Sales/payment/POS termasuk direct BANK sale dan replay lulus; error=null, stock_unchanged=true, sales_count_unchanged=true, journal_count_unchanged=true. T-01–T-36 dan fitur PDF yang belum dibuat tetap belum selesai.

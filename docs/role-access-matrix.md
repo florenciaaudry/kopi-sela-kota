@@ -15,7 +15,7 @@ Jurnal/akun hanya Finance dan Owner. Biaya standar hanya Warehouse, Procurement,
 
 Warehouse tidak mem-posting Credit Note atau membaca saldo invoice pada layar retur. Tahap inspeksi retur terpisah belum lengkap; layar Warehouse menampilkan referensi delivery dan memberi penjelasan yang jujur. Finance/Owner mem-posting Credit Note. Migrasi 006 memperketat guard RPC yang sebelumnya masih memperbolehkan Sales. Jangan menyebutnya sudah diterapkan sebelum ada hasil database.
 
-## Status faktual per 6 November 2026
+## Snapshot awal 6 November 2026 (historis; digantikan hasil di bawah)
 
 - Query langsung pada Supabase mengembalikan hanya `owner: profile_count=1, auth_user_count=1, confirmed_count=1`.
 - Login Owner pernah terverifikasi historis. Lima role lain belum dapat diuji login karena akun/profil belum dibuat.
@@ -27,7 +27,7 @@ Warehouse tidak mem-posting Credit Note atau membaca saldo invoice pada layar re
 
 1. Pastikan terminal berada di folder proyek dan aplikasi lokal berjalan.
 2. Jalankan `npm run roles:setup`.
-3. Saat diminta, masukkan Supabase secret/service-role key langsung di terminal. Input disembunyikan; key admin tidak disimpan atau dicetak. Publishable key tidak dapat membuat akun admin. Jangan kirim key ke chat atau video.
+3. Isi secret/service-role key hanya pada file lokal yang diabaikan Git, `.env.role-admin.local`, sebagai `SUPABASE_SECRET_KEY=...`. Script saat ini tidak memakai prompt tersembunyi. Publishable key tidak dapat membuat akun admin. Jangan kirim key ke chat atau video.
 4. Script membuat enam akun `qa-<role>@kopiselakota.test`, mengonfirmasi email uji lewat Admin API, dan mengisi profil masing-masing. Password acak disimpan hanya di `.env.role-accounts.local`, yang diabaikan Git. Akun Owner asli tidak diubah. Akun uji adalah akun tambahan, bukan identitas anggota kelompok.
 5. Script tidak mengganti password akun yang sudah ada. Jika menemukan email yang tidak cocok dengan metadata akun uji dan catatan lokal, script berhenti agar tidak mengambil alih akun lain.
 6. Jalankan `npm run test:roles`. Hasil aktual tersimpan di `docs/role-test-results.json` tanpa password/token. Role yang gagal login tidak dianggap lulus.

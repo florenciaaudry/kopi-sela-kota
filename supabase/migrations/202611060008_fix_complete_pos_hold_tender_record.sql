@@ -31,13 +31,18 @@ declare
   journal_lines jsonb := '[]'::jsonb;
   existing_hold text;
 begin
-  if p_hold_number is null or p_idempotency_key is null or p_tenders is null
+  if nullif(trim(p_hold_number), '') is null or p_idempotency_key is null
+     or length(trim(p_idempotency_key)) < 8 or p_tenders is null
      or jsonb_typeof(p_tenders) <> 'array' or jsonb_array_length(p_tenders) = 0 then
     raise exception 'Hold, tender, dan idempotency key wajib diisi';
   end if;
   if exists (
     select 1 from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
-    where requested_tender.payment_method not in ('CASH', 'BANK') or requested_tender.amount is null or requested_tender.amount <= 0
+    where requested_tender.payment_method is null
+      or requested_tender.payment_method not in ('CASH', 'BANK')
+      or requested_tender.amount is null or requested_tender.amount <= 0
+      or requested_tender.amount::text in ('NaN', 'Infinity', '-Infinity')
+      or requested_tender.amount <> trunc(requested_tender.amount)
   ) then raise exception 'Tender hanya menerima Cash/Bank dengan nominal positif'; end if;
   if (select count(*) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
      <> (select count(distinct requested_tender.payment_method) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)) then
@@ -51,6 +56,17 @@ begin
       select 1 from public.pos_receipts pr where pr.number = receipt_number
         and pr.hold_number = p_hold_number and pr.created_by = actor_id
     ) then raise exception 'Idempotency key sudah digunakan untuk transaksi POS berbeda'; end if;
+    if exists (
+      (select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+       except select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key))
+      union all
+      (select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key)
+       except select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
+    ) then raise exception 'Idempotency key sudah digunakan dengan tender berbeda'; end if;
     return receipt_number;
   end if;
   perform public.expire_pos_holds();
@@ -59,6 +75,10 @@ begin
     raise exception 'Hold POS tidak aktif atau sudah kedaluwarsa';
   end if;
   if hold_row.created_by <> actor_id then raise exception 'Hold POS bukan milik sesi kasir ini'; end if;
+  perform 1 from public.pos_sessions ps
+    where ps.number = hold_row.session_number and ps.opened_by = actor_id
+      and ps.status = 'Open' for update;
+  if not found then raise exception 'Sesi POS sudah ditutup atau bukan milik kasir ini'; end if;
   select * into configuration from public.pos_configuration where id = 'POS-TBT';
   select coalesce(sum(phl.quantity), 0)::integer,
          coalesce(sum(phl.subtotal), 0), coalesce(sum(phl.tax_amount), 0),
