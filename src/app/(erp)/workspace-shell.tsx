@@ -13,7 +13,7 @@ export function WorkspaceShell({ children, fullName, role, demo = false }: { chi
   const apps = applicationAccess.filter(app => demo || app.roles.includes(role));
   const navigation = <>
     <NavigationLink className="ksk-nav-link" href="/"><AppIcon name="home" /><span>Beranda</span></NavigationLink>
-    <ModuleNavigation><p className="ksk-nav-label">APLIKASI</p>
+    <ModuleNavigation>
     {apps.map(app => app.href ? <NavigationLink className="ksk-nav-link" key={app.name} href={app.href}><AppIcon name={app.name} /><span>{appDescriptions[app.name].label}<small>{app.name}</small></span></NavigationLink> : null)}</ModuleNavigation>
     {demo || ["warehouse", "finance", "owner"].includes(role) ? <><p className="ksk-nav-label">MENU LAINNYA</p><NavigationLink className="ksk-nav-link" href="/returns"><AppIcon name="returns" /><span>Retur & pemeriksaan</span></NavigationLink></> : null}
     {demo || ["finance", "owner"].includes(role) ? <NavigationLink className="ksk-nav-link" href="/#reporting"><AppIcon name="Accounting" /><span>Ringkasan keuangan</span></NavigationLink> : null}

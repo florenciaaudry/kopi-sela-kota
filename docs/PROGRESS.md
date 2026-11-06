@@ -152,3 +152,13 @@
 - Pengujian SSR tambahan: Finance memiliki 2 kartu dan laporan keuangan; Sales memiliki 2 kartu tanpa laporan. test:roles diulang: 114 PASS / 0 FAIL. Build webpack, typecheck, lint dan test:role-policy lulus. Tidak ada transaksi usaha/migrasi/seed/reset dalam pekerjaan UI ini.
 - Pemeriksaan browser Edge sempat timeout; pemeriksaan visual selesai melalui browser aplikasi. Viewport dikembalikan ke default. Screenshot final disimpan di outputs pengguna, bukan data fixture atau angka buatan.
 - Ini penyelesaian pembaruan layout/beranda, bukan klaim seluruh fitur PDF/T-01-T-36 selesai.
+
+## Perbaikan regresi sidebar Retur - 6 November 2026
+
+- Penyebab: ModuleNavigation otomatis menyisipkan seluruh aplikasi setelah keluar dari beranda, sehingga menu Retur terdorong ke bawah dan susunan sidebar berbeda antar halaman.
+- Diganti pemilih aplikasi yang konsisten pada semua halaman: tertutup secara default, dibuka hanya atas tindakan pengguna, menutup setelah memilih modul/perubahan route. Kartu beranda tetap menjadi pintu masuk utama; daftar aplikasi tidak otomatis diulang.
+- Owner browser: Beranda digulir ke bawah lalu Retur, Retur -> pilih Sales -> Retur; konten Retur tampil, scroll halaman 0, judul berada di layar, dan hanya Retur memiliki aria-current=page. Posisi link Retur di Sales/Retur sama sekitar y=343px saat pemilih tertutup.
+- Form Catat retur & Credit Note terbuka, batal kembali ke daftar; tab Credit Note menampilkan keadaan kosong yang jelas, kembali Invoice terkait menampilkan 3 invoice. Tidak menekan posting atau membuat transaksi.
+- HP 390x844: menu, pemilih aplikasi, link aktif dan isi Retur diperiksa; documentWidth=375 <= viewport 390. Viewport dikembalikan ke default setelah pemeriksaan.
+- Typecheck, lint dan production build lulus. test:roles diulang: 114 PASS, 0 FAIL, termasuk Retur untuk Warehouse/Finance/Owner dan penolakan untuk role lain.
+- Cakupan perubahan ini navigasi/tampilan. Guard role, transaksi dan database tidak diubah. Uji bisnis lengkap T-01-T-36 dan form inspeksi Warehouse yang belum lengkap tidak dinyatakan selesai.

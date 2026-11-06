@@ -1212,6 +1212,16 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 @media(max-width:520px) { .data-browser .table-controls > .demo-field { flex:1 1 100%; } .record-filter-menu { width:100%; } .record-filter-panel { position:static; width:100%; margin-top:8px; box-shadow:none; } }
 
 /* Sidebar workspace and app home, inspired by familiar ERP navigation. */
+.ksk-module-picker { margin:4px 0; }
+.ksk-module-picker > summary { display:flex; align-items:center; gap:13px; cursor:pointer; list-style:none; padding:12px; border:1px solid #e7e0d7; border-radius:8px; color:#665644; font-size:13px; min-height:44px; }
+.ksk-module-picker > summary::-webkit-details-marker { display:none; }
+.ksk-module-picker > summary::after { content:"⌄"; margin-left:auto; }
+.ksk-module-picker[open] > summary::after { content:"⌃"; }
+.ksk-module-picker > summary:hover { background:#faf7f3; }
+.ksk-module-picker > div { padding-top:5px; }
+.ksk-module-picker[open] > div { max-height:45dvh; overflow-y:auto; }
+.ksk-mobile-nav .ksk-module-picker { grid-column:1/-1; }
+.ksk-mobile-nav .ksk-module-picker[open] > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 .ksk-shell { display:grid; grid-template-columns:258px minmax(0,1fr); background:#f7f7f9; color:#282727; }
 .ksk-sidebar { position:sticky; top:0; height:100dvh; display:flex; flex-direction:column; background:#fff; border-right:1px solid #e9e6e2; padding:30px 18px 20px; overflow-y:auto; }
 .ksk-brand { display:flex; align-items:center; gap:12px; padding:0 8px; text-decoration:none; }
