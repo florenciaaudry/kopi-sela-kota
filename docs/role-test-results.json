@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T11:29:17.909Z",
+  "checkedAt": "2026-11-06T11:50:50.196Z",
   "scope": "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.",
   "results": [
     {
@@ -19,6 +19,12 @@
       "check": "profil sesuai",
       "status": "PASS",
       "detail": "profil cocok"
+    },
+    {
+      "role": "sales",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Arif Mahendra"
     },
     {
       "role": "sales",
@@ -136,6 +142,12 @@
     },
     {
       "role": "warehouse",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Fajar Pratama"
+    },
+    {
+      "role": "warehouse",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=allowed; actual=allowed; title=Sales; network_attempt=1"
@@ -250,6 +262,12 @@
     },
     {
       "role": "procurement",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Bima Santoso"
+    },
+    {
+      "role": "procurement",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
@@ -361,6 +379,12 @@
       "check": "profil sesuai",
       "status": "PASS",
       "detail": "profil cocok"
+    },
+    {
+      "role": "finance",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Dewi Larasati"
     },
     {
       "role": "finance",
@@ -478,6 +502,12 @@
     },
     {
       "role": "cashier",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Maya Kusuma"
+    },
+    {
+      "role": "cashier",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
@@ -589,6 +619,12 @@
       "check": "profil sesuai",
       "status": "PASS",
       "detail": "profil cocok"
+    },
+    {
+      "role": "owner",
+      "check": "nama sesuai tokoh PDF",
+      "status": "PASS",
+      "detail": "Nadia Prameswari"
     },
     {
       "role": "owner",

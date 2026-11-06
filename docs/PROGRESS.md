@@ -169,3 +169,11 @@
 - Istilah tampilan terpusat di src/lib/erp-terminology.ts; klasifikasi aksi/role, FormData, nilai database dan nominal tetap. Nama aplikasi tidak diulang dua kali pada kartu/sidebar.
 - Penamaan konsisten pada kartu, sidebar, breadcrumb, halaman modul, table headers, form, tombol, CRM stages dan Receipt, termasuk mode demo. Panduan: docs/language-and-odoo-terms.md.
 - Typecheck, lint, build dan kebijakan role lulus; pengujian akses aktual 114 PASS / 0 FAIL. Browser Sales/form diperiksa dengan nama Inggris dan bantuan Indonesia, tanpa membuat transaksi bisnis.
+
+
+## Identitas tokoh PDF — 6 November 2026
+
+- Seluruh tujuh profil database sudah memakai tokoh usaha sesuai role, bukan nama mahasiswa atau Uji role. Kedua profil Owner memakai Nadia Prameswari. Audit event disimpan tanpa mengubah akun/role atau histori transaksi.
+- Sumber nama terpusat dalam scenario-identities.json; pembuat akun dan pengujian role memakai sumber yang sama.
+- Login, akses dan nama: 120 PASS / 0 FAIL. Lint dan typecheck lulus. Browser Owner menampilkan Nadia Prameswari.
+- Rincian dan batas kesesuaian seluruh PDF: docs/scenario-identities.md. Seluruh Must dan T-01–T-36 belum dinyatakan selesai.

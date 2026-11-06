@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { createClient } = require("@supabase/supabase-js");
+const scenarioNames = require("../src/lib/scenario-identities.json");
 require("@next/env").loadEnvConfig(process.cwd());
 
 const roles = ["sales", "warehouse", "procurement", "finance", "cashier", "owner"];
@@ -41,6 +42,7 @@ async function main() {
     if (data.users.length < 100) break;
   }
   for (const role of roles) {
+    const fullName = scenarioNames[role];
     const email = `qa-${role}@kopiselakota.test`;
     let account = stored.accounts.find((item) => item.email === email);
     let user = existingUsers.find((item) => item.email?.toLowerCase() === email);
@@ -49,7 +51,7 @@ async function main() {
     }
     if (!user) {
       const password = crypto.randomBytes(24).toString("base64url");
-      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, app_metadata: { erp_role_test: true }, user_metadata: { full_name: `Uji ${role}` } });
+      const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, app_metadata: { erp_role_test: true }, user_metadata: { full_name: fullName } });
       if (error || !data.user) throw new Error(`Gagal membuat ${role}: ${error?.message ?? "tidak ada user"}`);
       user = data.user;
       account = { role, email, password, id: user.id };
@@ -58,14 +60,18 @@ async function main() {
       // Persist after every creation so partial setup never loses generated passwords.
       fs.writeFileSync(credentialsPath, JSON.stringify(stored, null, 2), { mode: 0o600 });
     }
-    const { data: profile, error: profileError } = await admin.from("profiles").select("role").eq("id", user.id).maybeSingle();
+    const { data: profile, error: profileError } = await admin.from("profiles").select("role,full_name").eq("id", user.id).maybeSingle();
     if (profileError) throw new Error(`Profil ${role}: ${profileError.message}`);
     if (profile && profile.role !== role) throw new Error(`Role profil ${email} berbeda. Tidak mengubah akses yang sudah ada.`);
     if (!profile) {
-      const { error } = await admin.from("profiles").insert({ id: user.id, full_name: `Uji ${role}`, role });
+      const { error } = await admin.from("profiles").insert({ id: user.id, full_name: fullName, role });
       if (error) throw new Error(`Gagal membuat profil ${role}: ${error.message}`);
     }
-    console.log(`Siap: ${role} (${email})`);
+    if (profile && profile.full_name !== fullName) {
+      const { error } = await admin.from("profiles").update({ full_name: fullName }).eq("id", user.id).eq("role", role);
+      if (error) throw new Error(`Gagal menyelaraskan nama ${role}: ${error.message}`);
+    }
+    console.log(`Siap: ${fullName} / ${role} (${email})`);
   }
   console.log("Akun uji tersimpan di .env.role-accounts.local (diabaikan Git). Password tidak dicetak; akun asli tidak diubah.");
   console.log("Lanjutkan: npm run test:roles");

@@ -196,3 +196,8 @@ Status aktual rinci (fixture, harapan, aktual, dan bukti) dicatat di `docs/test-
 - Eksekusi akhir: 114 PASS, 0 FAIL. Login/profil keenam role, 48 akses URL, RLS jurnal/akun/biaya, larangan mengubah profil/biaya langsung, larangan insert jurnal langsung, RPC lintas-role, logout dan redirect diperiksa nyata.
 - Laporan utama: docs/role-test-results.json. Histori: role-test-results-before-parser-fix.json, role-test-results-owner-transient.json, role-test-results-network-timeout.json. Tidak ada password/token pada laporan.
 - Tidak mem-posting transaksi bisnis. Cakupan ini tidak membuktikan semua workflow transaksi, tombol UI, atau T-01–T-36.
+
+
+## Pembaruan identitas stakeholder — 6 November 2026
+
+PDF halaman 4–6: enam nama stakeholder dipetakan ke enam role pada scenario-identities.json. Tujuh profil database telah dibaca ulang dan cocok; kedua Owner bernama Nadia Prameswari. Script setup mempertahankan nama skenario. Tes enam nama ditambahkan; hasil akses/identitas 120 PASS, 0 FAIL. Status ini hanya menutup ketidaksesuaian identitas; gap fungsi lain tetap terbuka. Lihat docs/scenario-identities.md.

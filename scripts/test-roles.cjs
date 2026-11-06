@@ -6,6 +6,7 @@ const { createServerClient } = require("@supabase/ssr");
 const ts = require("typescript");
 const Module = require("node:module");
 const { inspectPageAccess } = require("./page-access-result.cjs");
+const scenarioNames = require("../src/lib/scenario-identities.json");
 require("@next/env").loadEnvConfig(process.cwd());
 
 const roleModule = new Module("role-policy");
@@ -40,8 +41,9 @@ async function main() {
     const { data, error } = await client.auth.signInWithPassword({ email: account.email, password: account.password });
     record(role, "login password nyata", !error && data.user?.id === account.id, error?.code || "Auth berhasil");
     if (error || !data.user) continue;
-    const profile = await client.from("profiles").select("role").eq("id", data.user.id).single();
+    const profile = await client.from("profiles").select("role,full_name").eq("id", data.user.id).single();
     record(role, "profil sesuai", !profile.error && profile.data?.role === role, profile.error?.code || "profil cocok");
+    record(role, "nama sesuai tokoh PDF", !profile.error && profile.data?.full_name === scenarioNames[role], profile.error?.code || scenarioNames[role]);
     const cookies = [...cookieJar].map(([name, value]) => `${name}=${value}`).join("; ");
     for (const [route, roles] of Object.entries(routeAccess)) {
       for (let attempt = 1; attempt <= 2; attempt++) {
