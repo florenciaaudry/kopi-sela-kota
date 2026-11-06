@@ -108,3 +108,24 @@
 - Menguji komponen dengan halaman contoh sementara terpisah dari Supabase: modal buka/tutup/Escape/return focus, pencarian, tab klik/keyboard, filter status, reset berhasil. Desktop, dialog, dan 390x844 diperiksa. Halaman/launcher sementara dihapus dan server uji ditutup.
 - Panduan desain dan bukti uji dicatat di ui-ux-guidelines.md. Tidak menjalankan seed, migrasi, posting transaksi, atau push GitHub pada tahap ini.
 - Pemeriksaan visual pada sesi Owner aktual dan pengujian seluruh role/transaksi tetap belum lengkap; jangan menyamakan uji komponen dengan T-01–T-36.
+
+## Audit dan kelengkapan role — 6 November 2026
+
+- Query SQL langsung mengonfirmasi satu profil Owner, satu akun Auth terkait dan terkonfirmasi; lima role staf belum mempunyai profil/akun uji.
+- Menambahkan matriks routeAccess terpusat dan menggunakannya untuk otorisasi halaman modul. Tes test:role-policy lulus untuk enam role, konsistensi tujuh menu, dan batas server-action Credit Note.
+- Memperbaiki ketidaksesuaian Warehouse pada halaman retur: hanya referensi pengiriman, tanpa query saldo invoice yang tidak diizinkan dan tanpa tombol posting Credit Note. Form inspeksi terpisah tetap gap implementasi.
+- Menyamakan server-action posting Credit Note menjadi Finance/Owner. Guard RPC semula masih mengizinkan Sales. Setelah izin eksplisit pengguna, migrasi 006 berhasil diterapkan pada Supabase bersama; query verifikasi finance_owner_guard=true. Tidak ada perubahan saldo, seed, atau posting transaksi.
+- Menyiapkan roles:setup untuk membuat enam akun uji melalui Admin API menggunakan secret key yang dimasukkan tersembunyi di terminal. Script tidak mengganti akun/password asli dan menyimpan password acak akun uji di file .env.role-accounts.local yang diabaikan Git. Script belum dijalankan karena key admin belum disediakan secara lokal.
+- Menyiapkan test:roles: login password nyata, profil, URL SSR langsung, RLS jurnal/akun/biaya, penolakan UPDATE profil, penolakan RPC lintas-role, logout dan redirect sesudah logout. Laporan hanya hasil aktual tanpa password/token.
+- Test runner berhenti dengan pesan akun uji belum tersedia; T-02/tes login staf tidak ditandai lulus.
+- Build Webpack, TypeScript, ESLint, tes kebijakan role, dan tes validasi keranjang lulus. Bundle setup/apply-transactions diperbarui untuk instalasi baru; JANGAN jalankan ulang bundle penuh pada database bersama.
+- Panduan: docs/role-access-matrix.md. Tindakan berikutnya: jalankan npm run roles:setup di terminal lokal dan masukkan secret/service-role key secara tersembunyi, lalu npm run test:roles. Tanpa akun uji, pengujian login enam role belum selesai.
+
+## Hasil login dan akses role aktual — 6 November 2026
+
+- Akun uji keenam role berhasil dibuat pengguna lewat roles:complete; Owner asli tidak diubah.
+- Laporan awal 82 PASS/20 FAIL mengandung false positive parser: string not-found ikut pada template script di halaman yang sah. Diperbaiki dengan pemeriksaan HTML h1 aktual, error data, dan digest penolakan 403/404; regression test lulus.
+- Satu pengulangan mengalami timeout Owner dan pengulangan lain timeout Procurement/Inventory. Histori disimpan terpisah; retry hanya untuk exception jaringan, bukan hasil izin yang salah.
+- Eksekusi akhir: 114 PASS, 0 FAIL. Login/profil keenam role, 48 akses URL, RLS jurnal/akun/biaya, larangan mengubah profil/biaya langsung, larangan insert jurnal langsung, RPC lintas-role, logout dan redirect diperiksa nyata.
+- Laporan utama: docs/role-test-results.json. Histori: role-test-results-before-parser-fix.json, role-test-results-owner-transient.json, role-test-results-network-timeout.json. Tidak ada password/token pada laporan.
+- Tidak mem-posting transaksi bisnis. Cakupan ini tidak membuktikan semua workflow transaksi, tombol UI, atau T-01–T-36.

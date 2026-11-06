@@ -398,7 +398,7 @@ export async function createCreditNoteAction(form: FormData) {
   const quantity = positiveInteger(form, "quantity", "Kuantitas", path);
   const condition = required(form, "item_condition", "Kondisi barang", path);
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["warehouse", "finance", "owner"], (client) =>
+  return submitRpc(path, ["finance", "owner"], (client) =>
     client.rpc("create_customer_credit_note", {
       p_invoice_number: invoice,
       p_sku: sku,

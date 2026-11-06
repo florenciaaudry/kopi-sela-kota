@@ -166,3 +166,21 @@ Uji pada komponen sebenarnya melalui harness sementara dengan data contoh, tanpa
 - Screenshot desktop/form dan viewport 390x844 diperiksa; viewport direset.
 - Harness dan launcher sementara dihapus setelah uji, server uji dihentikan.
 - Bukan pengujian mutasi database atau fixture T-01–T-36. Pemeriksaan live Owner/role lainnya masih perlu.
+
+## Audit role dan prasyarat login — 6 November 2026
+
+- SQL audit profil/Auth: owner=1 profil, 1 akun Auth, 1 terkonfirmasi; role lain belum tersedia.
+- Migrasi 006: PASS setelah izin eksplisit pengguna; hasil read-back finance_owner_guard=true, current_profiles=1. Tidak ada transaksi bisnis diposting.
+- test:role-policy: PASS (matriks enam role, tujuh menu, pembatasan Credit Note action).
+- Build/TypeScript/ESLint: PASS pada perubahan aplikasi role.
+- test:roles: BLOCKED sebelum login, file akun uji belum tersedia. Bukan hasil gagal otorisasi; pengujian login/URL/RLS/logout belum dijalankan.
+- roles:setup belum dieksekusi; memerlukan input key admin di terminal lokal.
+
+## Hasil login dan akses role aktual — 6 November 2026
+
+- Akun uji keenam role berhasil dibuat pengguna lewat roles:complete; Owner asli tidak diubah.
+- Laporan awal 82 PASS/20 FAIL mengandung false positive parser: string not-found ikut pada template script di halaman yang sah. Diperbaiki dengan pemeriksaan HTML h1 aktual, error data, dan digest penolakan 403/404; regression test lulus.
+- Satu pengulangan mengalami timeout Owner dan pengulangan lain timeout Procurement/Inventory. Histori disimpan terpisah; retry hanya untuk exception jaringan, bukan hasil izin yang salah.
+- Eksekusi akhir: 114 PASS, 0 FAIL. Login/profil keenam role, 48 akses URL, RLS jurnal/akun/biaya, larangan mengubah profil/biaya langsung, larangan insert jurnal langsung, RPC lintas-role, logout dan redirect diperiksa nyata.
+- Laporan utama: docs/role-test-results.json. Histori: role-test-results-before-parser-fix.json, role-test-results-owner-transient.json, role-test-results-network-timeout.json. Tidak ada password/token pada laporan.
+- Tidak mem-posting transaksi bisnis. Cakupan ini tidak membuktikan semua workflow transaksi, tombol UI, atau T-01–T-36.

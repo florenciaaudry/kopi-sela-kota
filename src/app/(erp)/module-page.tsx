@@ -5,9 +5,11 @@ import { DataTable } from "./data-table";
 import { PosCart } from "./pos-cart";
 import { CrmPipeline } from "./crm-pipeline";
 import { SubmitButton } from "./submit-button";
+import { PurchaseOrderFields } from "./purchase-order-fields";
 
 import { requireRole } from "@/lib/auth";
 import { formatRupiah } from "@/lib/format";
+import { routeAccess } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/runtime-mode";
 
@@ -97,7 +99,7 @@ function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRol
       else if (["Pengiriman dari Sales Order", "Penerimaan barang"].includes(title)) roles = ["warehouse", "owner"];
       else if (title === "Buat Purchase Order") roles = ["procurement", "owner"];
       else if (["Terbitkan invoice untuk delivery", "Catat pembayaran pelanggan", "Buat Vendor Bill dari barang diterima", "Bayar Vendor Bill"].includes(title)) roles = ["finance", "owner"];
-      else if (title === "Buat Credit Note") roles = ["warehouse", "finance", "owner"];
+      else if (title === "Buat Credit Note") roles = ["finance", "owner"];
       else if (!title.startsWith("Persetujuan selisih ")) roles = ["cashier", "owner"];
       if (!roles.includes(role)) return;
     }
@@ -227,16 +229,7 @@ export async function ModulePage({
   if (isDemoMode()) return <DemoWorkspace module={module} />;
 
   const message = searchParams ? await searchParams : undefined;
-  const roleMap = {
-    sales: ["sales", "warehouse", "owner"],
-    crm: ["sales", "owner"],
-    purchase: ["procurement", "warehouse", "owner"],
-    accounting: ["finance", "owner"],
-    invoicing: ["finance", "owner"],
-    pos: ["cashier", "owner"],
-    returns: ["warehouse", "finance", "owner"],
-  } as const;
-  const profile = await requireRole([...roleMap[module]]);
+  const profile = await requireRole([...routeAccess[`/${module}`]]);
   const supabase = await createSupabaseServerClient();
 
   if (module === "sales") {
@@ -360,9 +353,7 @@ export async function ModulePage({
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
-            <Select label="Pemasok" name="vendor_id" options={vendors.data.map((item) => option(item.id, `${item.id} · ${item.name}`))} />
-            <Select label="Produk pada daftar harga" name="sku" options={prices.data.map((item) => option(item.sku, `${item.vendor_id} · ${item.sku} · minimum ${item.minimum_quantity} · ${money(item.purchase_price)}`))} />
-            <NumberInput label="Kuantitas" name="quantity" />
+            <PurchaseOrderFields vendors={vendors.data} prices={prices.data} products={products.data} />
           </Form>
         </Panel>
         <Panel title="Penerimaan barang">
@@ -627,6 +618,22 @@ export async function ModulePage({
         </Panel>
       </ModuleWorkspace>
     );
+  }
+
+  if (profile.role === "warehouse") {
+    const [deliveries, deliveryLines] = await Promise.all([
+      supabase.from("delivery_notes").select("number, sales_order_number, delivered_at").order("delivered_at", { ascending: false }),
+      supabase.from("delivery_note_lines").select("delivery_number, sku, quantity"),
+    ]);
+    const error = deliveries.error ?? deliveryLines.error;
+    if (error) return <DataLoadError error={error.message} />;
+    return <ModuleWorkspace role={profile.role}>
+      <PageTitle module={module} />
+      <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Form pencatatan inspeksi terpisah masih dalam pengembangan.</section>
+      <Panel title="Referensi pengiriman untuk pemeriksaan retur">
+        <DataTable headers={["Delivery", "Sales Order", "Produk terkirim", "Waktu"]} rows={(deliveries.data ?? []).map((delivery) => [delivery.number, delivery.sales_order_number, (deliveryLines.data ?? []).filter((line) => line.delivery_number === delivery.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · "), new Date(delivery.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
+      </Panel>
+    </ModuleWorkspace>;
   }
 
   const [invoices, lines, creditNotes] = await Promise.all([

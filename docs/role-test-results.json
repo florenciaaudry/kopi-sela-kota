@@ -1,0 +1,690 @@
+{
+  "checkedAt": "2026-11-06T02:11:21.370Z",
+  "scope": "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.",
+  "results": [
+    {
+      "role": "anonymous",
+      "check": "jurnal tidak dapat dibaca",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "sales",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "sales",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "sales",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Peluang Pelanggan; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "sales",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "sales",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "sales",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "sales",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "sales",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "sales",
+      "check": "RPC lintas-role ditolak sebelum transaksi",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "sales",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "sales",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    },
+    {
+      "role": "warehouse",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "warehouse",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "warehouse",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "warehouse",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "warehouse",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "warehouse",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "warehouse",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "warehouse",
+      "check": "RPC lintas-role ditolak sebelum transaksi",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "warehouse",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    },
+    {
+      "role": "procurement",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "procurement",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "procurement",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "procurement",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "procurement",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "procurement",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "procurement",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "procurement",
+      "check": "RPC lintas-role ditolak sebelum transaksi",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "procurement",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "procurement",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    },
+    {
+      "role": "finance",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "finance",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "finance",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Akuntansi; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Tagihan & Pembayaran; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "finance",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "finance",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "finance",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "finance",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "finance",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "finance",
+      "check": "RPC lintas-role ditolak sebelum transaksi",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "finance",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "finance",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    },
+    {
+      "role": "cashier",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "cashier",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Kasir; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "cashier",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "cashier",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "cashier",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "cashier",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "cashier",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "cashier",
+      "check": "RPC lintas-role ditolak sebelum transaksi",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "cashier",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "cashier",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    },
+    {
+      "role": "owner",
+      "check": "login password nyata",
+      "status": "PASS",
+      "detail": "Auth berhasil"
+    },
+    {
+      "role": "owner",
+      "check": "profil sesuai",
+      "status": "PASS",
+      "detail": "profil cocok"
+    },
+    {
+      "role": "owner",
+      "check": "URL /sales",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /crm",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Peluang Pelanggan; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /purchase",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /inventory",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /accounting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Akuntansi; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /invoicing",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Tagihan & Pembayaran; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /pos",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Kasir; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /returns",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "RLS baca journal_entries",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "owner",
+      "check": "RLS baca chart_of_accounts",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "owner",
+      "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "owner",
+      "check": "UPDATE profiles langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "owner",
+      "check": "UPDATE biaya langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "owner",
+      "check": "INSERT jurnal langsung ditolak",
+      "status": "PASS",
+      "detail": "42501"
+    },
+    {
+      "role": "owner",
+      "check": "logout",
+      "status": "PASS",
+      "detail": "sesi lokal berakhir"
+    },
+    {
+      "role": "owner",
+      "check": "URL internal setelah logout diarahkan ke login",
+      "status": "PASS",
+      "detail": "HTTP 307"
+    }
+  ]
+}

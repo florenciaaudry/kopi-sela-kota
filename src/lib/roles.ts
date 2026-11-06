@@ -9,6 +9,17 @@ export const roleLabels: Record<AppRole, string> = {
   owner: "Owner",
 };
 
+export const routeAccess = {
+  "/sales": ["sales", "warehouse", "owner"],
+  "/crm": ["sales", "owner"],
+  "/purchase": ["procurement", "warehouse", "owner"],
+  "/inventory": ["warehouse", "procurement", "owner"],
+  "/accounting": ["finance", "owner"],
+  "/invoicing": ["finance", "owner"],
+  "/pos": ["cashier", "owner"],
+  "/returns": ["warehouse", "finance", "owner"],
+} satisfies Record<string, AppRole[]>;
+
 export const applicationAccess: {
   name: string;
   group: "Komersial" | "Rantai pasok" | "Keuangan" | "Kasir";

@@ -83,13 +83,13 @@ Reporting adalah menu/kapabilitas laporan, bukan aplikasi kedelapan. Retur dan p
 | F-02 | 16, 23 | Data `customers`, pilihan kontak Sales/POS; `create_pos_sale_for_customer`; migrasi 005 | T-03–T-04; T-04 diuji; schema customer link terbaca live | Dibuat tetapi belum diuji | Belum ada halaman/form Contacts untuk termin/limit/eksposur. Customer link pada receipt direct-sale belum dibuktikan dengan write; checkout hold belum menautkan customer. |
 | F-03 | 16, 24 | `inventory/page.tsx`, products, product costs | T-05 baca live; T-06 belum | Dibuat tetapi belum diuji | Daftar stok bukan Form produk; harga jual/edit produk dan validasi duplikasi lewat UI tidak ada. |
 | F-04 | 16, 25 | CRM forms/RPC pada `module-page.tsx` | T-07–T-08; hanya penolakan alasan kosong diuji | Dibuat tetapi belum diuji | Kanban, pencarian, dan filter tahap sudah dibuat; Log Notes dan bukti perubahan Lost dengan alasan masih belum lengkap. |
-| F-05 | 16–17, 26 | Sales Order action/RPC, Delivery list | T-09–T-12; satu alur live kuantitas 1 | Dibuat tetapi belum diuji | Form/order list ada; detail multibaris, snapshot harga pascakonfirmasi dan smart button belum tersedia/teruji. |
+| F-05 | 16–17, 26 | Sales Order action/RPC, Delivery list | T-09–T-12; satu alur live kuantitas 1 | Dibuat tetapi belum diuji | RPC langsung membuat SO terkonfirmasi; lifecycle Quotation/draft belum dibuat. Harga asal disimpan; baris multibaris, uji perubahan katalog, dan smart button belum lengkap. |
 | F-06 | 17, 26 | Discount 0–5% pada Sales form/action/RPC | T-09–T-10; T-10 belum terpenuhi | Dibuat tetapi belum diuji | Approval Owner >5–10% belum dibuat; diskon >10% dan persetujuan/waktu belum dibuktikan. |
 | F-07 | 17, 26, 28, 36 | Reservasi Sales, inventory transfer, POS holds | T-09, T-14, T-29–T-30; T-14 lulus penolakan | Dibuat tetapi belum diuji | Available transfer diuji; reservasi lintas Sales/POS dan replay hold belum diuji. |
 | F-08 | 17, 27 | `deliver_sales_order` dan Delivery UI | T-11–T-12 belum | Dibuat tetapi belum diuji | Tidak ada bukti Delivery 8/10 lalu backorder 2 dan penolakan sisa berlebih. |
 | F-09 | 17, 31 | `invoice_delivered_sales_order`; Invoicing form/table | T-19–T-20; invoice live penuh sesudah delivery 1 | Dibuat tetapi belum diuji | Dasar Delivered ada; kuantitas parsial dan permintaan invoice dengan Delivered 0 belum diuji. |
 | F-10 | 18, 23, 26 | RPC perhitungan eksposur dan validasi SO | T-04 lulus penolakan; C05 Sales live | Selesai dan terverifikasi (kontrol blokir) | Kasus SO C03 dalam limit dan perhitungan perpindahan invoice belum diuji; pesan/ruang kredit di form kontak belum tersedia. |
-| F-11 | 18, 29 | Purchase form, PO RPC | T-15–T-16; PO live qty 1 | Dibuat tetapi belum diuji | RFQ status sent/PO replay dan harga locked belum diuji dengan fixture 20. |
+| F-11 | 18, 29 | Purchase form, PO RPC | T-15–T-16; PO live qty 1 | Dibuat tetapi belum diuji | RPC langsung membuat PO; lifecycle RFQ/draft belum dibuat. Replay dan harga locked belum diuji dengan fixture 20. |
 | F-12 | 18, 30 | Receipt form/action/RPC | T-17–T-18; T-18 lulus penolakan | Dibuat tetapi belum diuji | Alur accepted 16/rejected 4, stok dan jurnal GRNI belum diuji. |
 | F-13 | 18, 32 | Vendor Bill RPC dan Invoicing form | T-21–T-22; bill live qty 1 | Dibuat tetapi belum diuji | Three-way match parsial dan penahanan kuantitas rejected belum diuji. |
 | F-14 | 19, 34 | Journal schema/RPC, accounting table | T-25–T-26 belum; jurnal enam alur live seimbang | Dibuat tetapi belum diuji | Bukti balancing alur lain tersedia; hitungan persis fixture T-25 dan replay posting T-26 belum. |
@@ -178,3 +178,21 @@ Status aktual rinci (fixture, harapan, aktual, dan bukti) dicatat di `docs/test-
 - S-15: keranjang hold dinamis, estimasi subtotal/PBJT, validasi input server; tidak mengubah RPC/migrasi.
 - S-16: nomor struk membuka /pos/receipt/[number] dengan data database, detail baris/PBJT/tender, dan tombol cetak browser. Role Cashier/Owner diperiksa pada server. Belum diuji dengan struk live pada sesi ini.
 - Tabel live module-page memiliki pencarian/filter status/group by atas data yang dimuat; fitur ini bukan pagination atau pencarian seluruh database.
+
+## Koreksi audit ulang 6 November 2026
+
+- F-05: kode create_sales_order langsung menyimpan status Sales Order, locked_at, snapshot harga, dan reservasi; belum ada lifecycle Quotation/draft → konfirmasi. Ini gap implementasi, bukan sekadar belum diuji.
+- F-11: kode create_purchase_order langsung menyimpan Purchase Order; RFQ terpisah belum dibuat.
+- F-12: accepted/rejected tersedia, tetapi jumlah datang independen belum ada pada input/RPC.
+- F-18/SR-15: migrasi 006 sudah diterapkan dengan izin pengguna; guard Credit Note Finance/Owner diverifikasi true. Warehouse kini hanya referensi delivery; workflow inspeksi terpisah masih belum dibuat.
+- Akun lima role staf dan laporan test:roles masih belum tersedia saat pemeriksaan file.
+- Dropdown PO diperbaiki agar SKU/harga mengikuti vendor dan minimum pricelist. Pemeriksaan live perubahan ini belum dilakukan.
+
+## Hasil login dan akses role aktual — 6 November 2026
+
+- Akun uji keenam role berhasil dibuat pengguna lewat roles:complete; Owner asli tidak diubah.
+- Laporan awal 82 PASS/20 FAIL mengandung false positive parser: string not-found ikut pada template script di halaman yang sah. Diperbaiki dengan pemeriksaan HTML h1 aktual, error data, dan digest penolakan 403/404; regression test lulus.
+- Satu pengulangan mengalami timeout Owner dan pengulangan lain timeout Procurement/Inventory. Histori disimpan terpisah; retry hanya untuk exception jaringan, bukan hasil izin yang salah.
+- Eksekusi akhir: 114 PASS, 0 FAIL. Login/profil keenam role, 48 akses URL, RLS jurnal/akun/biaya, larangan mengubah profil/biaya langsung, larangan insert jurnal langsung, RPC lintas-role, logout dan redirect diperiksa nyata.
+- Laporan utama: docs/role-test-results.json. Histori: role-test-results-before-parser-fix.json, role-test-results-owner-transient.json, role-test-results-network-timeout.json. Tidak ada password/token pada laporan.
+- Tidak mem-posting transaksi bisnis. Cakupan ini tidak membuktikan semua workflow transaksi, tombol UI, atau T-01–T-36.

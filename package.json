@@ -9,7 +9,11 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:pos-cart": "node scripts/test-pos-cart.cjs",
-    "supabase:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-supabase.ps1"
+    "supabase:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-supabase.ps1",
+    "roles:setup": "node scripts/setup-role-accounts.cjs",
+    "roles:complete": "node scripts/setup-role-accounts.cjs && node scripts/test-roles.cjs",
+    "test:roles": "node scripts/test-roles.cjs",
+    "test:role-policy": "node scripts/test-role-policy.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
