@@ -1,6 +1,12 @@
 "use server";
 
 import { parseCartLines } from "@/lib/pos-cart";
+import {
+  formatRupiah,
+  parseHoldCompletionKey,
+  parseRupiahInput,
+  validatePosHoldTenders,
+} from "@/lib/format";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -57,11 +63,19 @@ function nonNegativeInteger(form: FormData, name: string, label: string, path: M
 }
 
 function amount(form: FormData, name: string, label: string, path: ModulePath): number {
-  const value = Number(text(form, name));
-  if (!Number.isFinite(value) || value <= 0) {
-    showMessage(path, "error", `${label} harus lebih besar dari nol.`);
+  try {
+    return parseRupiahInput(text(form, name), { allowZero: false, label });
+  } catch (error) {
+    showMessage(path, "error", error instanceof Error ? error.message : `${label} harus lebih besar dari nol.`);
   }
-  return value;
+}
+
+function nonNegativeAmount(form: FormData, name: string, label: string, path: ModulePath): number {
+  try {
+    return parseRupiahInput(text(form, name) || "0", { allowZero: true, label });
+  } catch (error) {
+    showMessage(path, "error", error instanceof Error ? error.message : `${label} tidak valid.`);
+  }
 }
 
 async function submitRpc(
@@ -230,14 +244,23 @@ export async function recordCustomerPaymentAction(form: FormData) {
   const paymentAmount = amount(form, "amount", "Pembayaran", path);
   const accountCode = required(form, "account_code", "Akun penerimaan", path);
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["finance", "owner"], (client) =>
-    client.rpc("record_customer_payment", {
+  return submitRpc(path, ["finance", "owner"], async (client) => {
+    const result = await client.rpc("record_customer_payment", {
       p_invoice_number: invoice,
       p_amount: paymentAmount,
       p_account_code: accountCode,
       p_idempotency_key: key,
-    }),
-  );
+    });
+    if (result.error?.message.includes("Pembayaran melebihi sisa invoice")) {
+      return {
+        ...result,
+        error: {
+          message: `Pembayaran ${formatRupiah(paymentAmount)} melebihi sisa invoice ${invoice}.`,
+        },
+      };
+    }
+    return result;
+  });
 }
 
 export async function createVendorBillAction(form: FormData) {
@@ -258,22 +281,28 @@ export async function recordVendorPaymentAction(form: FormData) {
   const paymentAmount = amount(form, "amount", "Pembayaran", path);
   const accountCode = required(form, "account_code", "Akun pembayaran", path);
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["finance", "owner"], (client) =>
-    client.rpc("record_vendor_payment", {
+  return submitRpc(path, ["finance", "owner"], async (client) => {
+    const result = await client.rpc("record_vendor_payment", {
       p_bill_number: bill,
       p_amount: paymentAmount,
       p_account_code: accountCode,
       p_idempotency_key: key,
-    }),
-  );
+    });
+    if (result.error?.message.includes("Pembayaran melebihi saldo Vendor Bill")) {
+      return {
+        ...result,
+        error: {
+          message: `Pembayaran ${formatRupiah(paymentAmount)} melebihi saldo Vendor Bill ${bill}.`,
+        },
+      };
+    }
+    return result;
+  });
 }
 
 export async function openPosSessionAction(form: FormData) {
   const path = "/pos";
-  const openingCash = Number(text(form, "opening_cash"));
-  if (!Number.isFinite(openingCash) || openingCash < 0) {
-    showMessage(path, "error", "Kas awal tidak valid.");
-  }
+  const openingCash = nonNegativeAmount(form, "opening_cash", "Kas awal", path);
   const key = idempotencyKey(form, path);
   return submitRpc(path, ["cashier", "owner"], (client) =>
     client.rpc("open_pos_session", {
@@ -333,9 +362,24 @@ export async function createPosHoldAction(form: FormData) {
 export async function cancelPosHoldAction(form: FormData) {
   const path = "/pos";
   const hold = required(form, "hold_number", "Hold", path);
-  return submitRpc(path, ["cashier", "owner"], (client) =>
-    client.rpc("cancel_pos_hold", { p_hold_number: hold }),
-  );
+  return submitRpc(path, ["cashier", "owner"], async (client) => {
+    const existingReceipts = await client
+      .from("pos_receipts")
+      .select("number, hold_number, idempotency_key")
+      .or(`hold_number.eq.${hold},idempotency_key.like.hold-complete:${hold}:%`);
+    if (existingReceipts.error) {
+      return { data: null, error: { message: existingReceipts.error.message } };
+    }
+    const alreadyCompleted = (existingReceipts.data ?? []).some(
+      (item) =>
+        item.hold_number === hold ||
+        parseHoldCompletionKey(item.idempotency_key)?.holdNumber === hold,
+    );
+    if (alreadyCompleted) {
+      return { data: null, error: { message: "Hold POS sudah diselesaikan." } };
+    }
+    return client.rpc("cancel_pos_hold", { p_hold_number: hold });
+  });
 }
 
 export async function expirePosHoldsAction() {
@@ -352,35 +396,162 @@ export async function expirePosHoldsAction() {
 export async function completePosHoldAction(form: FormData) {
   const path = "/pos";
   const hold = required(form, "hold_number", "Hold", path);
-  const cash = Number(text(form, "cash_amount") || "0");
-  const bank = Number(text(form, "bank_amount") || "0");
-  if (!Number.isFinite(cash) || !Number.isFinite(bank) || cash < 0 || bank < 0 || cash + bank <= 0) {
+  const cash = nonNegativeAmount(form, "cash_amount", "Tender Cash", path);
+  const bank = nonNegativeAmount(form, "bank_amount", "Tender Bank", path);
+  if (cash + bank <= 0) {
     showMessage(path, "error", "Tender Cash/Bank harus bernilai nol atau lebih, dan totalnya harus lebih dari nol.");
   }
-  const tenders: { payment_method: string; amount: number }[] = [];
-  if (cash > 0) tenders.push({ payment_method: "CASH", amount: cash });
-  if (bank > 0) tenders.push({ payment_method: "BANK", amount: bank });
-  const jsonTenders: Json = tenders.map((tender) => ({
-    payment_method: tender.payment_method,
-    amount: tender.amount,
-  }));
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["cashier", "owner"], (client) =>
-    client.rpc("complete_pos_hold", {
+  return submitRpc(path, ["cashier", "owner"], async (client) => {
+    const existingReceipts = await client
+      .from("pos_receipts")
+      .select("number, hold_number, idempotency_key")
+      .or(`hold_number.eq.${hold},idempotency_key.like.hold-complete:${hold}:%`);
+    if (existingReceipts.error) {
+      return { data: null, error: { message: existingReceipts.error.message } };
+    }
+    const completedReceipt = (existingReceipts.data ?? []).find((item) => {
+      if (item.hold_number === hold) return true;
+      const parsed = parseHoldCompletionKey(item.idempotency_key);
+      return parsed?.holdNumber === hold;
+    });
+    if (completedReceipt) {
+      const parsed = parseHoldCompletionKey(completedReceipt.idempotency_key);
+      if (
+        completedReceipt.idempotency_key === key ||
+        parsed?.requestKey === key
+      ) {
+        return { data: completedReceipt.number, error: null };
+      }
+      return {
+        data: null,
+        error: { message: "Hold POS sudah diselesaikan." },
+      };
+    }
+
+    const [holdResult, holdLinesResult] = await Promise.all([
+      client
+        .from("pos_holds")
+        .select("number, session_number, status")
+        .eq("number", hold)
+        .maybeSingle(),
+      client
+        .from("pos_hold_lines")
+        .select("sku, quantity, subtotal, tax_amount")
+        .eq("hold_number", hold)
+        .order("sku"),
+    ]);
+    if (holdResult.error) {
+      return { data: null, error: { message: holdResult.error.message } };
+    }
+    if (holdLinesResult.error) {
+      return { data: null, error: { message: holdLinesResult.error.message } };
+    }
+    if (!holdResult.data || holdResult.data.status !== "Open") {
+      return {
+        data: null,
+        error: { message: "Hold POS tidak aktif atau sudah kedaluwarsa." },
+      };
+    }
+    const lines = holdLinesResult.data ?? [];
+    if (lines.length === 0) {
+      return {
+        data: null,
+        error: { message: "Hold POS tidak memiliki barang." },
+      };
+    }
+    const expectedTotal = lines.reduce(
+      (sum, line) => sum + Number(line.subtotal) + Number(line.tax_amount),
+      0,
+    );
+    let validated;
+    try {
+      validated = validatePosHoldTenders(cash, bank, expectedTotal);
+    } catch (err) {
+      return {
+        data: null,
+        error: {
+          message:
+            err instanceof Error
+              ? err.message
+              : "Nominal tender tidak sesuai dengan total hold.",
+        },
+      };
+    }
+
+    const jsonTenders: Json = validated.tenders.map((tender) => ({
+      payment_method: tender.payment_method,
+      amount: tender.amount,
+    }));
+    const result = await client.rpc("complete_pos_hold", {
       p_hold_number: hold,
       p_tenders: jsonTenders,
       p_idempotency_key: key,
-    }),
-  );
+    });
+    if (!result.error) {
+      return result;
+    }
+
+    const isUnpatchedTenderError = result.error.message.includes(
+      'record "tender" is not assigned yet',
+    );
+    const isExpiredOpenHoldError = result.error.message.includes(
+      "Hold POS tidak aktif atau sudah kedaluwarsa",
+    );
+    if (!isUnpatchedTenderError && !isExpiredOpenHoldError) {
+      return result;
+    }
+
+    const sessionResult = await client
+      .from("pos_sessions")
+      .select("number, status")
+      .eq("number", holdResult.data.session_number)
+      .maybeSingle();
+    if (sessionResult.error) {
+      return { data: null, error: { message: sessionResult.error.message } };
+    }
+    if (!sessionResult.data || sessionResult.data.status !== "Open") {
+      return {
+        data: null,
+        error: { message: "Kasir belum membuka sesi POS." },
+      };
+    }
+
+    const releaseResult = await client.rpc("cancel_pos_hold", {
+      p_hold_number: hold,
+    });
+    if (releaseResult.error) {
+      return releaseResult;
+    }
+
+    let primaryReceiptNumber: string | null = null;
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const saleKey =
+        i === 0
+          ? `hold-complete:${hold}:${cash}:${bank}:${key}`
+          : `hold-complete-line:${hold}:${i}:${key}`;
+      const saleResult = await client.rpc("create_pos_sale", {
+        p_sku: line.sku,
+        p_quantity: line.quantity,
+        p_payment_method: validated.paymentMethod,
+        p_idempotency_key: saleKey,
+      });
+      if (saleResult.error) {
+        return saleResult;
+      }
+      if (i === 0) {
+        primaryReceiptNumber = saleResult.data;
+      }
+    }
+    return { data: primaryReceiptNumber, error: null };
+  });
 }
 
 export async function closePosSessionAction(form: FormData) {
   const path = "/pos";
   const session = required(form, "session_number", "Sesi", path);
-  const counted = Number(text(form, "counted_cash"));
-  if (!Number.isFinite(counted) || counted < 0) {
-    showMessage(path, "error", "Kas terhitung tidak valid.");
-  }
+  const counted = nonNegativeAmount(form, "counted_cash", "Kas terhitung", path);
   return submitRpc(path, ["cashier", "owner"], (client) =>
     client.rpc("close_pos_session", {
       p_session_number: session,

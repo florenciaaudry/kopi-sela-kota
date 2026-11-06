@@ -9,6 +9,7 @@ import { DemoWorkspace } from "../demo-workspace";
 import { WorkspaceViews } from "../workspace-views";
 import { DataTable } from "../data-table";
 import { SubmitButton } from "../submit-button";
+import { SelectField } from "../select-field";
 import { transferInventoryAction } from "../module-actions";
 
 export const metadata: Metadata = {
@@ -82,29 +83,33 @@ export default async function InventoryPage({
         id: "transfer", title: "Transfer antar lokasi", content: (
           <form action={transferInventoryAction} className="demo-form">
             <input name="idempotency_key" type="hidden" value={crypto.randomUUID()} />
-            <label className="demo-field">
-              <span>SKU</span>
-              <select defaultValue="" name="sku" required>
-                <option disabled value="">Pilih SKU…</option>
-                {[...new Map(snapshot.rows.map((row) => [row.sku, row.name])).entries()].map(([sku, name]) => (
-                  <option key={sku} value={sku}>{sku} · {name}</option>
-                ))}
-              </select>
-            </label>
-            <label className="demo-field">
-              <span>Lokasi sumber</span>
-              <select defaultValue="" name="source_location" required>
-                <option disabled value="">Pilih lokasi…</option>
-                {locations.data.map((location) => <option key={location.code} value={location.code}>{location.code} · {location.name}</option>)}
-              </select>
-            </label>
-            <label className="demo-field">
-              <span>Lokasi tujuan</span>
-              <select defaultValue="" name="destination_location" required>
-                <option disabled value="">Pilih lokasi…</option>
-                {locations.data.map((location) => <option key={location.code} value={location.code}>{location.code} · {location.name}</option>)}
-              </select>
-            </label>
+            <SelectField
+              label="SKU"
+              name="sku"
+              placeholder="Pilih SKU…"
+              options={[...new Map(snapshot.rows.map((row) => [row.sku, row.name])).entries()].map(([sku, name]) => ({
+                value: sku,
+                label: `${sku} · ${name}`,
+              }))}
+            />
+            <SelectField
+              label="Lokasi sumber"
+              name="source_location"
+              placeholder="Pilih lokasi…"
+              options={locations.data.map((location) => ({
+                value: location.code,
+                label: `${location.code} · ${location.name}`,
+              }))}
+            />
+            <SelectField
+              label="Lokasi tujuan"
+              name="destination_location"
+              placeholder="Pilih lokasi…"
+              options={locations.data.map((location) => ({
+                value: location.code,
+                label: `${location.code} · ${location.name}`,
+              }))}
+            />
             <label className="demo-field">
               <span>Kuantitas</span>
               <input min={1} name="quantity" required step={1} type="number" />

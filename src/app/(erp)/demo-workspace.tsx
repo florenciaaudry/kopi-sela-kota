@@ -10,8 +10,9 @@ import {
   isDemoState,
   type DemoState,
 } from "@/lib/demo-data";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, parseRupiahInput } from "@/lib/format";
 import { applicationAccess } from "@/lib/roles";
+import { CurrencyInput } from "./currency-input";
 
 export type DemoModule =
   | "dashboard"
@@ -90,11 +91,7 @@ function quantityField(form: FormData, name = "quantity"): number {
 }
 
 function moneyField(form: FormData, name = "amount"): number {
-  const value = Number(field(form, name));
-  if (!Number.isFinite(value) || value <= 0) {
-    throw new Error("Nilai pembayaran harus lebih besar dari nol.");
-  }
-  return Math.round(value);
+  return parseRupiahInput(field(form, name), { label: "Nilai pembayaran" });
 }
 
 function lineAmounts(quantity: number, price: number, discount: number) {
@@ -731,7 +728,7 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
                 <optgroup label="Piutang pelanggan">{state.invoices.filter((invoice) => invoice.subtotal + invoice.tax - invoice.paid - (invoice.credited ?? 0) > 0).map((invoice) => <option key={invoice.number} value={invoice.number}>{invoice.number} · {customerName(invoice.customerId)} · sisa {formatRupiah(invoice.subtotal + invoice.tax - invoice.paid - (invoice.credited ?? 0))}</option>)}</optgroup>
                 <optgroup label="Utang pemasok">{state.bills.filter((bill) => bill.total > bill.paid).map((bill) => <option key={bill.number} value={bill.number}>{bill.number} · {vendorName(bill.vendorId)} · sisa {formatRupiah(bill.total - bill.paid)}</option>)}</optgroup>
               </SelectField>
-              <NumberField label="Jumlah pembayaran (Rp)" name="amount" />
+              <CurrencyInput label="Jumlah pembayaran (Rp)" name="amount" />
               <SelectField label="Akun pembayaran" name="method"><option value="">Pilih akun</option><option>Cash</option><option>Bank</option></SelectField>
             </DemoForm>
           </Panel>

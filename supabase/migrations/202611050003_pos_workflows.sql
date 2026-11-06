@@ -257,7 +257,7 @@ declare
   hold_row public.pos_holds%rowtype;
   configuration public.pos_configuration%rowtype;
   item record;
-  tender record;
+  tender_row record;
   payment_count integer;
   quantity_total integer := 0;
   subtotal_total numeric(14, 2) := 0;
@@ -277,11 +277,11 @@ begin
     raise exception 'Hold, tender, dan idempotency key wajib diisi';
   end if;
   if exists (
-    select 1 from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric)
-    where tender.payment_method not in ('CASH', 'BANK') or tender.amount is null or tender.amount <= 0
+    select 1 from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+    where requested_tender.payment_method not in ('CASH', 'BANK') or requested_tender.amount is null or requested_tender.amount <= 0
   ) then raise exception 'Tender hanya menerima Cash/Bank dengan nominal positif'; end if;
-  if (select count(*) from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric))
-     <> (select count(distinct tender.payment_method) from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric)) then
+  if (select count(*) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
+     <> (select count(distinct requested_tender.payment_method) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)) then
     raise exception 'Metode tender duplikat harus digabung';
   end if;
   perform public.lock_transaction_key(p_idempotency_key);
@@ -309,10 +309,10 @@ begin
   if quantity_total <= 0 then raise exception 'Hold POS tidak memiliki barang'; end if;
   select phl.sku, phl.quantity into first_sku, first_quantity
     from public.pos_hold_lines phl where phl.hold_number = p_hold_number order by phl.sku limit 1;
-  select coalesce(sum(tender.amount), 0), count(*),
-         coalesce(sum(tender.amount) filter (where tender.payment_method = 'CASH'), 0)
+  select coalesce(sum(requested_tender.amount), 0), count(*),
+         coalesce(sum(requested_tender.amount) filter (where requested_tender.payment_method = 'CASH'), 0)
     into tender_total, payment_count, cash_tender
-    from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric);
+    from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric);
   if tender_total <> subtotal_total + tax_total then
     raise exception 'Total tender % harus sama dengan total struk %', tender_total, subtotal_total + tax_total;
   end if;
@@ -331,7 +331,7 @@ begin
   end loop;
   receipt_number := 'POSR' || lpad(nextval('public.pos_receipt_number_seq')::text, 5, '0');
   payment_method := case when payment_count = 1
-    then (select tender.payment_method from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric) limit 1)
+    then (select requested_tender.payment_method from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric) limit 1)
     else 'MIXED' end;
   insert into public.pos_receipts (
     number, session_number, sku, quantity, subtotal, tax_amount, total,
@@ -353,16 +353,16 @@ begin
       where source_type = 'pos_hold' and source_reference = p_hold_number
         and sku = item.sku and status = 'active';
   end loop;
-  for tender in
-    select tender.payment_method, tender.amount, pm.account_code
-    from jsonb_to_recordset(p_tenders) as tender(payment_method text, amount numeric)
-    join public.pos_payment_methods pm on pm.id = tender.payment_method
-    order by tender.payment_method
+  for tender_row in
+    select requested_tender.payment_method, requested_tender.amount, pm.account_code
+    from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+    join public.pos_payment_methods pm on pm.id = requested_tender.payment_method
+    order by requested_tender.payment_method
   loop
     insert into public.pos_receipt_tenders (receipt_number, payment_method, amount)
-    values (receipt_number, tender.payment_method, tender.amount);
+    values (receipt_number, tender_row.payment_method, tender_row.amount);
     journal_lines := journal_lines || jsonb_build_array(jsonb_build_object(
-      'account_code', tender.account_code, 'debit', tender.amount, 'credit', 0
+      'account_code', tender_row.account_code, 'debit', tender_row.amount, 'credit', 0
     ));
   end loop;
   journal_lines := journal_lines || jsonb_build_array(

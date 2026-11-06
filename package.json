@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:pos-cart": "node scripts/test-pos-cart.cjs",
+    "test:rupiah-format": "node scripts/test-rupiah-format.cjs",
     "supabase:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-supabase.ps1",
     "roles:setup": "node scripts/setup-role-accounts.cjs",
     "roles:complete": "node scripts/setup-role-accounts.cjs && node scripts/test-roles.cjs",
