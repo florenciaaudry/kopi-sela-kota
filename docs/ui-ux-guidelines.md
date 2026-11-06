@@ -23,3 +23,14 @@
 Komponen WorkspaceViews dan DataTable diuji lewat halaman sementara dengan data contoh, tanpa koneksi Supabase (server uji terpisah port 3002). Pengujian berhasil: membuka dialog, Escape/return focus, mencari nomor dokumen (2 menjadi 1 hasil), pindah tab dengan klik dan panah keyboard, membuka menu filter, memilih Partial Delivery (2 menjadi 1 hasil), reset filter. Screenshot desktop, dialog, dan viewport 390x844 diperiksa. Ukuran browser dikembalikan setelah uji. Halaman serta launcher pengujian sementara dihapus; tidak menjadi fitur publik.
 
 Pengujian tersebut memverifikasi interaksi komponen, bukan seluruh alur transaksi live, role end-to-end, atau T-01–T-36.
+
+## Tata letak baru berdasarkan referensi pengguna - 6 November 2026
+
+- Sidebar kiri untuk seluruh aplikasi yang diizinkan, identitas usaha, breadcrumb, akun/peran dan tombol keluar. Tujuh aplikasi tetap mengikuti empat kelompok PDF; Retur/laporan bukan aplikasi tambahan.
+- Beranda memakai kartu ringkasan dan kartu aplikasi dengan ikon SVG orisinal, nama Indonesia, nama modul serta deskripsi tugas. Pencarian dan filter kelompok tersedia; tidak mengiklankan lifecycle Quotation yang belum dibuat.
+- Palet putih/abu lembut dengan cokelat kopi, ruang antarkartu, fokus keyboard, skip link, status teks dan dukungan reduced motion. Pada HP tersedia menu aplikasi yang menutup setelah navigasi; tabel menggulir di dalam wadah.
+- Ringkasan keuangan diperbaiki agar muncul untuk Finance meskipun tidak punya akses stok. Tidak mengubah permission atau nilai database.
+- Browser Owner live: 7 kartu; pencarian stok menyisakan Inventory, pencarian tidak ditemukan menampilkan reset, reset mengembalikan 7; filter Rantai pasok menampilkan Pembelian/Produk & stok. Beranda dan modal Sales diperiksa pada 390x844; menu mobile menutup saat memilih Sales. Lebar dokumen Sales 375 pada viewport 390, tidak melebar karena tabel.
+- Pengujian SSR tambahan: Finance memiliki 2 kartu dan laporan keuangan; Sales memiliki 2 kartu tanpa laporan. test:roles diulang: 114 PASS / 0 FAIL. Build webpack, typecheck, lint dan test:role-policy lulus. Tidak ada transaksi usaha/migrasi/seed/reset dalam pekerjaan UI ini.
+- Pemeriksaan browser Edge sempat timeout; pemeriksaan visual selesai melalui browser aplikasi. Viewport dikembalikan ke default. Screenshot final disimpan di outputs pengguna, bukan data fixture atau angka buatan.
+- Ini penyelesaian pembaruan layout/beranda, bukan klaim seluruh fitur PDF/T-01-T-36 selesai.

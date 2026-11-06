@@ -141,3 +141,14 @@
 - Login Sales dan pemilihan dropdown pelanggan di browser berhasil; formulir ditutup tanpa mencatat transaksi. Fitur Quotation, approval diskon >5%, Contacts dan gap PDF lainnya belum lengkap. Status rinci: docs/status-anggota-1.md.
 - Tambahan final: migrasi 009 dipasang. Trigger mengisi detail baris/tender penjualan langsung secara atomik; backfill POSR00001 (Rp38.500) dan POSR00002 (Rp35.200) diverifikasi terhadap jurnal posted dan masing-masing menghasilkan satu audit perbaikan. Tidak mengubah saldo, stok, waktu atau jurnal. HOLD/00001 tetap Expired karena struk lama dijual sesudah expiry.
 - Regresi setelah 009: empat kelompok uji CRM/Sales/payment/POS termasuk direct BANK sale dan replay lulus; error=null, stock_unchanged=true, sales_count_unchanged=true, journal_count_unchanged=true. T-01–T-36 dan fitur PDF yang belum dibuat tetap belum selesai.
+
+## Tata letak baru berdasarkan referensi pengguna - 6 November 2026
+
+- Sidebar kiri untuk seluruh aplikasi yang diizinkan, identitas usaha, breadcrumb, akun/peran dan tombol keluar. Tujuh aplikasi tetap mengikuti empat kelompok PDF; Retur/laporan bukan aplikasi tambahan.
+- Beranda memakai kartu ringkasan dan kartu aplikasi dengan ikon SVG orisinal, nama Indonesia, nama modul serta deskripsi tugas. Pencarian dan filter kelompok tersedia; tidak mengiklankan lifecycle Quotation yang belum dibuat.
+- Palet putih/abu lembut dengan cokelat kopi, ruang antarkartu, fokus keyboard, skip link, status teks dan dukungan reduced motion. Pada HP tersedia menu aplikasi yang menutup setelah navigasi; tabel menggulir di dalam wadah.
+- Ringkasan keuangan diperbaiki agar muncul untuk Finance meskipun tidak punya akses stok. Tidak mengubah permission atau nilai database.
+- Browser Owner live: 7 kartu; pencarian stok menyisakan Inventory, pencarian tidak ditemukan menampilkan reset, reset mengembalikan 7; filter Rantai pasok menampilkan Pembelian/Produk & stok. Beranda dan modal Sales diperiksa pada 390x844; menu mobile menutup saat memilih Sales. Lebar dokumen Sales 375 pada viewport 390, tidak melebar karena tabel.
+- Pengujian SSR tambahan: Finance memiliki 2 kartu dan laporan keuangan; Sales memiliki 2 kartu tanpa laporan. test:roles diulang: 114 PASS / 0 FAIL. Build webpack, typecheck, lint dan test:role-policy lulus. Tidak ada transaksi usaha/migrasi/seed/reset dalam pekerjaan UI ini.
+- Pemeriksaan browser Edge sempat timeout; pemeriksaan visual selesai melalui browser aplikasi. Viewport dikembalikan ke default. Screenshot final disimpan di outputs pengguna, bukan data fixture atau angka buatan.
+- Ini penyelesaian pembaruan layout/beranda, bukan klaim seluruh fitur PDF/T-01-T-36 selesai.
