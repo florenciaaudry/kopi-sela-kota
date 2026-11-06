@@ -13,13 +13,6 @@ import { CurrencyInput } from "./currency-input";
 import { requireRole } from "@/lib/auth";
 import {
   formatRupiah,
-  reconcileCp00004DashboardTotals,
-  reconcileCp00004Invoices,
-  reconcileCp00004JournalLines,
-  reconcileCp00004Payments,
-  reconcilePosHoldDashboardTotals,
-  reconcilePosHoldJournalLines,
-  reconcilePosHoldState,
 } from "@/lib/format";
 import { routeAccess } from "@/lib/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -427,25 +420,8 @@ export async function ModulePage({
     if (!rawTotals || !journals.data || !accounts.data || !lines.data) {
       return <DataLoadError error="Database mengembalikan laporan Accounting yang tidak lengkap." />;
     }
-    const cp00004JournalIds = new Set(
-      journals.data
-        .filter((j) => j.source_type === "customer_payment" && j.source_reference === "CP00004")
-        .map((j) => j.id),
-    );
-    const isCp00004UnreconciledInDb = lines.data.some(
-      (line) =>
-        cp00004JournalIds.has(line.journal_entry_id) &&
-        line.account_code === "1102" &&
-        Number(line.debit) === 330,
-    );
-    const totals = reconcilePosHoldDashboardTotals(
-      reconcileCp00004DashboardTotals(rawTotals, isCp00004UnreconciledInDb),
-      journals.data,
-    );
-    const reconciledLines = reconcilePosHoldJournalLines(
-      journals.data,
-      reconcileCp00004JournalLines(journals.data, lines.data),
-    );
+    const totals = rawTotals;
+    const reconciledLines = lines.data;
     const accountNames = new Map(accounts.data.map((item) => [item.code, item.name]));
     const linesByJournal = new Map<string, string[]>();
     for (const line of reconciledLines) {
@@ -492,8 +468,8 @@ export async function ModulePage({
     if (!invoices.data || !customerPayments.data || !orders.data || !bills.data || !vendorPayments.data || !purchaseOrders.data) {
       return <DataLoadError error="Database mengembalikan data Invoicing yang tidak lengkap." />;
     }
-    const reconciledInvoices = reconcileCp00004Invoices(invoices.data);
-    const reconciledCustomerPayments = reconcileCp00004Payments(customerPayments.data);
+    const reconciledInvoices = invoices.data;
+    const reconciledCustomerPayments = customerPayments.data;
     const openInvoices = reconciledInvoices.filter((item) => item.total - item.amount_paid - item.amount_credited > 0);
     const openBills = bills.data.filter((item) => item.total - item.amount_paid > 0);
     return (
@@ -576,14 +552,14 @@ export async function ModulePage({
         !holds.data || !holdLines.data || !receiptLines.data || !tenders.data) {
       return <DataLoadError error="Database mengembalikan data POS yang tidak lengkap." />;
     }
-    const reconciledPos = reconcilePosHoldState({
+    const reconciledPos = {
       holds: holds.data,
       holdLines: holdLines.data,
       receipts,
       receiptLines: receiptLines.data,
       tenders: tenders.data,
       sessions: sessions.data,
-    });
+    };
     const activeSession = reconciledPos.sessions.find((item) => ["Open", "Pending Approval"].includes(item.status));
     const openHolds = reconciledPos.holds.filter((item) => item.status === "Open");
     const holdTotals = new Map(reconciledPos.holds.map((hold) => [
@@ -713,7 +689,7 @@ export async function ModulePage({
   if (!invoices.data || !lines.data || !creditNotes.data) {
     return <DataLoadError error="Database mengembalikan data retur yang tidak lengkap." />;
   }
-  const reconciledReturnInvoices = reconcileCp00004Invoices(invoices.data);
+  const reconciledReturnInvoices = invoices.data;
   const returnableInvoices = reconciledReturnInvoices.filter((item) => item.status === "Posted" && item.total - item.amount_paid - item.amount_credited > 0);
   const invoiceLineOptions = lines.data
     .filter((line) => returnableInvoices.some((invoice) => invoice.number === line.invoice_number))

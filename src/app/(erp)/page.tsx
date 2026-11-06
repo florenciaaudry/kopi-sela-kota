@@ -3,8 +3,6 @@ import Link from "next/link";
 import { getCurrentProfile } from "@/lib/auth";
 import {
   formatRupiah,
-  reconcileCp00004DashboardTotals,
-  reconcilePosHoldDashboardTotals,
 } from "@/lib/format";
 import { getInventorySnapshot } from "@/lib/inventory";
 import { applicationAccess } from "@/lib/roles";
@@ -33,30 +31,8 @@ export default async function DashboardPage() {
   const financialSummary = ["finance", "owner"].includes(profile.role)
     ? await (async (): Promise<{ data: OwnerDashboard | null; error: string | null }> => {
         const supabase = await createSupabaseServerClient();
-        const [{ data, error }, cp00004, posJournals] = await Promise.all([
-          supabase.rpc("get_owner_dashboard"),
-          supabase
-            .from("customer_payments")
-            .select("number, invoice_number, amount")
-            .eq("number", "CP00004")
-            .maybeSingle(),
-          supabase
-            .from("journal_entries")
-            .select("source_type, idempotency_key")
-            .eq("source_type", "pos_sale"),
-        ]);
-        const isCp00004UnreconciledInDb =
-          cp00004.data?.invoice_number === "INV00003" &&
-          Number(cp00004.data?.amount) === 330;
-        return {
-          data: data
-            ? reconcilePosHoldDashboardTotals(
-                reconcileCp00004DashboardTotals(data, isCp00004UnreconciledInDb),
-                posJournals.data ?? [],
-              )
-            : null,
-          error: error?.message ?? null,
-        };
+        const { data, error } = await supabase.rpc("get_owner_dashboard");
+        return { data, error: error?.message ?? null };
       })()
     : null;
   const visibleApplications = applicationAccess.filter((app) =>

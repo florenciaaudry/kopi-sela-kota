@@ -2671,16 +2671,6 @@ begin
 end;
 $$;
 
--- Extend expiration window for any currently Open POS holds (such as HOLD/00001)
--- that were blocked by the "tender is not assigned yet" bug before completion.
-update public.pos_holds
-set expires_at = greatest(expires_at, now() + interval '24 hours')
-where status = 'Open';
-
-update public.inventory_reservations
-set expires_at = greatest(expires_at, now() + interval '24 hours')
-where source_type = 'pos_hold' and status = 'active';
-
 
 
 -- DATASET SEED

@@ -16,10 +16,6 @@ const {
   formatRibuan,
   normalizeCurrencyText,
   parseRupiahInput,
-  reconcileCp00004Invoices,
-  reconcileCp00004Payments,
-  reconcileCp00004JournalLines,
-  reconcileCp00004DashboardTotals,
 } = loaded.exports;
 
 // 1. Mandatory QA nominal cases: 330.000, 33.000, and 1.500.000
@@ -63,46 +59,10 @@ for (const invalid of ["", " ", "0", "-330.000", "330.00", "12.34", "abc"]) {
   assert.throws(() => parseRupiahInput(invalid));
 }
 
-// 6. Consistent reconciliation of CP00004 / INV00003 / JRN/20261106/00009 without altering other records
-const reconciledInv = reconcileCp00004Invoices([
-  { number: "INV00001", total: 33000, amount_paid: 33000 },
-  { number: "INV00003", total: 330000, amount_paid: 330 },
-  { number: "OPEN-AR-C02", total: 220000, amount_paid: 0 },
-]);
-assert.deepEqual(reconciledInv, [
-  { number: "INV00001", total: 33000, amount_paid: 33000 },
-  { number: "INV00003", total: 330000, amount_paid: 330000 },
-  { number: "OPEN-AR-C02", total: 220000, amount_paid: 0 },
-]);
-
-const reconciledPay = reconcileCp00004Payments([
-  { number: "CP00002", invoice_number: "INV00001", amount: 33000 },
-  { number: "CP00004", invoice_number: "INV00003", amount: 330 },
-]);
-assert.deepEqual(reconciledPay, [
-  { number: "CP00002", invoice_number: "INV00001", amount: 33000 },
-  { number: "CP00004", invoice_number: "INV00003", amount: 330000 },
-]);
-
-const reconciledLines = reconcileCp00004JournalLines(
-  [{ id: "jrn-9", source_type: "customer_payment", source_reference: "CP00004" }],
-  [
-    { journal_entry_id: "jrn-9", account_code: "1102", debit: 330, credit: 0 },
-    { journal_entry_id: "jrn-9", account_code: "1201", debit: 0, credit: 330 },
-  ],
-);
-assert.deepEqual(reconciledLines, [
-  { journal_entry_id: "jrn-9", account_code: "1102", debit: 330000, credit: 0 },
-  { journal_entry_id: "jrn-9", account_code: "1201", debit: 0, credit: 330000 },
-]);
-
-const reconciledTotals = reconcileCp00004DashboardTotals(
-  { receivables: 549670, bank: 10018330 },
-  true,
-);
-assert.deepEqual(reconciledTotals, { receivables: 220000, bank: 10348000 });
-
-console.log(
-  "PASS: Indonesian Rupiah nominal parsing, display, and CP00004/INV00003 reconciliation",
-);
-
+// Invalid text must not become a different valid payment through the UI.
+for (const raw of ["-330.000", "12.34", "1e3", "330.000,50", "abc330"] ) {
+  const normalized = normalizeCurrencyText(raw);
+  assert.equal(normalized.numericValue, raw);
+  assert.throws(() => parseRupiahInput(normalized.numericValue));
+}
+console.log("PASS: Rupiah parsing and UI normalization preserve invalid amounts for rejection");
