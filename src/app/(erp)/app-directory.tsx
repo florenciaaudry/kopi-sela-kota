@@ -18,7 +18,7 @@ export function AppDirectory({ applications }: { applications: AppItem[] }) {
     <div className="ksk-group-filters" aria-label="Kelompok aplikasi">{groups.map(item => <button type="button" key={item} aria-pressed={group === item} onClick={() => setGroup(item)}>{item}</button>)}</div>
     <div className="ksk-app-grid">{shown.map(app => {
       const detail = appDescriptions[app.name];
-      return <Link className="ksk-app-card" href={app.href ?? "/"} key={app.name}><div className="ksk-card-top"><span className={`ksk-app-icon tone-${detail.tone}`}><AppIcon name={app.name} /></span><span className="ksk-card-arrow" aria-hidden="true">↗</span></div><span className="ksk-card-module">{app.name}</span><h3>{detail.label}</h3><p>{detail.description}</p><span className="ksk-card-group">{app.group}</span></Link>;
+      return <Link className="ksk-app-card" href={app.href ?? "/"} key={app.name}><div className="ksk-card-top"><span className={`ksk-app-icon tone-${detail.tone}`}><AppIcon name={app.name} /></span><span className="ksk-card-arrow" aria-hidden="true">↗</span></div><h3>{detail.label}</h3><p>{detail.description}</p><span className="ksk-card-group">{app.group}</span></Link>;
     })}</div>
     {shown.length === 0 ? <div className="ksk-no-results"><h3>Aplikasinya belum ditemukan</h3><p>Coba nama lain, misalnya “stok” atau “pembayaran”.</p><button className="secondary-button" type="button" onClick={() => { setQuery(""); setGroup("Semua"); }}>Tampilkan semua aplikasi</button></div> : null}
   </section>;

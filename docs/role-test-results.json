@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T11:12:47.975Z",
+  "checkedAt": "2026-11-06T11:29:17.909Z",
   "scope": "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.",
   "results": [
     {
@@ -24,13 +24,13 @@
       "role": "sales",
       "check": "URL /sales",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Sales; network_attempt=1"
     },
     {
       "role": "sales",
       "check": "URL /crm",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Peluang Pelanggan; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=CRM; network_attempt=1"
     },
     {
       "role": "sales",
@@ -138,7 +138,7 @@
       "role": "warehouse",
       "check": "URL /sales",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Sales; network_attempt=1"
     },
     {
       "role": "warehouse",
@@ -150,13 +150,13 @@
       "role": "warehouse",
       "check": "URL /purchase",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Purchase; network_attempt=1"
     },
     {
       "role": "warehouse",
       "check": "URL /inventory",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Inventory; network_attempt=1"
     },
     {
       "role": "warehouse",
@@ -180,7 +180,7 @@
       "role": "warehouse",
       "check": "URL /returns",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Returns & Credit Notes; network_attempt=1"
     },
     {
       "role": "warehouse",
@@ -264,13 +264,13 @@
       "role": "procurement",
       "check": "URL /purchase",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Purchase; network_attempt=1"
     },
     {
       "role": "procurement",
       "check": "URL /inventory",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Inventory; network_attempt=1"
     },
     {
       "role": "procurement",
@@ -390,13 +390,13 @@
       "role": "finance",
       "check": "URL /accounting",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Akuntansi; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Accounting; network_attempt=1"
     },
     {
       "role": "finance",
       "check": "URL /invoicing",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Tagihan & Pembayaran; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Invoicing; network_attempt=1"
     },
     {
       "role": "finance",
@@ -408,7 +408,7 @@
       "role": "finance",
       "check": "URL /returns",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Returns & Credit Notes; network_attempt=1"
     },
     {
       "role": "finance",
@@ -516,7 +516,7 @@
       "role": "cashier",
       "check": "URL /pos",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Kasir; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Point of Sale; network_attempt=1"
     },
     {
       "role": "cashier",
@@ -594,49 +594,49 @@
       "role": "owner",
       "check": "URL /sales",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Penjualan; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Sales; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /crm",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Peluang Pelanggan; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=CRM; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /purchase",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Pembelian; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Purchase; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /inventory",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Produk & Stok; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Inventory; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /accounting",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Akuntansi; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Accounting; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /invoicing",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Tagihan & Pembayaran; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Invoicing; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /pos",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Kasir; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Point of Sale; network_attempt=1"
     },
     {
       "role": "owner",
       "check": "URL /returns",
       "status": "PASS",
-      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Retur & Credit Note; network_attempt=1"
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Returns & Credit Notes; network_attempt=1"
     },
     {
       "role": "owner",

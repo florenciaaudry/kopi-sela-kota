@@ -15,11 +15,11 @@ export function AppIcon({ name, className = "" }: { name: string; className?: st
 }
 
 export const appDescriptions: Record<string, { label: string; description: string; tone: string }> = {
-  Sales: { label: "Penjualan", description: "Pesanan pelanggan dan pengiriman barang.", tone: "plum" },
-  CRM: { label: "Peluang pelanggan", description: "Peluang pesanan dan tindak lanjut pelanggan.", tone: "rose" },
-  Purchase: { label: "Pembelian", description: "Pesanan pemasok dan penerimaan barang.", tone: "blue" },
-  Inventory: { label: "Produk & stok", description: "Stok tersedia dan perpindahan antar lokasi.", tone: "green" },
-  Accounting: { label: "Akuntansi", description: "Jurnal transaksi dan saldo keuangan.", tone: "amber" },
-  Invoicing: { label: "Tagihan & pembayaran", description: "Tagihan pelanggan, pemasok, dan pelunasannya.", tone: "teal" },
-  "Point of Sale": { label: "Kasir", description: "Penjualan di kedai, pembayaran, dan struk.", tone: "coffee" },
+  Sales: { label: "Sales", description: "Pesanan pelanggan dan pengiriman barang.", tone: "plum" },
+  CRM: { label: "CRM", description: "Peluang pesanan dan tindak lanjut pelanggan.", tone: "rose" },
+  Purchase: { label: "Purchase", description: "Pesanan pemasok dan penerimaan barang.", tone: "blue" },
+  Inventory: { label: "Inventory", description: "Stok tersedia dan perpindahan antar lokasi.", tone: "green" },
+  Accounting: { label: "Accounting", description: "Jurnal transaksi dan saldo keuangan.", tone: "amber" },
+  Invoicing: { label: "Invoicing", description: "Tagihan pelanggan, pemasok, dan pelunasannya.", tone: "teal" },
+  "Point of Sale": { label: "Point of Sale", description: "Penjualan di kedai, pembayaran, dan struk.", tone: "coffee" },
 };

@@ -1,5 +1,7 @@
 "use client";
 
+import { moduleTitles, odooLabel } from "@/lib/erp-terminology";
+
 import Link from "next/link";
 import { useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 
@@ -163,7 +165,7 @@ function PageTitle({ eyebrow, title, subtitle }: { eyebrow: string; title: strin
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="section-card demo-panel">
-      <div className="section-heading"><h2>{title}</h2></div>
+      <div className="section-heading"><h2>{odooLabel(title)}</h2></div>
       {children}
     </section>
   );
@@ -187,7 +189,7 @@ function DemoForm({
       }}
     >
       {children}
-      <button className="primary-button" type="submit">{submitLabel}</button>
+      <button className="primary-button" type="submit">{odooLabel(submitLabel)}</button>
     </form>
   );
 }
@@ -203,7 +205,7 @@ function SelectField({
 }) {
   return (
     <label className="demo-field">
-      <span>{label}</span>
+      <span>{odooLabel(label)}</span>
       <select defaultValue="" name={name} required>
         {children}
       </select>
@@ -226,7 +228,7 @@ function NumberField({
 }) {
   return (
     <label className="demo-field">
-      <span>{label}</span>
+      <span>{odooLabel(label)}</span>
       <input
         defaultValue={defaultValue}
         max={max}
@@ -249,7 +251,7 @@ function DataTable({
   return (
     <div className="table-scroll">
       <table>
-        <thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead>
+        <thead><tr>{headers.map((header) => <th key={header}>{odooLabel(header)}</th>)}</tr></thead>
         <tbody>
           {rows.length ? rows.map((row, index) => (
             <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>
@@ -580,7 +582,7 @@ export function DemoWorkspace({ module }: { module: DemoModule }) {
 
   return (
     <div className="page-stack">
-      <PageTitle {...title} />
+      <PageTitle {...title} title={module === "dashboard" ? title.title : moduleTitles[module]} />
       <div className="notice notice-warning demo-notice">
         <strong>MODE DEMO — bukan integrasi database.</strong> Data berasal dari fixture PDF dan perubahan hanya tersimpan di localStorage browser ini. Tidak ada transaksi yang dikirim ke Supabase atau menjadi catatan resmi.{" "}
         <button className="text-button" onClick={resetDemo} type="button">Reset fixture demo</button>

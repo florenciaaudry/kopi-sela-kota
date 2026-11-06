@@ -1,5 +1,7 @@
 "use client";
 
+import { odooLabel } from "@/lib/erp-terminology";
+
 import { useEffect, useId, useRef, useState } from "react";
 
 export type SelectOption = {
@@ -21,7 +23,7 @@ type SelectFieldProps = {
 };
 
 export function SelectField({
-  label,
+  label: sourceLabel,
   name,
   options,
   placeholder = "Pilih…",
@@ -31,6 +33,7 @@ export function SelectField({
   defaultValue = "",
   onValueChange,
 }: SelectFieldProps) {
+  const label = odooLabel(sourceLabel);
   const isControlled = controlledValue !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);

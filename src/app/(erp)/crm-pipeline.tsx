@@ -13,7 +13,7 @@ type Opportunity = {
   lostReason: string | null;
 };
 const stages = ["New", "Qualified", "Proposition", "Won", "Lost"];
-const labels: Record<string, string> = { New: "Baru", Qualified: "Terkualifikasi", Proposition: "Penawaran", Won: "Berhasil", Lost: "Tidak berhasil" };
+const labels: Record<string, string> = Object.fromEntries(stages.map(stage => [stage, stage]));
 
 export function CrmPipeline({ opportunities }: { opportunities: Opportunity[] }) {
   const [query, setQuery] = useState("");
@@ -22,10 +22,10 @@ export function CrmPipeline({ opportunities }: { opportunities: Opportunity[] })
   const matching = opportunities.filter((item) => (!selectedStage || item.stage === selectedStage) && [item.number, item.customer, item.product].some((value) => value.toLocaleLowerCase("id-ID").includes(query.trim().toLocaleLowerCase("id-ID"))));
   return <div className="crm-pipeline">
     <div className="table-controls">
-      <label className="demo-field"><span>Cari peluang</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nomor, pelanggan, produk…" /></label>
-      <label className="demo-field"><span>Filter tahap</span><select value={selectedStage} onChange={(event) => setSelectedStage(event.target.value)}><option value="">Semua tahap</option>{stages.map((stage) => <option key={stage} value={stage}>{labels[stage]}</option>)}</select></label>
+      <label className="demo-field"><span>Search Opportunities</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nomor, pelanggan, produk…" /></label>
+      <label className="demo-field"><span>Filter Stage</span><select value={selectedStage} onChange={(event) => setSelectedStage(event.target.value)}><option value="">Semua tahap</option>{stages.map((stage) => <option key={stage} value={stage}>{labels[stage]}</option>)}</select></label>
     </div>
-    <p className="muted-copy" role="status">{matching.length} peluang · Gunakan formulir Perbarui tahap untuk memindahkan peluang.</p>
+    <p className="muted-copy" role="status">{matching.length} peluang · Gunakan formulir Update Stage untuk memindahkan peluang.</p>
     <div className="kanban-board" aria-label="Pipeline peluang penjualan">
       {stages.filter((stage) => !selectedStage || stage === selectedStage).map((stage) => {
         const items = matching.filter((item) => item.stage === stage);
@@ -33,7 +33,7 @@ export function CrmPipeline({ opportunities }: { opportunities: Opportunity[] })
           <header><h3>{labels[stage]} <span>({items.length})</span></h3><p>{currency(items.reduce((sum, item) => sum + item.revenue, 0))}</p></header>
           {items.length ? items.map((item) => <article className="opportunity-card" key={item.number}>
             <span className="demo-status">{item.stage}</span><h4>{item.number} · {item.customer}</h4><p>{item.product} × {item.quantity}</p>
-            <strong>{currency(item.revenue)}</strong><p>Probabilitas {item.probability}%</p>
+            <strong>{currency(item.revenue)}</strong><p>Probability {item.probability}%</p>
             {item.lostReason ? <p>Alasan: {item.lostReason}</p> : null}
           </article>) : <p className="muted-copy">Belum ada peluang pada tahap ini.</p>}
         </section>;

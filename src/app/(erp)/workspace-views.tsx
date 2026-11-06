@@ -1,5 +1,7 @@
 "use client";
 
+import { odooLabel } from "@/lib/erp-terminology";
+
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 export type WorkspaceSection = { id: string; title: string; content: ReactNode };
@@ -31,7 +33,7 @@ export function WorkspaceViews({ actions, views }: { actions: WorkspaceSection[]
         if (!dialog.current?.open) {
           dialog.current?.showModal();
         }
-      }}>{index === 0 ? "+ " : ""}{action.title}</button>)}
+      }}>{index === 0 ? "+ " : ""}{odooLabel(action.title)}</button>)}
     </div> : null}
     {views.length ? <>
       <div className="document-tabs" role="tablist" aria-label="Tampilan dokumen">
@@ -45,7 +47,7 @@ export function WorkspaceViews({ actions, views }: { actions: WorkspaceSection[]
           event.preventDefault();
           setSelected(views[next].id);
           document.getElementById(`${id}-${views[next].id}-tab`)?.focus();
-        }}>{view.title}</button>)}
+        }}>{odooLabel(view.title)}</button>)}
       </div>
       {views.map((view) => <div key={view.id} id={`${id}-${view.id}-panel`} role="tabpanel" hidden={view.id !== currentView?.id} aria-labelledby={`${id}-${view.id}-tab`} tabIndex={0}>{view.content}</div>)}
     </> : <p className="muted-copy">Pilih aksi untuk mulai mengelola dokumen.</p>}
@@ -71,7 +73,7 @@ export function WorkspaceViews({ actions, views }: { actions: WorkspaceSection[]
       }}
     >
       <div className="workflow-dialog-body" onClick={(event) => event.stopPropagation()}>
-        <header className="workflow-dialog-header"><div><p className="eyebrow">KOPI SELA KOTA / FORMULIR</p><h2 id={`${id}-dialog-title`}>{currentAction?.title ?? "Formulir transaksi"}</h2></div><button className="dialog-close" aria-label="Tutup formulir" type="button" onClick={close}>×</button></header>
+        <header className="workflow-dialog-header"><div><p className="eyebrow">KOPI SELA KOTA / FORMULIR</p><h2 id={`${id}-dialog-title`}>{odooLabel(currentAction?.title ?? "Formulir transaksi")}</h2></div><button className="dialog-close" aria-label="Tutup formulir" type="button" onClick={close}>×</button></header>
         <p className="workflow-help">Periksa data sebelum menyimpan. Menutup formulir tidak mencatat transaksi.</p>
         {currentAction ? <div key={currentAction.id} className="workflow-dialog-content" onSubmit={(event) => {
           if (!event.defaultPrevented) {

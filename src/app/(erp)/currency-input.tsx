@@ -1,10 +1,12 @@
 "use client";
 
+import { odooLabel } from "@/lib/erp-terminology";
+
 import { useState } from "react";
 import { formatRibuan, normalizeCurrencyText } from "@/lib/format";
 
 export function CurrencyInput({
-  label,
+  label: sourceLabel,
   name,
   defaultValue,
   required = true,
@@ -18,6 +20,7 @@ export function CurrencyInput({
   allowZero?: boolean;
   placeholder?: string;
 }) {
+  const label = odooLabel(sourceLabel);
   const initial =
     defaultValue !== undefined && Number.isFinite(defaultValue)
       ? {

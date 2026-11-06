@@ -162,3 +162,10 @@
 - HP 390x844: menu, pemilih aplikasi, link aktif dan isi Retur diperiksa; documentWidth=375 <= viewport 390. Viewport dikembalikan ke default setelah pemeriksaan.
 - Typecheck, lint dan production build lulus. test:roles diulang: 114 PASS, 0 FAIL, termasuk Retur untuk Warehouse/Finance/Owner dan penolakan untuk role lain.
 - Cakupan perubahan ini navigasi/tampilan. Guard role, transaksi dan database tidak diubah. Uji bisnis lengkap T-01-T-36 dan form inspeksi Warehouse yang belum lengkap tidak dinyatakan selesai.
+
+## Standar istilah Odoo - 6 November 2026
+
+- Nama aplikasi, dokumen, status, field dan aksi memakai Inggris; penjelasan dan pesan operasional tetap Indonesia sesuai PDF. Menggantikan judul aplikasi Indonesia pada desain sebelumnya.
+- Istilah tampilan terpusat di src/lib/erp-terminology.ts; klasifikasi aksi/role, FormData, nilai database dan nominal tetap. Nama aplikasi tidak diulang dua kali pada kartu/sidebar.
+- Penamaan konsisten pada kartu, sidebar, breadcrumb, halaman modul, table headers, form, tombol, CRM stages dan Receipt, termasuk mode demo. Panduan: docs/language-and-odoo-terms.md.
+- Typecheck, lint, build dan kebijakan role lulus; pengujian akses aktual 114 PASS / 0 FAIL. Browser Sales/form diperiksa dengan nama Inggris dan bantuan Indonesia, tanpa membuat transaksi bisnis.

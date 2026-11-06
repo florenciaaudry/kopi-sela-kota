@@ -13,7 +13,7 @@ import { SelectField } from "../select-field";
 import { transferInventoryAction } from "../module-actions";
 
 export const metadata: Metadata = {
-  title: "Produk & Stok",
+  title: "Inventory",
 };
 
 export default async function InventoryPage({
@@ -70,14 +70,14 @@ export default async function InventoryPage({
 
   return (
     <div className="page-stack module-workspace">
-      <div className="page-heading"><div><p className="eyebrow">KOPI SELA KOTA / INVENTORY</p><h1>Produk &amp; Stok</h1><p className="muted-copy">Periksa stok tiap lokasi dan pindahkan barang sesuai ketersediaannya.</p></div><span className="date-chip"><span className="connection-dot" aria-hidden="true" /> Data tersimpan online</span></div>
+      <div className="page-heading"><div><p className="eyebrow">KOPI SELA KOTA / INVENTORY</p><h1>Inventory</h1><p className="muted-copy">Periksa stok tiap lokasi dan pindahkan barang sesuai ketersediaannya.</p></div><span className="date-chip"><span className="connection-dot" aria-hidden="true" /> Data tersimpan online</span></div>
       {message.error ? <section className="notice notice-error" role="alert">{message.error}</section> : null}
       {message.success ? <section className="notice notice-info" role="status">{message.success}</section> : null}
       <section className="inventory-summary" aria-label="Ringkasan stok">
-        <div><span>Produk</span><strong>{snapshot.productCount} SKU</strong></div>
-        <div><span>Lokasi</span><strong>{snapshot.locationCount}</strong></div>
+        <div><span>Products</span><strong>{snapshot.productCount} SKU</strong></div>
+        <div><span>Locations</span><strong>{snapshot.locationCount}</strong></div>
         <div><span>Stok fisik · On Hand</span><strong>{snapshot.onHand.toLocaleString("id-ID")} unit</strong></div>
-        <div><span>Nilai persediaan</span><strong>{formatRupiah(snapshot.inventoryValue)}</strong></div>
+        <div><span>Inventory Value</span><strong>{formatRupiah(snapshot.inventoryValue)}</strong></div>
       </section>
       <WorkspaceViews actions={profile.role === "warehouse" || profile.role === "owner" ? [{
         id: "transfer", title: "Transfer antar lokasi", content: (
@@ -111,15 +111,15 @@ export default async function InventoryPage({
               }))}
             />
             <label className="demo-field">
-              <span>Kuantitas</span>
+              <span>Quantity</span>
               <input min={1} name="quantity" required step={1} type="number" />
             </label>
             <SubmitButton label="Simpan transfer" />
           </form>
         ),
       }] : []} views={[
-        { id: "stock", title: "Stok per lokasi", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Ketersediaan produk</h2></div><p className="muted-copy">On Hand = stok fisik · Reserved = sudah dipesan · Available = stok yang masih bisa digunakan.</p><DataTable headers={["SKU", "Produk", "Ukuran", "Lokasi", "On Hand", "Reserved", "Available", "Biaya standar"]} rows={snapshot.rows.map((row) => [row.sku, row.name, row.size, row.locationCode, row.onHand, row.reserved, row.available, formatRupiah(row.standardCost)])} /></section> },
-        { id: "transfers", title: "Riwayat transfer", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Perpindahan barang</h2></div><DataTable headers={["Nomor", "SKU", "Sumber", "Tujuan", "Kuantitas", "Waktu"]} rows={transfers.data.map((transfer) => [transfer.number, transfer.sku, transfer.source_location, transfer.destination_location, transfer.quantity, new Date(transfer.transferred_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} /></section> },
+        { id: "stock", title: "Stok per lokasi", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Stock Availability</h2></div><p className="muted-copy">On Hand = stok fisik · Reserved = sudah dipesan · Available = stok yang masih bisa digunakan.</p><DataTable headers={["SKU", "Produk", "Ukuran", "Lokasi", "On Hand", "Reserved", "Available", "Biaya standar"]} rows={snapshot.rows.map((row) => [row.sku, row.name, row.size, row.locationCode, row.onHand, row.reserved, row.available, formatRupiah(row.standardCost)])} /></section> },
+        { id: "transfers", title: "Riwayat transfer", content: <section className="section-card demo-panel"><div className="section-heading"><h2>Internal Transfers</h2></div><DataTable headers={["Reference", "SKU", "Source Location", "Destination Location", "Quantity", "Date & Time"]} rows={transfers.data.map((transfer) => [transfer.number, transfer.sku, transfer.source_location, transfer.destination_location, transfer.quantity, new Date(transfer.transferred_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} /></section> },
       ]} />
     </div>
   );

@@ -1,3 +1,4 @@
+import { moduleTitles, odooLabel } from "@/lib/erp-terminology";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import type { AppRole } from "@/lib/supabase/database.types";
 import { WorkspaceViews, type WorkspaceSection } from "./workspace-views";
@@ -46,15 +47,7 @@ type Option = { value: string; label: string };
 type Message = { error?: string; success?: string };
 
 function PageTitle({ module }: { module: Module }) {
-  const title: Record<Module, string> = {
-    sales: "Penjualan",
-    crm: "Peluang Pelanggan",
-    purchase: "Pembelian",
-    accounting: "Akuntansi",
-    invoicing: "Tagihan & Pembayaran",
-    pos: "Kasir",
-    returns: "Retur & Credit Note",
-  };
+  const title = moduleTitles;
   return (
     <div className="page-heading">
       <div>
@@ -70,22 +63,22 @@ function PageTitle({ module }: { module: Module }) {
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="section-card demo-panel">
-      <div className="section-heading"><h2>{title}</h2></div>
+      <div className="section-heading"><h2>{odooLabel(title)}</h2></div>
       {children}
     </section>
   );
 }
 
 const actionLabels: Record<string, string> = {
-  "Buat Sales Order": "Pesanan baru", "Pengiriman dari Sales Order": "Catat pengiriman",
-  "Buat Lead": "Peluang baru", "Perbarui tahap": "Ubah tahap peluang",
-  "Buat Purchase Order": "Pesanan pembelian baru", "Penerimaan barang": "Terima barang",
-  "Terbitkan invoice untuk delivery": "Buat invoice pelanggan", "Catat pembayaran pelanggan": "Terima pembayaran",
-  "Buat Vendor Bill dari barang diterima": "Buat tagihan pemasok", "Bayar Vendor Bill": "Bayar pemasok",
-  "Buka sesi kasir": "Buka sesi kasir", "Penjualan POS": "Penjualan langsung",
-  "Hold pesanan POS": "Buat keranjang tertahan", "Selesaikan hold · tender lunas": "Bayar keranjang",
-  "Batalkan hold": "Batalkan keranjang", "Pelepasan hold kedaluwarsa": "Periksa keranjang kedaluwarsa",
-  "Buat Credit Note": "Catat retur & Credit Note",
+  "Buat Sales Order": "New Sales Order", "Pengiriman dari Sales Order": "Validate Delivery",
+  "Buat Lead": "New Lead", "Perbarui tahap": "Update Stage",
+  "Buat Purchase Order": "New Purchase Order", "Penerimaan barang": "Validate Receipt",
+  "Terbitkan invoice untuk delivery": "Create Invoice", "Catat pembayaran pelanggan": "Register Payment",
+  "Buat Vendor Bill dari barang diterima": "Create Vendor Bill", "Bayar Vendor Bill": "Register Vendor Payment",
+  "Buka sesi kasir": "Open Session", "Penjualan POS": "New POS Order",
+  "Hold pesanan POS": "Hold Order", "Selesaikan hold · tender lunas": "Validate Payment",
+  "Batalkan hold": "Cancel Hold", "Pelepasan hold kedaluwarsa": "Expire Holds",
+  "Buat Credit Note": "Create Credit Note",
 };
 
 function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRole }) {
@@ -108,7 +101,7 @@ function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRol
       else if (!title.startsWith("Persetujuan selisih ")) roles = ["cashier", "owner"];
       if (!roles.includes(role)) return;
     }
-    const section = { id: `section-${views.length + actions.length}`, title: actionLabels[title] ?? title, content: node };
+    const section = { id: `section-${views.length + actions.length}`, title: odooLabel(actionLabels[title] ?? title), content: node };
     (isAction ? actions : views).push(section);
   });
   add(children);
@@ -173,7 +166,7 @@ function NumberInput({
 }) {
   return (
     <label className="demo-field">
-      <span>{label}</span>
+      <span>{odooLabel(label)}</span>
       <input
         defaultValue={defaultValue}
         min={min}
@@ -189,7 +182,7 @@ function NumberInput({
 function TextInput({ label, name, required = true }: { label: string; name: string; required?: boolean }) {
   return (
     <label className="demo-field">
-      <span>{label}</span>
+      <span>{odooLabel(label)}</span>
       <input name={name} required={required} type="text" />
     </label>
   );
@@ -439,7 +432,7 @@ export async function ModulePage({
             ["Nilai persediaan", totals.inventory_value], ["Unit On Hand", totals.on_hand],
           ].map(([label, amount]) => (
             <article className="metric-card" key={String(label)}>
-              <span>{label}</span><strong>{label === "Unit On Hand" ? Number(amount).toLocaleString("id-ID") : money(Number(amount))}</strong>
+              <span>{odooLabel(label)}</span><strong>{label === "Unit On Hand" ? Number(amount).toLocaleString("id-ID") : money(Number(amount))}</strong>
             </article>
           ))}
         </section>
@@ -511,7 +504,7 @@ export async function ModulePage({
           ])} />
         </Panel>
         <Panel title="Riwayat pembayaran">
-          <DataTable headers={["Nomor", "Dokumen", "Jenis", "Jumlah", "Akun", "Waktu"]} rows={[
+          <DataTable headers={["Reference", "Document", "Type", "Amount", "Account", "Date & Time"]} rows={[
             ...reconciledCustomerPayments.map((item) => [item.number, item.invoice_number, "Pelanggan", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
             ...vendorPayments.data.map((item) => [item.number, item.bill_number, "Pemasok", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
           ]} />

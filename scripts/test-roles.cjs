@@ -12,7 +12,9 @@ const roleModule = new Module("role-policy");
 roleModule._compile(ts.transpileModule(fs.readFileSync("src/lib/roles.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, "role-policy.cjs");
 const { routeAccess } = roleModule.exports;
 const results = [];
-const titles = { "/sales": "Penjualan", "/crm": "Peluang Pelanggan", "/purchase": "Pembelian", "/inventory": "Produk & Stok", "/accounting": "Akuntansi", "/invoicing": "Tagihan & Pembayaran", "/pos": "Kasir", "/returns": "Retur & Credit Note" };
+const termModule = new Module("erp-terminology");
+termModule._compile(ts.transpileModule(fs.readFileSync("src/lib/erp-terminology.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, "erp-terminology.cjs");
+const titles = Object.fromEntries(Object.entries(termModule.exports.moduleTitles).map(([key, value]) => ["/" + key, value]));
 function record(role, check, pass, detail) {
   results.push({ role, check, status: pass ? "PASS" : "FAIL", detail });
   const expectation = detail?.includes("expected=denied") ? " [harus ditolak]" : detail?.includes("expected=allowed") ? " [harus diizinkan]" : "";

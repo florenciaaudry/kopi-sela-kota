@@ -47,7 +47,7 @@ export function DeliveryOrderFields({
         }}
       />
       <label className="demo-field">
-        <span>Kuantitas terkirim</span>
+        <span>Done Quantity</span>
         <input
           name="quantity"
           required
