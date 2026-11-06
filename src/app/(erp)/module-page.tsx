@@ -202,16 +202,31 @@ function money(value: number) {
   return formatRupiah(Number(value));
 }
 
+function dateLabel(value: string | null | undefined, includeTime = false) {
+  if (!value) return "—";
+  const options = {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    ...(includeTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  } satisfies Intl.DateTimeFormatOptions;
+  const formatted = includeTime
+    ? new Date(value).toLocaleString("id-ID", options)
+    : new Date(value).toLocaleDateString("id-ID", options);
+  return formatted + (includeTime ? " WIB" : "");
+}
+
 function option(value: string, label: string): Option {
   return { value, label };
 }
 
 function DataLoadError({ error }: { error: string }) {
+  console.error("Module data load failed:", error);
   return (
     <section className="notice notice-error" role="alert">
-      <strong>Data Supabase gagal dimuat.</strong>
-      <p>{error}</p>
-      <p>Periksa status migrasi dan kebijakan akses; aplikasi tidak mengganti error dengan data demo.</p>
+      <strong>Data tidak dapat dimuat.</strong>
+      <p>Coba muat ulang. Jika masalah berlanjut, hubungi administrator.</p>
     </section>
   );
 }
@@ -358,44 +373,102 @@ export async function ModulePage({
   }
 
   if (module === "purchase") {
-    const [vendors, prices, products, orders, receipts] = await Promise.all([
+    const [vendors, prices, products, orders, receipts, orderLines, receiptLines] = await Promise.all([
       supabase.from("vendors").select("id, name").order("name"),
       supabase.from("vendor_pricelist").select("vendor_id, sku, minimum_quantity, purchase_price").order("sku"),
       supabase.from("products").select("sku, name").order("sku"),
-      supabase.from("purchase_orders").select("number, vendor_id, status, total").order("created_at", { ascending: false }),
+      supabase.from("purchase_orders").select("number, vendor_id, status, order_date, created_at, total").order("created_at", { ascending: false }),
       supabase.from("goods_receipts").select("number, purchase_order_number, received_at").order("received_at", { ascending: false }),
+      supabase.from("purchase_order_lines").select("id, purchase_order_number, sku, quantity, received_quantity, rejected_quantity"),
+      supabase.from("goods_receipt_lines").select("receipt_number, purchase_order_line_id, sku, accepted_quantity, rejected_quantity"),
     ]);
-    const error = vendors.error ?? prices.error ?? products.error ?? orders.error ?? receipts.error;
+    const error = vendors.error ?? prices.error ?? products.error ?? orders.error ?? receipts.error ?? orderLines.error ?? receiptLines.error;
     if (error) return <DataLoadError error={error.message} />;
-    if (!vendors.data || !prices.data || !products.data || !orders.data || !receipts.data) {
+    if (!vendors.data || !prices.data || !products.data || !orders.data || !receipts.data || !orderLines.data || !receiptLines.data) {
       return <DataLoadError error="Database mengembalikan data Purchase yang tidak lengkap." />;
     }
     const vendorNames = new Map(vendors.data.map((item) => [item.id, item.name]));
     const productNames = new Map(products.data.map((item) => [item.sku, item.name]));
+    const orderLineById = new Map(orderLines.data.map((item) => [item.id, item]));
+    const orderLineTotals = new Map<string, { ordered: number; accepted: number; rejected: number }>();
+    for (const line of orderLines.data) {
+      const current = orderLineTotals.get(line.purchase_order_number) ?? { ordered: 0, accepted: 0, rejected: 0 };
+      current.ordered += line.quantity;
+      current.accepted += line.received_quantity;
+      current.rejected += line.rejected_quantity;
+      orderLineTotals.set(line.purchase_order_number, current);
+    }
+    const receiptAudit = profile.role === "owner" && receipts.data.length > 0
+      ? await supabase.from("audit_events")
+        .select("actor_label, action, document_number, details, occurred_at")
+        .eq("document_type", "goods_receipt")
+        .in("document_number", receipts.data.map((item) => item.number))
+        .order("occurred_at", { ascending: false })
+      : null;
+    if (receiptAudit?.error) return <DataLoadError error={receiptAudit.error.message} />;
+    const receiptLinesByNumber = new Map<string, string[]>();
+    for (const line of receiptLines.data) {
+      const orderLine = orderLineById.get(line.purchase_order_line_id);
+      const productName = productNames.get(line.sku) ?? line.sku;
+      const summary = `${line.sku} · ${productName}: ${line.accepted_quantity} diterima, ${line.rejected_quantity} ditolak`;
+      const current = receiptLinesByNumber.get(line.receipt_number) ?? [];
+      current.push(summary);
+      receiptLinesByNumber.set(line.receipt_number, current);
+      if (orderLine?.purchase_order_number !== receipts.data.find((receipt) => receipt.number === line.receipt_number)?.purchase_order_number) {
+        return <DataLoadError error="Detail Goods Receipt tidak cocok dengan Purchase Order asal." />;
+      }
+    }
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
+        <section className="notice notice-info" aria-label="Panduan tugas Purchase">
+          {profile.role === "procurement" ? <><strong>Untuk Procurement:</strong> buat Purchase Order dan pantau jumlah yang masih menunggu. Tanggal order dicatat otomatis; Warehouse mencatat hasil hitung fisik saat barang tiba.</> : null}
+          {profile.role === "warehouse" ? <><strong>Untuk Warehouse:</strong> cocokkan nomor Purchase Order dengan barang fisik. Masukkan jumlah diterima baik dan ditolak sesuai hitungan; waktu penerimaan dicatat otomatis saat kamu posting.</> : null}
+          {profile.role === "owner" ? <><strong>Untuk Owner:</strong> daftar menampilkan tanggal order, waktu penerimaan, serta jumlah diterima/ditolak. Bukti pelaku dan waktu posting tersedia pada Audit Penerimaan.</> : null}
+        </section>
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
             <PurchaseOrderFields vendors={vendors.data} prices={prices.data} products={products.data} />
           </Form>
+          <p className="muted-copy">Tanggal order mengikuti tanggal server saat Purchase Order disimpan; jangan isi tanggal perkiraan sebagai tanggal transaksi.</p>
         </Panel>
         <Panel title="Penerimaan barang">
           <Form action={receivePurchaseOrderAction} submitLabel="Posting penerimaan">
-            <Select label="Purchase Order" name="purchase_order_number" options={orders.data.filter((item) => ["Purchase Order", "Partial Receipt"].includes(item.status)).map((item) => option(item.number, `${item.number} · ${item.status}`))} />
+            <Select label="Purchase Order" name="purchase_order_number" options={orders.data.filter((item) => ["Purchase Order", "Partial Receipt"].includes(item.status)).map((item) => {
+              const totals = orderLineTotals.get(item.number) ?? { ordered: 0, accepted: 0, rejected: 0 };
+              return option(item.number, `${item.number} · order ${dateLabel(item.order_date)} · sisa ${totals.ordered - totals.accepted - totals.rejected}`);
+            })} />
             <NumberInput label="Diterima baik" name="accepted_quantity" min={0} defaultValue={0} />
             <NumberInput label="Ditolak" name="rejected_quantity" min={0} defaultValue={0} />
           </Form>
+          <p className="muted-copy">Tanggal dan waktu aktual dicatat oleh server ketika penerimaan diposting. Penerimaan tidak boleh dicatat sebelum barang dihitung.</p>
         </Panel>
         <Panel title="Purchase Order">
-          <DataTable headers={["Nomor", "Pemasok", "Status", "Total"]} rows={orders.data.map((item) => [
-            item.number, `${item.vendor_id} · ${vendorNames.get(item.vendor_id) ?? "—"}`, item.status, money(item.total),
-          ])} />
+          <DataTable headers={["Nomor", "Pemasok", "Tanggal Order", "Status", "Dipesan", "Diterima", "Ditolak", "Sisa", "Total"]} rows={orders.data.map((item) => {
+            const totals = orderLineTotals.get(item.number) ?? { ordered: 0, accepted: 0, rejected: 0 };
+            return [
+              item.number, `${item.vendor_id} · ${vendorNames.get(item.vendor_id) ?? "—"}`, dateLabel(item.order_date), item.status,
+              totals.ordered, totals.accepted, totals.rejected, Math.max(0, totals.ordered - totals.accepted - totals.rejected), money(item.total),
+            ];
+          })} />
         </Panel>
         <Panel title="Goods Receipt">
-          <DataTable headers={["Nomor", "Purchase Order", "Diterima"]} rows={receipts.data.map((item) => [item.number, item.purchase_order_number, new Date(item.received_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
-          <p className="muted-copy">Produk referensi: {products.data.map((item) => `${item.sku} ${productNames.get(item.sku) ?? ""}`).join(" · ")}</p>
+          <DataTable headers={["Nomor", "Purchase Order", "Tanggal Order", "Tanggal Diterima", "Rincian hitung"]} rows={receipts.data.map((item) => [
+            item.number, item.purchase_order_number,
+            dateLabel(orders.data.find((order) => order.number === item.purchase_order_number)?.order_date),
+            dateLabel(item.received_at, true),
+            receiptLinesByNumber.get(item.number)?.join(" · ") ?? "Rincian penerimaan belum tersedia",
+          ])} />
         </Panel>
+        {profile.role === "owner" && receiptAudit?.data?.length ? <Panel title="Audit Penerimaan">
+          <DataTable headers={["Goods Receipt", "Tindakan", "Dicatat oleh", "Waktu bukti", "Rincian"]} rows={receiptAudit.data.map((event) => {
+            const details = event.details;
+            return [
+              event.document_number, event.action, event.actor_label, dateLabel(event.occurred_at, true),
+              `PO ${String(details.purchase_order ?? "—")} · ${String(details.accepted ?? "—")} diterima · ${String(details.rejected ?? "—")} ditolak`,
+            ];
+          })} />
+        </Panel> : null}
       </ModuleWorkspace>
     );
   }
@@ -516,7 +589,7 @@ export async function ModulePage({
   if (module === "pos") {
     const [configuration, sessions, products, customers, methods, receiptResult, holds, holdLines, receiptLines, tenders] = await Promise.all([
       supabase.from("pos_configuration").select("location_code, opening_cash").eq("id", "POS-TBT").single(),
-      supabase.from("pos_sessions").select("number, cashier_label, status, opening_cash, expected_cash, counted_cash, cash_difference, variance_reason").order("opened_at", { ascending: false }),
+      supabase.from("pos_sessions").select("number, cashier_label, status, opening_cash, opened_at, closed_at, approved_by, expected_cash, counted_cash, cash_difference, variance_reason").order("opened_at", { ascending: false }),
       supabase.from("products").select("sku, name, sales_price").order("sku"),
       supabase.from("customers").select("id, name, credit_limit").order("id"),
       supabase.from("pos_payment_methods").select("id, name").order("id"),
@@ -538,8 +611,18 @@ export async function ModulePage({
     } else if (receiptResult.error) {
       return <DataLoadError error={receiptResult.error.message} />;
     }
+    if (sessions.error) return <DataLoadError error={sessions.error.message} />;
+    const sessionRows = sessions.data;
+    if (!sessionRows) return <DataLoadError error="Database mengembalikan daftar sesi POS kosong atau tidak lengkap." />;
+    const approvalAudit = profile.role === "owner" && sessionRows.length > 0
+      ? await supabase.from("audit_events")
+        .select("actor_label, action, document_number, details, occurred_at")
+        .eq("document_type", "pos_session")
+        .in("document_number", sessionRows.map((item) => item.number))
+        .order("occurred_at", { ascending: false })
+      : null;
     const error = configuration.error ?? sessions.error ?? products.error ?? customers.error ?? methods.error ??
-      holds.error ?? holdLines.error ?? receiptLines.error ?? tenders.error;
+      holds.error ?? holdLines.error ?? receiptLines.error ?? tenders.error ?? approvalAudit?.error;
     if (error) return <DataLoadError error={error.message} />;
     if (!configuration.data || !sessions.data || !products.data || !customers.data || !methods.data || !receipts ||
         !holds.data || !holdLines.data || !receiptLines.data || !tenders.data) {
@@ -566,12 +649,29 @@ export async function ModulePage({
       current.push(`${tender.payment_method} ${money(tender.amount)}`);
       receiptTenderLabels.set(tender.receipt_number, current);
     }
+    const sessionEvents = new Map<string, { actor_label: string; action: string; document_number: string; details: Record<string, unknown>; occurred_at: string }[]>();
+    for (const event of approvalAudit?.data ?? []) {
+      const current = sessionEvents.get(event.document_number) ?? [];
+      current.push(event);
+      sessionEvents.set(event.document_number, current);
+    }
+    const approvalEvents = new Map<string, { actor_label: string; occurred_at: string }>();
+    for (const [number, events] of sessionEvents) {
+      const approved = events.find((event) => event.action === "approve_variance")
+        ?? (reconciledPos.sessions.find((item) => item.number === number)?.approved_by
+          ? events.find((event) => event.action === "close")
+          : undefined);
+      if (approved) approvalEvents.set(number, approved);
+    }
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
+        <section className="notice notice-info" aria-label="Panduan tugas POS">
+          {profile.role === "cashier" ? <>Saat tutup sesi, masukkan hasil hitung kas dan jelaskan setiap selisih. Jika perlu persetujuan Owner, sesi tetap berstatus menunggu sampai keputusan tercatat.</> : <>Sebelum menyetujui selisih kas, periksa alasan kasir dan angka harapan/hitungan. Setiap persetujuan menyimpan pelaku, waktu, dan nomor sesi pada Audit Trail.</>}
+        </section>
         {customerLinkMigrationPending ? (
           <section className="notice notice-warning" role="status">
-            Skema database belum menerapkan migrasi POS pelanggan 005. Penjualan tanpa pelanggan tetap tersedia; untuk menautkan pelanggan pada struk, jalankan migrasi `202611050005_pos_customer_link.sql` setelah migrasi 004. Data historis tidak diubah.
+            Pencatatan pelanggan pada struk sedang tidak tersedia. Hubungi administrator untuk mengaktifkannya. Penjualan untuk pembeli umum tetap dapat dilakukan.
           </section>
         ) : null}
         <Panel title="Buka sesi kasir">
@@ -624,18 +724,38 @@ export async function ModulePage({
         ) : null}
         {reconciledPos.sessions.filter((item) => item.status === "Pending Approval").map((item) => (
           <Panel key={item.number} title={`Persetujuan selisih ${item.number}`}>
-            <p>Harapan {money(item.expected_cash ?? 0)} · Hitung {money(item.counted_cash ?? 0)} · Selisih {money(item.cash_difference ?? 0)} · {item.variance_reason}</p>
+            <p>Kasir {item.cashier_label} · permintaan dicatat {dateLabel(sessionEvents.get(item.number)?.find((event) => event.action === "close")?.occurred_at, true)} · Harapan {money(item.expected_cash ?? 0)} · Hitung {money(item.counted_cash ?? 0)} · Selisih {money(item.cash_difference ?? 0)}.</p>
+            <p>Alasan kasir: {item.variance_reason || "Belum ada alasan tercatat."}</p>
             <Form action={approvePosVarianceAction} submitLabel="Setujui dan tutup" idempotent={false}>
               <input name="session_number" type="hidden" value={item.number} />
             </Form>
           </Panel>
         ))}
         <Panel title="Sesi POS">
-          <DataTable headers={["Sesi", "Kasir", "Status", "Kas awal", "Harapan", "Hitung", "Selisih"]} rows={reconciledPos.sessions.map((item) => [
-            item.number, item.cashier_label, item.status, money(item.opening_cash), money(item.expected_cash ?? item.opening_cash),
-            item.counted_cash === null ? "—" : money(item.counted_cash), item.cash_difference === null ? "—" : money(item.cash_difference),
-          ])} />
+          <DataTable headers={["Sesi", "Kasir", "Status", "Dibuka", "Ditutup", "Kas awal", "Harapan", "Hitung", "Selisih", "Alasan", "Bukti persetujuan"]} rows={reconciledPos.sessions.map((item) => {
+            const approval = approvalEvents.get(item.number);
+            const approver = approval?.actor_label ?? (item.approved_by ? `Owner · ${item.approved_by}` : item.status === "Pending Approval" ? "Menunggu Owner" : item.cash_difference === 0 ? "Tidak perlu (selisih nol)" : "—");
+            const approvalTime = approval ? dateLabel(approval.occurred_at, true) : item.approved_by ? dateLabel(item.closed_at, true) : "—";
+            return [
+              item.number, item.cashier_label, item.status, dateLabel(item.opened_at, true), dateLabel(item.closed_at, true),
+              money(item.opening_cash), money(item.expected_cash ?? item.opening_cash),
+              item.counted_cash === null ? "—" : money(item.counted_cash),
+              item.cash_difference === null ? "—" : money(item.cash_difference),
+              item.variance_reason ?? "—", item.approved_by ? `${approver} · ${approvalTime}` : approver,
+            ];
+          })} />
         </Panel>
+        {profile.role === "owner" ? <Panel title="Bukti persetujuan selisih kas">
+          <DataTable headers={["Sesi", "Persetujuan", "Disahkan oleh", "Waktu bukti", "Selisih", "Alasan kasir"]} rows={reconciledPos.sessions.filter((item) => item.approved_by).map((item) => {
+            const approval = approvalEvents.get(item.number);
+            return [
+              item.number, approval ? "Disetujui" : "Data persetujuan belum ditemukan",
+              approval?.actor_label ?? `Owner · ${item.approved_by}`,
+              approval ? dateLabel(approval.occurred_at, true) : dateLabel(item.closed_at, true),
+              item.cash_difference === null ? "—" : money(item.cash_difference), item.variance_reason ?? "—",
+            ];
+          })} />
+        </Panel> : null}
         <Panel title="Hold dan baris pesanan">
           <DataTable headers={["Hold", "Sesi", "Status", "Kedaluwarsa", "Baris barang", "Total"]} rows={reconciledPos.holds.map((item) => [
             item.number, item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
@@ -665,7 +785,7 @@ export async function ModulePage({
     if (error) return <DataLoadError error={error.message} />;
     return <ModuleWorkspace role={profile.role}>
       <PageTitle module={module} />
-      <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Form pencatatan inspeksi terpisah masih dalam pengembangan.</section>
+      <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Pencatatan hasil inspeksi belum tersedia di halaman ini.</section>
       <Panel title="Referensi pengiriman untuk pemeriksaan retur">
         <DataTable headers={["Delivery", "Sales Order", "Produk terkirim", "Waktu"]} rows={(deliveries.data ?? []).map((delivery) => [delivery.number, delivery.sales_order_number, (deliveryLines.data ?? []).filter((line) => line.delivery_number === delivery.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · "), new Date(delivery.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
       </Panel>

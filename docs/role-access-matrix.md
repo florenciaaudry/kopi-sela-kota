@@ -11,9 +11,11 @@
 | Cashier | POS, detail struk | Sesi, penjualan/hold/tender, struk, permintaan penutupan |
 | Owner | Seluruh tujuh aplikasi dan kemampuan terkait | Aksi operasional serta persetujuan selisih kas |
 
+Beranda menampilkan pintasan tugas sesuai role: CRM/Sales untuk Sales; Delivery, penerimaan dan stok untuk Warehouse; Purchase Order/stok untuk Procurement; tagihan, jurnal dan retur untuk Finance; POS dan tutup sesi untuk Cashier; serta persetujuan kas, audit dan ringkasan operasional untuk Owner. Pintasan hanya mengarahkan ke modul yang diizinkan, bukan melewati pemeriksaan akses server. Workflow inspeksi retur Warehouse belum tersedia sehingga tidak ditampilkan sebagai aksi yang bisa dilakukan.
+
 Jurnal/akun hanya Finance dan Owner. Biaya standar hanya Warehouse, Procurement, Finance, Owner. Semua role ditolak mengubah profil langsung melalui Data API; tidak ada pendaftaran publik pada UI. Filter menu bukan pengganti validasi server dan RLS.
 
-Warehouse tidak mem-posting Credit Note atau membaca saldo invoice pada layar retur. Tahap inspeksi retur terpisah belum lengkap; layar Warehouse menampilkan referensi delivery dan memberi penjelasan yang jujur. Finance/Owner mem-posting Credit Note. Migrasi 006 memperketat guard RPC yang sebelumnya masih memperbolehkan Sales. Jangan menyebutnya sudah diterapkan sebelum ada hasil database.
+Warehouse tidak mem-posting Credit Note atau membaca saldo invoice pada layar retur. Tahap inspeksi retur terpisah belum lengkap; layar Warehouse menampilkan referensi delivery dan memberi penjelasan yang jujur. Finance/Owner mem-posting Credit Note. Migrasi 006 memperketat guard RPC yang sebelumnya masih memperbolehkan Sales; pengguna mengonfirmasi penerapan dan query pasca-migrasi memverifikasi guard Finance/Owner.
 
 ## Snapshot awal 6 November 2026 (historis; digantikan hasil di bawah)
 

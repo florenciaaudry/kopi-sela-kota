@@ -2,7 +2,20 @@
 
 T-01–T-36 belum dijalankan penuh sesuai fixture PDF. PDF sumber asli terbaca 43 halaman; matriks `docs/requirements-traceability.md` mencatat halaman, implementasi, tes, status, dan gap. Pada 5 Nov 2026 login Owner/dashboard serta satu siklus Sales/Purchase sampai lunas berhasil diuji live; transaksi itu persisten di database bersama. Pada 6 Nov pengguna mengonfirmasi migrasi 004–005 berhasil diterapkan; query halaman POS terautentikasi membaca kolom customer pada receipt tanpa error skema. Tidak ada seed, migrasi, atau transaksi POS baru yang dijalankan dalam pemeriksaan ini.
 
-## Verifikasi lanjutan POS dan visual — 6 Nov 2026
+## Hasil terbaru yang menggantikan snapshot awal — 6 Nov 2026
+
+| Pemeriksaan | Hasil aktual | Batas klaim |
+|---|---|---|
+| Migrasi database | 004–006 dan 008–009 diterapkan/dikonfirmasi pada project bersama. Migrasi 007 retired/no-op sebelum deployment dan tidak menulis ulang CP00004 atau jurnal historis. | Jangan menjalankan `setup.sql`, seed, atau bundle 002–009 pada project bersama. |
+| Login/akses role | `docs/role-test-results.json`: 120 PASS, 0 FAIL, termasuk login, profil, identitas tokoh, akses route, RLS, penolakan aksi lintas-role, logout, dan redirect. | Tidak menguji setiap transaksi bisnis lewat browser untuk semua role. |
+| Regresi transaksi | CRM/Sales, pengiriman parsial/berlebih, invoice, partial/overpayment, POS sesi tertutup/tender tidak lengkap/mixed-tender/replay, dan direct BANK sale lulus melalui RPC di transaksi rollback. | Bukan fixture PDF bersih; tidak sama dengan T-01–T-36 penuh. Stok, jumlah sales, dan jurnal tidak berubah setelah rollback. |
+| POS customer link | Selector C01–C06 dan query `pos_receipts.customer_id` lulus baca; migrasi 005 tersedia. | Posting receipt yang terhubung ke customer belum diuji terpisah. Cashier POS sukses end-to-end lewat browser juga belum diuji. |
+| POS hold/receipt detail | Migrasi 008/009 aktif; hold completion/tender dan direct-sale detail memiliki regresi rollback, detail struk dapat dibaca/cetak dari UI. Backfill baris/tender receipt lama diverifikasi terhadap jurnal dengan audit repair. | Expiry tepat waktu pada fixture PDF dan alur browser Cashier masih belum diverifikasi. |
+| UI, build, dan role | Beranda/app directory role-aware, navigasi, CRM Kanban, tabel/search/filter, dialog, Returns, dan mobile memiliki hasil smoke/visual di catatan progres. Build Webpack, typecheck, lint, test kebijakan, dan test keranjang tercatat lulus pada perubahan UI/role terbaru. | Belum inspeksi seluruh state/field wireframe dan belum sertifikasi produksi. |
+| Pemeriksaan ulang workspace | `npm run typecheck`, `npm run lint`, `npm run test:pos-cart`, `npm run test:rupiah-format`, `npm run test:role-policy`, serta `ERP_VERIFY_BUILD=1 npm run build` lulus pada 6 Nov 2026. Output build terpisah di `.next-check`. PDF panduan diekspor, berjumlah 8 halaman, teks dan pengecualian kredensial diperiksa; cover, isi, dan halaman akhir dilihat di browser. | Lulus; dokumentasi/build bukan pengganti tes bisnis PDF. |
+| Fixture PDF | T-01–T-36 belum seluruhnya dijalankan dengan fixture bersih. | Project bersama sudah berisi transaksi uji persisten dan bukan seed awal; gunakan Supabase terisolasi untuk tes berikutnya. |
+
+## Snapshot POS baca/visual — 6 Nov 2026 (tahap sebelum regresi SQL terbaru)
 
 | Pemeriksaan | Hasil aktual | Status |
 |---|---|---|
@@ -35,7 +48,7 @@ T-01–T-36 belum dijalankan penuh sesuai fixture PDF. PDF sumber asli terbaca 4
 | Efek jurnal | Enam jurnal baru seimbang: `JRN/20261105/00001` delivery (HPP/inventory Rp15.000), `00002` invoice (AR Rp33.000 = pendapatan Rp30.000 + PBJT Rp3.000), `00003` customer payment (Bank/AR Rp33.000), `00004` receipt (inventory/GRNI Rp15.000), `00005` vendor bill (GRNI/AP Rp15.000), `00006` vendor payment (AP/Bank Rp15.000). | Lulus baca live |
 | SO untuk C06 COD/limit Rp0 | Percobaan 1 CBW-250 sebagai Sales Order belum dibayar ditolak RPC dengan eksposur Rp33.000 vs limit Rp0; tidak membuat SO. Batas kredit tidak diubah. Jalur langsung lunas adalah POS; C06 tampil pada selector dan skema receipt customer terbaca, tetapi posting receipt customer-linked belum diuji. | Penolakan kredit benar; simpan customer-linked belum diverifikasi |
 | Persistensi setelah refresh | Dashboard tetap menunjukkan saldo akhir; daftar invoice/payment dan vendor bill/payment menampilkan dokumen lunas. | Lulus |
-| Migrasi database | `setup.sql`/seed dan bundle 002–003 dilaporkan pengguna telah dijalankan. Dashboard dan RPC yang dipakai dalam seluruh alur di atas berhasil. Migrasi 004 untuk batas hold maksimum 10 menit disiapkan, tidak dijalankan. Seluruh katalog object/fungsi DB belum diperiksa independen. | Alur inti terverifikasi; migrasi 004 menunggu penerapan |
+| Migrasi database | Snapshot 5 Nov: `setup.sql`/seed dan bundle 002–003 dilaporkan dijalankan; migrasi 004 masih menunggu. Status aktual terbaru 6 Nov ada pada tabel pembaruan di awal dokumen: 004–006/008–009 diterapkan/dikonfirmasi, 007 retired/no-op. | Snapshot historis; status terbaru ada di atas |
 
 Tes live di atas menulis transaksi persisten ke database bersama. Tidak ada seed/reset yang dijalankan.
 
@@ -46,7 +59,7 @@ Tes live di atas menulis transaksi persisten ke database bersama. Tidak ada seed
 | TypeScript dan ESLint setelah perubahan POS pelanggan | `npm run typecheck` dan `npm run lint` lulus setelah menambahkan customer selector, kompatibilitas schema lama, dan RPC wrapper. | Lulus |
 | Production build | `npm run build` lulus; semua route Sales, CRM, Purchase, Inventory, Accounting, Invoicing, POS, dan Returns berhasil dibangun setelah perubahan POS. | Lulus |
 | Migrasi PostgreSQL | Foundation 93 statement, transaksi 122 statement, POS 29 statement, migrasi 004 tiga statement, dan migrasi 005 lima statement berhasil diparse dengan pglast. Parser tidak mengeksekusi PL/pgSQL atau migrasi di database. | Lulus statis |
-| SQL bundles terbaru | `setup.sql` 278 statement dan `apply-transactions.sql` 161 statement berhasil diparse. Bundle incremental mencakup migrasi setelah foundation (002–005), tanpa seed, dan dibungkus transaksi. Perintah generator hanya membentuk file; SQL tidak dijalankan. | Lulus statis |
+| SQL bundles pada snapshot 5 Nov | `setup.sql` 278 statement dan `apply-transactions.sql` 161 statement berhasil diparse saat bundle masih mencakup 002–005. Bundle terbaru kemudian dibangun ulang sampai 009; 007 retired/no-op. | Lulus statis saat snapshot; bundle terbaru tidak boleh dijalankan di DB bersama |
 | Server aplikasi lokal | `GET /login` HTTP 200; `/sales` tanpa sesi HTTP 307 menuju login. Setelah root redirect placeholder dihapus, dashboard `/` berhasil dimuat. | Smoke check lulus |
 | Supabase Auth dan REST | `/auth/v1/settings` HTTP 200. REST `profiles` menolak role anon dengan permission denied (akses memang dibatasi); login Owner kemudian berhasil dan query profil/inventory terautentikasi berhasil. | Koneksi dan pembacaan terautentikasi lulus |
 | Login, profil, dan hak akses Owner | Dashboard menampilkan profil ber-role Owner. Sesudah koreksi UI, tujuh aplikasi yang ditetapkan PDF tampil dalam empat modul fungsional; Retur bukan app terpisah dan Reporting tertaut dari beranda. Query database menunjukkan 15 SKU, 2 lokasi, 480 unit, 10 reserved/470 available, nilai stok Rp4.290.000. | Lulus untuk navigasi/data baca Owner; role lain belum diuji |
@@ -113,10 +126,10 @@ Seluruh pemeriksaan interaksi di atas berjalan dalam localStorage browser dan bu
 | T-26 | Validasi Receipt dan posting Bill dengan idempotency sama tidak menambah jurnal atau mengubah saldo lagi. | Belum diuji | Belum diuji |
 | T-27 | Sesi dibuka sekali dengan Rp100.000 yang sudah termasuk Kas perusahaan Rp500.000; 480 unit; tidak ada penjualan/jurnal baru. | Belum diuji | Belum diuji |
 | T-28 | Kas hitung Rp99.000 vs harapan Rp100.000 menghasilkan selisih -Rp1.000; penutupan menunggu alasan dan persetujuan Owner. | Belum diuji | Belum diuji |
-| T-29 | Hold P00001 sampai 09.10: 2 CBW-250 dan 1 TEH-250 direservasi; total 480 unit, Reserved 13, Available 467; belum ada jurnal. | Belum diuji; UI menetapkan expiry server 10 menit dan pengguna mengonfirmasi migrasi batas DB 004 diterapkan. Tidak ada sesi POS Open di database bersama. | Belum diuji |
-| T-30 | Konfirmasi ulang tidak menambah reservasi; order 19 unit ditolak; pembatalan melepas tepat sekali; hold baru expired 09.16 dan dilepas tepat sekali. | Belum diuji; butuh sesi dan fixture terisolasi untuk menguji idempotency, pelepasan, dan expiry tanpa meninggalkan data uji pada DB bersama. | Belum diuji |
-| T-31 | Cash Rp39.600 + Bank Rp33.000 melunasi Rp72.600 dengan satu struk; COGS Rp32.000; Kas Rp539.600, Bank Rp10.033.000, laci Rp139.600; stok 477/Rp4.258.000. | Belum diuji; checkout hold dan split tender tidak ditransaksikan, dan hold belum memiliki relasi customer. | Belum diuji |
-| T-32 | Tender parsial tidak mengubah saldo/jurnal/stok/struk lunas; pelunasan dan retry menghasilkan satu transaksi; invoice kedua ditolak. | Belum diuji; UI hanya menyelesaikan total tender Cash/Bank penuh; tidak ada sesi POS aktif di database untuk uji. | Belum diuji |
+| T-29 | Hold P00001 sampai 09.10: 2 CBW-250 dan 1 TEH-250 direservasi; total 480 unit, Reserved 13, Available 467; belum ada jurnal. | RPC hold/completion diuji pada regresi rollback, tetapi angka fixture, expiry 10 menit tepat, dan pelepasan expiry sesuai T-29 belum diuji. | Fixture belum diuji |
+| T-30 | Konfirmasi ulang tidak menambah reservasi; order 19 unit ditolak; pembatalan melepas tepat sekali; hold baru expired 09.16 dan dilepas tepat sekali. | Replay hold diuji sebagian dalam regresi rollback; fixture jumlah/expiry/pembatalan tepat waktu dan jam expiry belum diuji. | Fixture belum diuji |
+| T-31 | Cash Rp39.600 + Bank Rp33.000 melunasi Rp72.600 dengan satu struk; COGS Rp32.000; Kas Rp539.600, Bank Rp10.033.000, laci Rp139.600; stok 477/Rp4.258.000. | Mixed-tender POS hold dan jurnal seimbang diuji lewat RPC rollback; nilai, sesi Cashier, refresh, dan saldo fixture T-31 belum diuji end-to-end di browser. | Fixture/browser belum diuji |
+| T-32 | Tender parsial tidak mengubah saldo/jurnal/stok/struk lunas; pelunasan dan retry menghasilkan satu transaksi; invoice kedua ditolak. | Tender tidak lengkap ditolak tanpa efek dan replay diuji melalui rollback; seluruh assertion PDF, retry browser, dan invoice kedua belum diuji. | Fixture/browser belum diuji |
 | T-33 | Retur 2 tersegel: Credit Note Rp66.000; AR Rp418.000; stok 474/Rp4.200.000; net COGS Rp90.000; tanpa refund sebelum invoice dibayar. | Belum diuji | Belum diuji |
 | T-34 | Retur rusak tidak menambah stok; Credit Note idempoten; 7 tambahan ditolak karena melebihi sisa maksimum 6 unit. | Belum diuji | Belum diuji |
 | T-35 | Dashboard periode 20 Okt: net Rp240.000, PBJT Rp24.000, COGS Rp120.000, margin Rp120.000, AR Rp384.000, AP Rp300.000, Bank Rp10.100.000, Kas Rp500.000, stok 472/Rp4.170.000. | Belum diuji | Belum diuji |
@@ -132,8 +145,8 @@ Status tes di tabel tetap **Belum diuji**; daftar ini mencatat fitur yang memang
 |---|---|
 | T-06 | Ubah harga katalog belum memiliki UI/RPC; snapshot harga Sales Order sudah disimpan. |
 | T-10 | Persetujuan Owner untuk diskon di atas 5% belum dibuat; RPC saat ini menolak diskon lebih dari 5%. |
-| T-29–T-30 | RPC hold multi-item (UI maksimum dua SKU), reservasi, idempotency, pembatalan, dan expiry tersedia di migrasi 003. UI/action menetapkan 10 menit; migrasi 004 dilaporkan pengguna sudah diterapkan. Pemicu expiry manual; belum ada scheduler dan enforcement/idempotency belum diuji dengan write DB. |
-| T-31–T-32 | RPC penyelesaian hold dan split tender Cash/Bank tersedia di migrasi 003; validasi mensyaratkan pelunasan dan replay struk idempoten. Migrasi 005 menambah customer link untuk penjualan langsung saja; partial tender dan cart dengan jumlah baris bebas belum tersedia. Belum diuji pada DB. |
+| T-29–T-30 | RPC hold multi-item, reservasi, idempotency, pembatalan, dan expiry tersedia; UI mendukung jumlah baris dinamis dan server menentukan expiry 10 menit (migration 004). Regresi RPC rollback mencakup completion/replay, tetapi expiry/cancel dengan jam fixture belum diuji. Pelepasan expired dipicu RPC/UI; belum ada scheduler otomatis. |
+| T-31–T-32 | RPC completion/split tender Cash/Bank (migration 008) dan detail receipt direct sale (migration 009) diterapkan. Regresi rollback menguji hold mixed tender, tender tidak lengkap, replay, dan direct BANK sale. Tidak ada alur tender parsial persisten; linked customer receipt dan Cashier sukses end-to-end lewat browser belum dibuktikan. Fixture T-31/T-32 belum lulus. |
 | T-35–T-36 | Dashboard berisi saldo persediaan, piutang, utang, Kas, dan Bank; laporan periode, net sales/COGS/margin, drill-down, dan ekspor belum lengkap. |
 | F-21 | Ekspor tetap ditunda sampai kebutuhan Must lulus. |
 
@@ -196,3 +209,22 @@ Uji pada komponen sebenarnya melalui harness sementara dengan data contoh, tanpa
 - Login Sales dan pemilihan dropdown pelanggan di browser berhasil; formulir ditutup tanpa mencatat transaksi. Fitur Quotation, approval diskon >5%, Contacts dan gap PDF lainnya belum lengkap. Status rinci: docs/status-anggota-1.md.
 - Tambahan final: migrasi 009 dipasang. Trigger mengisi detail baris/tender penjualan langsung secara atomik; backfill POSR00001 (Rp38.500) dan POSR00002 (Rp35.200) diverifikasi terhadap jurnal posted dan masing-masing menghasilkan satu audit perbaikan. Tidak mengubah saldo, stok, waktu atau jurnal. HOLD/00001 tetap Expired karena struk lama dijual sesudah expiry.
 - Regresi setelah 009: empat kelompok uji CRM/Sales/payment/POS termasuk direct BANK sale dan replay lulus; error=null, stock_unchanged=true, sales_count_unchanged=true, journal_count_unchanged=true. T-01–T-36 dan fitur PDF yang belum dibuat tetap belum selesai.
+
+## Pemeriksaan pintasan role, tanggal Purchase dan bukti audit — 6 November 2026
+
+- `npm run typecheck`, `npm run lint`, `npm run test:pos-cart`, `npm run test:rupiah-format`, `npm run test:role-policy`, dan production build Webpack terisolasi lulus setelah perubahan UI.
+- Build menghasilkan seluruh route aplikasi. Pemeriksaan HTTP ke server verifikasi berhasil, tetapi membuka `/purchase` dialihkan ke `/login?session=expired`; snapshot browser sebelumnya adalah halaman lama/stale. Karena itu tampilan route Purchase/POS pascaperubahan belum dihitung sebagai verifikasi visual. Build terbaru tersedia pada preview port 3001 (PID 15660) untuk diperiksa setelah login.
+- Tidak mem-posting transaksi, seed, reset, atau menjalankan migrasi pada Supabase bersama. Bukti audit yang ditampilkan berasal dari event yang memang sudah tersedia; tampilan event nyata dan role behavior masih perlu diverifikasi dengan sesi role/fixture uji yang sah.
+- T-01–T-36 tetap belum selesai. Pemeriksaan tipe/lint/build dan tes lokal tidak menggantikan skenario transaksi fixture.
+
+
+## Owner: Users & Permissions dan Audit Log - 6 November 2026
+
+- /settings dan /audit dijaga requireRole([owner]) di server; menu hanya Owner. Jumlah aplikasi tetap tujuh; Settings bukan role baru atau app tambahan.
+- Users menampilkan profil aktual dan matriks akses aplikasi. Ini baca-saja: pembuatan akun, undangan dan perubahan role belum tersedia dari UI. Tidak memakai key admin pada server aplikasi dan tidak memperluas permission database.
+- Audit Log membaca audit_events dengan RLS yang sudah ada: pelaku historis, waktu WIB, tindakan dan referensi. Filter dokumen/tindakan/rentang WIB di server; pagination 50 baris. Detail JSON mentah tidak ditampilkan. Nama actor historis tetap dipertahankan.
+- 132 PASS / 0 FAIL untuk enam role, termasuk dua URL tambahan: hanya Owner diterima; lima role lain ditolak. Ini bukan 36 tes bisnis. Typecheck, lint awal, kebijakan role dan build produksi terisolasi lulus.
+- Browser: 7 profil, 6 role pada matriks, 27 audit events aktual; pencarian PO00002 menghasilkan 1 event; tanggal mulai sesudah akhir ditolak dengan panduan koreksi. Lebar halaman Settings 375 pada viewport 390, tidak melebar ke luar.
+- Pesan error modul menyimpan rincian di log server dan menampilkan pemulihan ringkas kepada pengguna. Peringatan layanan yang tidak tersedia tetap ditampilkan; bukan menyembunyikan masalah.
+- PDF gabungan diperbarui menjadi v1.1, enam halaman, dengan panduan pengguna, cakupan 132 pemeriksaan dan susunan video progres. Layout semua halaman dirender dan diperiksa.
+- Seluruh perubahan agent sebelumnya dipertahankan. Tidak ada migrasi, seed, reset atau posting transaksi usaha pada pekerjaan ini. Gap Quotation/RFQ, approval diskon, inspeksi retur, Reporting lengkap dan T-01-T-36 tetap terbuka.

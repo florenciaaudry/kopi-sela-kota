@@ -40,7 +40,7 @@
 - [x] Percobaan awal gagal pada `RAISE` di `create_sales_order`; persen literal dikoreksi menjadi `%%` dan semua `RAISE` di migrasi 001–003 diaudit.
 - [x] Dashboard Owner berhasil memanggil `get_owner_dashboard`: AR Rp220.000, AP Rp300.000, Kas Rp500.000, Bank Rp10.000.000; stok 15 SKU, 2 lokasi, 480 unit, 10 reserved/470 available, nilai Rp4.290.000.
 - [x] Modul Sales, CRM, Purchase, Inventory, Accounting, Invoicing, POS, dan Returns berhasil dibaca dari Supabase. Data baseline Sales S00001, Lead L00001, PO00001, POS/00001 dan opening journal tampil.
-- [x] Pengguna melaporkan migrasi 002–003 terdahulu dan kini mengonfirmasi migrasi 004–005 berhasil diterapkan. Query POS Owner menampilkan selector C06 dan berhasil memilih kolom `pos_receipts.customer_id` tanpa peringatan skema. Bundle [`apply-transactions.sql`](../supabase/apply-transactions.sql) mencakup 002–005; jangan jalankan bundle penuh, seed, atau migrasi lama di DB bersama.
+- [x] Migrasi 004–006 dan 008–009 pada project bersama telah diterapkan/dikonfirmasi; migrasi 007 dipensiunkan sebelum deployment agar pembayaran/jurnal historis tidak ditulis ulang. Bundle [`apply-transactions.sql`](../supabase/apply-transactions.sql) memuat migrasi lama 002–009 (007 no-op retired); jangan jalankan bundle, seed, atau migrasi lama di DB bersama.
 - [x] Verifikasi ulang login Owner dan dashboard; sesi Owner bertahan setelah reload.
 - [x] Alur Sales live: S00002 → DN00001 → INV00001 → CP00002, C05, 1 CBW-250, invoice Rp33.000 lunas via Bank. Stok turun 1 saat delivery; jurnal delivery, invoice, dan pembayaran seimbang.
 - [x] Alur Purchase live: PO00002 → GR00001 → BILL00001 → VP00002, V01, 1 CBW-250 seharga Rp15.000, lunas via Bank. Receipt menaikkan stok 1; jurnal receipt, bill, dan pembayaran seimbang.
@@ -52,8 +52,8 @@
 
 ## Sisa pekerjaan / batas verifikasi
 
-- Modul POS memiliki RPC hold multi-item, expiry/cancel, split tender, dan penyelesaian; workflow belum diuji lewat transaksi nyata. Pengguna mengonfirmasi migrasi 004/005, dan UI membuktikan schema customer link terbaca. Hold checkout belum mencatat customer. POS/00001 berstatus Opening Control, bukan sesi Open, dan saat pemeriksaan tidak ada hold aktif; checkout belum diuji agar tidak menambah receipt/jurnal permanen ke database bersama. Expiry dihitung server, tetapi pelepasan status kedaluwarsa dipicu manual melalui RPC/UI; tidak ada scheduler otomatis.
-- UI hold POS sekarang mendukung tambah/hapus baris sampai jumlah SKU katalog, estimasi subtotal/PBJT, dan validasi server. Transaksi live keranjang baru belum diuji.
+- POS hold multi-item, split tender, completion, replay, dan direct sale diuji melalui RPC dalam transaksi rollback; stok, jumlah sales, dan jurnal tidak berubah setelah rollback. Uji lengkap T-29–T-32 dengan fixture PDF dan checkout Cashier end-to-end di browser belum selesai. Customer link dapat dibaca di UI; persistence dengan customer terpilih belum diuji terpisah. Expiry 10 menit ditentukan server; pelepasan expired dipicu RPC/UI, tanpa scheduler otomatis.
+- UI hold POS mendukung tambah/hapus baris sampai jumlah SKU katalog, estimasi subtotal/PBJT, serta validasi server atas SKU duplikat dan jumlah tidak valid. Tes validasi keranjang lokal lulus; semua perilaku belum diuji dengan fixture PDF bersih.
 - Kontak pelanggan tidak memiliki halaman Form untuk termin/limit/eksposur; pengaitan pelanggan pada checkout hold belum dibuat.
 - Pengeditan katalog/harga, approval diskon Owner >5–10%, laporan periode/drill-down, smart button/Log Notes, dan fitur ekspor F-21 belum lengkap.
 - Tampilan List/Kanban/Form serta Search/Filters/Group By belum konsisten di semua modul; kebanyakan halaman transaksi masih form dan tabel.
@@ -62,14 +62,14 @@
 
 ## Langkah manual minimum
 
-1. Migrasi 004 dan 005 telah dilaporkan berhasil dijalankan pada Supabase bersama; jangan jalankan ulang. Untuk transaksi POS sukses, gunakan project uji terisolasi atau sepakati dahulu transaksi uji persisten pada database bersama.
+1. Migrasi 004–006 dan 008–009 telah diterapkan/dikonfirmasi pada Supabase bersama; 007 retired/no-op. Jangan menjalankan ulang seed, migrasi, atau bundle transaksi.
 2. Laptop baru mengikuti [Panduan Handoff](./handoff.md). Jangan menjalankan SQL/seed pada project bersama yang sudah dipakai.
-3. Tes role selain Owner memerlukan akun/profil uji role terkait. Sisa tes mutasi sebaiknya dilakukan pada project uji terisolasi agar saldo baseline bersama tidak tercampur.
+3. Login dan akses enam role telah diuji; sisa tes mutasi sebaiknya dilakukan pada project uji terisolasi agar saldo database bersama tidak tercampur.
 
 ## Checkpoint sesi — 6 Nov 2026
 
-- Migrasi 004 (batas hold 10 menit) dan 005 (customer link pada receipt POS direct-sale) telah dikonfirmasi pengguna berhasil dijalankan pada Supabase bersama. Tidak menjalankan ulang seed, migrasi, atau bundle SQL.
-- Verifikasi POS terbaru bersifat baca-saja: Owner membuka POS, selector memuat C01–C06 termasuk C06 ber-limit Rp0, dan query receipt dengan `customer_id` sukses. Tidak ada sesi POS berstatus Open maupun hold; sesi `POS/00001` masih `Opening Control`. Hold, checkout, receipt customer-linked, replay idempotency, stok, dan jurnal POS belum diuji dengan mutasi karena perubahan akan persisten pada database bersama.
+- Migrasi 004–006 dan 008–009 telah diterapkan/dikonfirmasi pada Supabase bersama; 007 retired/no-op. Tidak menjalankan ulang seed atau bundle SQL.
+- UI POS baca-saja menampilkan C01–C06 termasuk C06 ber-limit Rp0, dan query receipt `customer_id` berhasil. Regresi RPC terbaru menguji hold checkout/mixed tender, sesi tertutup, tender tidak lengkap, replay, dan direct BANK sale melalui rollback. Persistence receipt dengan customer terpilih dan alur sukses Cashier di browser belum diuji.
 - Visual desktop telah diperiksa pada dashboard dan delapan route ERP. Pemeriksaan 390px menemukan navigasi aplikasi/workspace yang semula memakai strip scroll horizontal; CSS telah diperbaiki agar semua tautan membungkus beberapa baris. Pengukuran POS setelah perbaikan: lebar dokumen 375px pada viewport 390px, semua tautan terlihat. Halaman login dalam keadaan anonim belum diperiksa.
 - Setelah perubahan navigasi, `npm run typecheck`, `npm run lint`, dan `npm run build` lulus. Server preview lokal tetap aktif pada `http://127.0.0.1:3000` (PID 32336); itu bukan pekerjaan coding yang berjalan.
 - Pengujian T-01–T-36 belum lengkap; gap implementasi pada daftar di atas tetap berlaku. Prioritas lanjutan adalah membuat/menggunakan Supabase uji terisolasi untuk POS dan fixture bersih, kemudian menguji transaksi beserta persistensi stok/jurnal tanpa mengubah project bersama.
@@ -177,3 +177,39 @@
 - Sumber nama terpusat dalam scenario-identities.json; pembuat akun dan pengujian role memakai sumber yang sama.
 - Login, akses dan nama: 120 PASS / 0 FAIL. Lint dan typecheck lulus. Browser Owner menampilkan Nadia Prameswari.
 - Rincian dan batas kesesuaian seluruh PDF: docs/scenario-identities.md. Seluruh Must dan T-01–T-36 belum dinyatakan selesai.
+
+## Panduan pengguna untuk demo/klien — 6 November 2026
+
+- Dibuat satu dokumen gabungan [Panduan Penggunaan dan Hasil Verifikasi (PDF)](./Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf), berisi navigasi tujuh aplikasi/empat kelompok, batas akses enam role, alur yang tersedia, instruksi aman, hasil uji, status migrasi, dan gap yang tersisa.
+- Panduan menandai prototipe belum lengkap/siap produksi; secara eksplisit membedakan 120 pemeriksaan akses role, regresi RPC rollback, smoke/visual browser, dan T-01–T-36 yang belum lulus fixture penuh.
+- File PDF diekspor dengan Microsoft Edge dan diperiksa jumlah halaman serta ekstraksi teks; layout cover, isi, dan halaman akhir juga diperiksa visual. Tidak menyertakan kredensial.
+- Pemeriksaan teknis lokal pada workspace ini: `npm run typecheck`, `npm run lint`, `npm run test:pos-cart`, `npm run test:rupiah-format`, `npm run test:role-policy`, dan production build Webpack lulus. Build menggunakan `ERP_VERIFY_BUILD=1` sehingga output berada di `.next-check` dan tidak menimpa cache preview.
+- Preview Next.js saat penutupan pemeriksaan merespons HTTP 200 di `http://127.0.0.1:3000` (PID 43016); proses tersebut hanya server preview, bukan agent coding.
+
+## Penyelarasan app switcher bergaya ERP — 6 November 2026
+
+- Tindak lanjut atas masukan bahwa tampilan belum cukup terasa seperti Odoo: daftar aplikasi pada sidebar kini langsung terbuka di desktop, tanpa pemilih aplikasi bertingkat.
+- Pada viewport kecil, menu hamburger di bawah header diganti app switcher grid di bar atas; pilihan tetap mengikuti role dan ditutup setelah navigasi.
+- Build produksi terisolasi, typecheck, lint, serta pemeriksaan visual browser untuk Beranda, menu aplikasi dan list Sales lulus. Sales masih menampilkan tab dokumen, pencarian, Filters & Group By, status, dan tabel.
+- Perubahan ini memperjelas pola app switcher/navigasi; bukan penyalinan visual Odoo dan bukan audit visual lengkap semua layar/state. Fitur PDF yang belum lengkap dan T-01–T-36 tetap belum selesai.
+
+## Alur sesuai role, tanggal dokumen, dan bukti pengesahan — 6 November 2026
+
+- Beranda menambahkan pintasan tugas berbasis role untuk Sales, Warehouse, Procurement, Finance, Cashier, dan Owner. Link tetap hanya menuju modul yang sudah diizinkan; inspeksi retur Warehouse yang belum dibuat tidak ditampilkan sebagai aksi.
+- Purchase Order kini menampilkan tanggal order server, jumlah dipesan/diterima/ditolak/sisa. Goods Receipt menampilkan tanggal order asal, waktu diterima WIB dan rincian aktual per baris.
+- Owner mendapat Audit Penerimaan dengan pelaku, waktu, PO asal serta jumlah accepted/rejected dari audit_events. Tidak ada input tanggal transaksi manual; receipt time tetap ditetapkan server ketika diposting.
+- POS menampilkan waktu sesi, alasan selisih, status persetujuan, pengesah dan waktu bukti audit untuk Owner; panel approval menyertakan alasan serta waktu permintaan kasir. Pembuktian lewat alur browser dan data pada database bersama belum dilakukan; tidak ada transaksi bisnis atau migrasi dijalankan.
+- Pekerjaan ini belum membuat workflow approval PO/RFQ, pengunggahan foto/berkas bukti, catatan alasan Owner saat menyetujui, atau workflow inspeksi retur. Jangan menyatakan fitur-fitur tersebut tersedia.
+- Preview build terbaru tersedia di `http://127.0.0.1:3001` (PID 15660); route Purchase meminta login karena sesi browser kedaluwarsa. Preview lama port 3000 juga tetap aktif.
+
+
+## Owner: Users & Permissions dan Audit Log - 6 November 2026
+
+- /settings dan /audit dijaga requireRole([owner]) di server; menu hanya Owner. Jumlah aplikasi tetap tujuh; Settings bukan role baru atau app tambahan.
+- Users menampilkan profil aktual dan matriks akses aplikasi. Ini baca-saja: pembuatan akun, undangan dan perubahan role belum tersedia dari UI. Tidak memakai key admin pada server aplikasi dan tidak memperluas permission database.
+- Audit Log membaca audit_events dengan RLS yang sudah ada: pelaku historis, waktu WIB, tindakan dan referensi. Filter dokumen/tindakan/rentang WIB di server; pagination 50 baris. Detail JSON mentah tidak ditampilkan. Nama actor historis tetap dipertahankan.
+- 132 PASS / 0 FAIL untuk enam role, termasuk dua URL tambahan: hanya Owner diterima; lima role lain ditolak. Ini bukan 36 tes bisnis. Typecheck, lint awal, kebijakan role dan build produksi terisolasi lulus.
+- Browser: 7 profil, 6 role pada matriks, 27 audit events aktual; pencarian PO00002 menghasilkan 1 event; tanggal mulai sesudah akhir ditolak dengan panduan koreksi. Lebar halaman Settings 375 pada viewport 390, tidak melebar ke luar.
+- Pesan error modul menyimpan rincian di log server dan menampilkan pemulihan ringkas kepada pengguna. Peringatan layanan yang tidak tersedia tetap ditampilkan; bukan menyembunyikan masalah.
+- PDF gabungan diperbarui menjadi v1.1, enam halaman, dengan panduan pengguna, cakupan 132 pemeriksaan dan susunan video progres. Layout semua halaman dirender dan diperiksa.
+- Seluruh perubahan agent sebelumnya dipertahankan. Tidak ada migrasi, seed, reset atau posting transaksi usaha pada pekerjaan ini. Gap Quotation/RFQ, approval diskon, inspeksi retur, Reporting lengkap dan T-01-T-36 tetap terbuka.

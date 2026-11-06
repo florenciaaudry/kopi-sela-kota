@@ -4,7 +4,7 @@ Pondasi aplikasi ERP pembelajaran untuk Sales/CRM, Purchase/Inventory, Accountin
 
 ## Status
 
-Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran sudah diverifikasi terhadap database bersama; efek stok dan jurnal dicatat di [hasil pengujian](./docs/test-results.md). Aplikasi **belum dinyatakan lengkap**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md) dan [panduan handoff](./docs/handoff.md).
+Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran pernah diverifikasi live. Tes login/akses enam role mencatat 120 PASS/0 FAIL; regresi transaksi RPC diuji dengan rollback. Aplikasi **belum dinyatakan lengkap atau siap produksi**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md), [panduan handoff](./docs/handoff.md), dan [panduan pengguna + hasil verifikasi PDF](./docs/Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf).
 
 ## Stack sasaran
 
@@ -33,6 +33,7 @@ Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan 
 - [Defect Log](./docs/defect-log.md)
 - [AI disclosure (draft)](./docs/ai-disclosure.md)
 - [Progress](./docs/PROGRESS.md)
+- [Panduan Penggunaan dan Hasil Verifikasi (PDF)](./docs/Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf)
 - [Supabase setup checklist](./docs/supabase-setup.md)
 - [Panduan handoff dan laptop baru](./docs/handoff.md)
 - [Role Assignment Sheet (draft)](./docs/role-assignment.md)
