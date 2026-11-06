@@ -6,14 +6,15 @@ import { AppIcon, appDescriptions } from "./app-icon";
 import { NavigationLink } from "./navigation-link";
 import { WorkspaceBreadcrumb } from "./workspace-breadcrumb";
 import { MobileNavigation } from "./mobile-navigation";
+import { ModuleNavigation } from "./module-navigation";
 import { signOutAction } from "./actions";
 
 export function WorkspaceShell({ children, fullName, role, demo = false }: { children: ReactNode; fullName: string; role: AppRole; demo?: boolean }) {
   const apps = applicationAccess.filter(app => demo || app.roles.includes(role));
   const navigation = <>
     <NavigationLink className="ksk-nav-link" href="/"><AppIcon name="home" /><span>Beranda</span></NavigationLink>
-    <p className="ksk-nav-label">APLIKASI</p>
-    {apps.map(app => app.href ? <NavigationLink className="ksk-nav-link" key={app.name} href={app.href}><AppIcon name={app.name} /><span>{appDescriptions[app.name].label}<small>{app.name}</small></span></NavigationLink> : null)}
+    <ModuleNavigation><p className="ksk-nav-label">APLIKASI</p>
+    {apps.map(app => app.href ? <NavigationLink className="ksk-nav-link" key={app.name} href={app.href}><AppIcon name={app.name} /><span>{appDescriptions[app.name].label}<small>{app.name}</small></span></NavigationLink> : null)}</ModuleNavigation>
     {demo || ["warehouse", "finance", "owner"].includes(role) ? <><p className="ksk-nav-label">MENU LAINNYA</p><NavigationLink className="ksk-nav-link" href="/returns"><AppIcon name="returns" /><span>Retur & pemeriksaan</span></NavigationLink></> : null}
     {demo || ["finance", "owner"].includes(role) ? <NavigationLink className="ksk-nav-link" href="/#reporting"><AppIcon name="Accounting" /><span>Ringkasan keuangan</span></NavigationLink> : null}
   </>;
