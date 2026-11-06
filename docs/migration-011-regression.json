@@ -1,0 +1,17 @@
+{
+  "error": null,
+  "scope": "Current-data regression; not full PDF fixtures or UI test",
+  "checks": [
+    "PASS CRM Qualified / Lost reason rejection and persistence",
+    "PASS zero credit limit rejects unpaid SO",
+    "PASS partial invoice keeps remaining delivery open / second delivery and second invoice succeed",
+    "PASS SO replay / undelivered invoice rejection / partial delivery / over delivery rejection / invoice 33000 / partial payment 10000 remaining 23000 / payment replay / overpayment rejection",
+    "PASS incomplete tender no stock/receipt / closed session rejection / mixed tender 6600 / cash drawer +3300 only / stock -1 / Completed hold / replay no duplicate / changed replay rejected / balanced POS journal",
+    "PASS direct MIXED rejected before posting; split checkout remains supported",
+    "PASS direct BANK sale real line/tender and replay without duplicates"
+  ],
+  "passed": true,
+  "sqlstate": null,
+  "stock_unchanged": true,
+  "document_counts_unchanged": true
+}

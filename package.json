@@ -14,7 +14,13 @@
     "roles:setup": "node scripts/setup-role-accounts.cjs",
     "roles:complete": "node scripts/setup-role-accounts.cjs && node scripts/test-roles.cjs",
     "test:roles": "node scripts/test-roles.cjs",
-    "test:role-policy": "node scripts/test-role-policy.cjs"
+    "test:role-policy": "node scripts/test-role-policy.cjs",
+    "test:reporting": "node scripts/test-financial-report.cjs",
+    "video:preflight": "node scripts/rehearse-video.cjs",
+    "test:receipt": "node scripts/test-receipt-integrity.cjs",
+    "verify:video": "node scripts/verify-video-ui.cjs",
+    "verify:video:pos": "node scripts/verify-video-pos.cjs",
+    "verify:video:hold": "node scripts/verify-video-hold.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

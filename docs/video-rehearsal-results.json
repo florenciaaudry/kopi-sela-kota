@@ -1,0 +1,130 @@
+{
+  "prefix": "video-rehearsal-20261106-v1",
+  "references": {
+    "sales": "S00007",
+    "delivery": "DN00007",
+    "invoice": "INV00013",
+    "customer_payment": "CP00014",
+    "purchase": "PO00003",
+    "goods_receipt": "GR00002",
+    "vendor_bill": "BILL00003",
+    "vendor_payment": "VP00004",
+    "session": "POS/00004",
+    "hold": "HOLD/00006",
+    "mixed": "POSR00008",
+    "direct": "POSR00009"
+  },
+  "scope": "Persistent non-production QA rehearsal; not clean PDF T-01-T-36 fixtures.",
+  "checks": [
+    {
+      "check": "real login sales",
+      "status": "PASS"
+    },
+    {
+      "check": "real login warehouse",
+      "status": "PASS"
+    },
+    {
+      "check": "real login procurement",
+      "status": "PASS"
+    },
+    {
+      "check": "real login finance",
+      "status": "PASS"
+    },
+    {
+      "check": "real login cashier",
+      "status": "PASS"
+    },
+    {
+      "check": "real login owner",
+      "status": "PASS"
+    },
+    {
+      "check": "PDF unit sales prices",
+      "status": "PASS"
+    },
+    {
+      "check": "Sales invoice 33000 fully paid; source SO linked",
+      "status": "PASS"
+    },
+    {
+      "check": "Purchase bill 15000 fully paid; source PO linked",
+      "status": "PASS"
+    },
+    {
+      "check": "POS two receipts each 6600 with PBJT 600",
+      "status": "PASS"
+    },
+    {
+      "check": "COD customer C06 linked to direct receipt",
+      "status": "PASS"
+    },
+    {
+      "check": "Mixed receipt has Cash 3300 and Bank 3300 only",
+      "status": "PASS"
+    },
+    {
+      "check": "Hold completed",
+      "status": "PASS"
+    },
+    {
+      "check": "Only cash tender increases drawer",
+      "status": "PASS"
+    },
+    {
+      "check": "Cashier session closed with zero variance",
+      "status": "PASS"
+    },
+    {
+      "check": "Eight source documents each posted exactly once",
+      "status": "PASS"
+    },
+    {
+      "check": "All eight journals balanced",
+      "status": "PASS"
+    },
+    {
+      "check": "Audit actors match actual operational roles",
+      "status": "PASS"
+    },
+    {
+      "check": "Company AR/AP unchanged after paid flows",
+      "status": "PASS"
+    },
+    {
+      "check": "Bank delta 27900; Cash delta 3300",
+      "status": "PASS"
+    },
+    {
+      "check": "Company stock minus 2; inventory value minus 4000",
+      "status": "PASS"
+    }
+  ],
+  "opening_cash": 100000,
+  "before": {
+    "bank": 10018330,
+    "cash": 573700,
+    "on_hand": 461,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4109000
+  },
+  "started_at": "2026-11-06T16:42:31.162Z",
+  "after": {
+    "bank": 10046230,
+    "cash": 577000,
+    "on_hand": 459,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4105000
+  },
+  "completed_at": "2026-11-06T16:42:36.583Z",
+  "status": "PASS"
+}

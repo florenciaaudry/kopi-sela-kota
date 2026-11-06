@@ -44,7 +44,7 @@ import { DemoWorkspace, type DemoModule } from "./demo-workspace";
 
 type Module = Exclude<DemoModule, "dashboard" | "inventory">;
 type Option = { value: string; label: string };
-type Message = { error?: string; success?: string };
+type Message = { error?: string; success?: string; document?: string };
 
 function PageTitle({ module }: { module: Module }) {
   const title = moduleTitles;
@@ -198,6 +198,10 @@ function MessageBanner({ message }: { message?: Message }) {
   return null;
 }
 
+async function readServerClock() {
+  return Date.now();
+}
+
 function money(value: number) {
   return formatRupiah(Number(value));
 }
@@ -306,7 +310,7 @@ export async function ModulePage({
           </Form>
         </Panel>
         <Panel title="Sales Order">
-          <DataTable headers={["Nomor", "Pelanggan", "Tanggal", "Status", "Total"]} rows={orders.data.map((item) => [
+          <DataTable key={message?.document ?? "all-orders"} initialQuery={message?.document?.slice(0,100) ?? ""} headers={["Nomor", "Pelanggan", "Tanggal", "Status", "Total"]} rows={orders.data.map((item) => [
             item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`, item.order_date, item.status, money(item.total),
           ])} />
         </Panel>
@@ -362,10 +366,10 @@ export async function ModulePage({
           }))} />
         </Panel>
         <Panel title="Daftar peluang">
-          <DataTable headers={["Nomor", "Pelanggan", "Produk", "Qty", "Tahap", "Revenue", "Probabilitas", "Alasan Lost"]} rows={leads.data.map((item) => [
+          <DataTable headers={["Reference", "Customer", "Product", "Quantity", "Stage", "Expected Revenue", "Probability", "Weighted Revenue", "Lost Reason"]} rows={leads.data.map((item) => [
             item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
             `${item.sku} · ${productNames.get(item.sku) ?? "—"}`, item.quantity, item.stage,
-            money(item.expected_revenue), `${item.probability_percent}%`, item.lost_reason ?? "—",
+            money(item.expected_revenue), `${item.probability_percent}%`, money(Math.round(Number(item.expected_revenue) * Number(item.probability_percent) / 100)), item.lost_reason ?? "—",
           ])} />
         </Panel>
       </ModuleWorkspace>
@@ -444,7 +448,7 @@ export async function ModulePage({
           <p className="muted-copy">Tanggal dan waktu aktual dicatat oleh server ketika penerimaan diposting. Penerimaan tidak boleh dicatat sebelum barang dihitung.</p>
         </Panel>
         <Panel title="Purchase Order">
-          <DataTable headers={["Nomor", "Pemasok", "Tanggal Order", "Status", "Dipesan", "Diterima", "Ditolak", "Sisa", "Total"]} rows={orders.data.map((item) => {
+          <DataTable headers={["Reference", "Vendor", "Order Date", "Status", "Ordered Quantity", "Accepted Quantity", "Rejected Quantity", "Remaining Quantity", "Total"]} rows={orders.data.map((item) => {
             const totals = orderLineTotals.get(item.number) ?? { ordered: 0, accepted: 0, rejected: 0 };
             return [
               item.number, `${item.vendor_id} · ${vendorNames.get(item.vendor_id) ?? "—"}`, dateLabel(item.order_date), item.status,
@@ -453,7 +457,7 @@ export async function ModulePage({
           })} />
         </Panel>
         <Panel title="Goods Receipt">
-          <DataTable headers={["Nomor", "Purchase Order", "Tanggal Order", "Tanggal Diterima", "Rincian hitung"]} rows={receipts.data.map((item) => [
+          <DataTable headers={["Reference", "Purchase Order", "Order Date", "Received On (WIB)", "Received Quantities"]} rows={receipts.data.map((item) => [
             item.number, item.purchase_order_number,
             dateLabel(orders.data.find((order) => order.number === item.purchase_order_number)?.order_date),
             dateLabel(item.received_at, true),
@@ -461,7 +465,7 @@ export async function ModulePage({
           ])} />
         </Panel>
         {profile.role === "owner" && receiptAudit?.data?.length ? <Panel title="Audit Penerimaan">
-          <DataTable headers={["Goods Receipt", "Tindakan", "Dicatat oleh", "Waktu bukti", "Rincian"]} rows={receiptAudit.data.map((event) => {
+          <DataTable headers={["Goods Receipt", "Action", "Recorded By", "Recorded On (WIB)", "Details"]} rows={receiptAudit.data.map((event) => {
             const details = event.details;
             return [
               event.document_number, event.action, event.actor_label, dateLabel(event.occurred_at, true),
@@ -521,23 +525,26 @@ export async function ModulePage({
   }
 
   if (module === "invoicing") {
-    const [invoices, customerPayments, orders, bills, vendorPayments, purchaseOrders] = await Promise.all([
+    const [invoices, customerPayments, orders, bills, vendorPayments, purchaseOrders, billingLines] = await Promise.all([
       supabase.from("customer_invoices").select("number, customer_id, source_document, status, due_date, total, amount_paid, amount_credited").order("due_date"),
       supabase.from("customer_payments").select("number, invoice_number, amount, account_code, paid_at").order("paid_at", { ascending: false }),
       supabase.from("sales_orders").select("number, status").order("created_at", { ascending: false }),
       supabase.from("vendor_bills").select("number, vendor_id, source_document, status, due_date, total, amount_paid").order("due_date"),
       supabase.from("vendor_payments").select("number, bill_number, amount, account_code, paid_at").order("paid_at", { ascending: false }),
       supabase.from("purchase_orders").select("number, status").order("created_at", { ascending: false }),
+      supabase.from("purchase_order_lines").select("purchase_order_number,received_quantity,billed_quantity"),
     ]);
-    const error = invoices.error ?? customerPayments.error ?? orders.error ?? bills.error ?? vendorPayments.error ?? purchaseOrders.error;
+    const error = invoices.error ?? customerPayments.error ?? orders.error ?? bills.error ?? vendorPayments.error ?? purchaseOrders.error ?? billingLines.error;
     if (error) return <DataLoadError error={error.message} />;
-    if (!invoices.data || !customerPayments.data || !orders.data || !bills.data || !vendorPayments.data || !purchaseOrders.data) {
+    if (!invoices.data || !customerPayments.data || !orders.data || !bills.data || !vendorPayments.data || !purchaseOrders.data || !billingLines.data) {
       return <DataLoadError error="Database mengembalikan data Invoicing yang tidak lengkap." />;
     }
     const reconciledInvoices = invoices.data;
     const reconciledCustomerPayments = customerPayments.data;
     const openInvoices = reconciledInvoices.filter((item) => item.total - item.amount_paid - item.amount_credited > 0);
     const openBills = bills.data.filter((item) => item.total - item.amount_paid > 0);
+    const billableNumbers = new Set(billingLines.data.filter(line => line.received_quantity > line.billed_quantity).map(line => line.purchase_order_number));
+    const billableOrders = purchaseOrders.data.filter(order => billableNumbers.has(order.number));
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
@@ -550,30 +557,30 @@ export async function ModulePage({
           <Form action={recordCustomerPaymentAction} submitLabel="Posting pembayaran">
             <Select label="Invoice" name="invoice_number" options={openInvoices.map((item) => option(item.number, `${item.number} · sisa ${money(item.total - item.amount_paid - item.amount_credited)}`))} />
             <CurrencyInput label="Jumlah pembayaran" name="amount" />
-            <Select label="Akun penerimaan" name="account_code" options={[option("1101", "Kas"), option("1102", "Bank")]} />
+            <Select label="Akun penerimaan" name="account_code" options={[option("1101", "Cash"), option("1102", "Bank")]} />
           </Form>
         </Panel>
         <Panel title="Buat Vendor Bill dari barang diterima">
-          <Form action={createVendorBillAction} submitLabel="Posting Vendor Bill">
-            <Select label="Purchase Order" name="purchase_order_number" options={purchaseOrders.data.filter((item) => ["Received", "Partial Receipt"].includes(item.status)).map((item) => option(item.number, `${item.number} · ${item.status}`))} />
-          </Form>
+          {billableOrders.length ? <Form action={createVendorBillAction} submitLabel="Posting Vendor Bill">
+            <Select label="Purchase Order" name="purchase_order_number" options={billableOrders.map((item) => option(item.number, `${item.number} · ${item.status}`))} />
+          </Form> : <p className="demo-empty">Tidak ada penerimaan baik yang belum ditagih. Periksa Goods Receipt sebelum membuat Vendor Bill.</p>}
         </Panel>
         <Panel title="Bayar Vendor Bill">
           <Form action={recordVendorPaymentAction} submitLabel="Posting pembayaran vendor">
             <Select label="Vendor Bill" name="bill_number" options={openBills.map((item) => option(item.number, `${item.number} · sisa ${money(item.total - item.amount_paid)}`))} />
             <CurrencyInput label="Jumlah pembayaran" name="amount" />
-            <Select label="Akun pembayaran" name="account_code" options={[option("1101", "Kas"), option("1102", "Bank")]} />
+            <Select label="Akun pembayaran" name="account_code" options={[option("1101", "Cash"), option("1102", "Bank")]} />
           </Form>
         </Panel>
         <Panel title="Piutang pelanggan">
-          <DataTable headers={["Invoice", "Pelanggan", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledInvoices.map((item) => [
-            item.number, item.customer_id, item.source_document ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.amount_credited),
+          <DataTable linkColumn={{index:0,prefix:"/documents/invoice/"}} headers={["Invoice", "Pelanggan", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledInvoices.map((item) => [
+            item.number, item.customer_id, item.source_document?.split(":")[0] ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.amount_credited),
             money(item.total - item.amount_paid - item.amount_credited),
           ])} />
         </Panel>
         <Panel title="Utang pemasok">
           <DataTable headers={["Bill", "Pemasok", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Sisa"]} rows={bills.data.map((item) => [
-            item.number, item.vendor_id, item.source_document ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.total - item.amount_paid),
+            item.number, item.vendor_id, item.source_document?.split(":")[0] ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.total - item.amount_paid),
           ])} />
         </Panel>
         <Panel title="Riwayat pembayaran">
@@ -589,12 +596,12 @@ export async function ModulePage({
   if (module === "pos") {
     const [configuration, sessions, products, customers, methods, receiptResult, holds, holdLines, receiptLines, tenders] = await Promise.all([
       supabase.from("pos_configuration").select("location_code, opening_cash").eq("id", "POS-TBT").single(),
-      supabase.from("pos_sessions").select("number, cashier_label, status, opening_cash, opened_at, closed_at, approved_by, expected_cash, counted_cash, cash_difference, variance_reason").order("opened_at", { ascending: false }),
+      supabase.from("pos_sessions").select("number, cashier_label, status, opening_cash, opened_at, closed_at, approved_by, expected_cash, counted_cash, cash_difference, variance_reason, opened_by").order("opened_at", { ascending: false }),
       supabase.from("products").select("sku, name, sales_price").order("sku"),
       supabase.from("customers").select("id, name, credit_limit").order("id"),
       supabase.from("pos_payment_methods").select("id, name").order("id"),
       supabase.from("pos_receipts").select("number, session_number, sku, quantity, total, payment_method, customer_id, sold_at, idempotency_key, hold_number").order("sold_at", { ascending: false }),
-      supabase.from("pos_holds").select("number, session_number, status, expires_at").order("created_at", { ascending: false }),
+      supabase.from("pos_holds").select("number, session_number, status, expires_at, created_by, customer_id").order("created_at", { ascending: false }),
       supabase.from("pos_hold_lines").select("hold_number, sku, quantity, subtotal, tax_amount").order("sku"),
       supabase.from("pos_receipt_lines").select("receipt_number, sku, quantity, subtotal, tax_amount").order("sku"),
       supabase.from("pos_receipt_tenders").select("receipt_number, payment_method, amount"),
@@ -636,8 +643,10 @@ export async function ModulePage({
       tenders: tenders.data,
       sessions: sessions.data,
     };
-    const activeSession = reconciledPos.sessions.find((item) => ["Open", "Pending Approval"].includes(item.status));
-    const openHolds = reconciledPos.holds.filter((item) => item.status === "Open");
+    const activeSession = reconciledPos.sessions.find((item) => item.opened_by === profile.id && ["Open", "Pending Approval"].includes(item.status));
+    const openHolds = reconciledPos.holds.filter((item) => item.created_by === profile.id && item.status === "Open");
+    const checkedAt = await readServerClock();
+    const checkoutHolds = openHolds.filter(item => activeSession?.status === "Open" && item.session_number === activeSession.number && Date.parse(item.expires_at)>checkedAt);
     const holdTotals = new Map(reconciledPos.holds.map((hold) => [
       hold.number,
       holdLines.data.filter((line) => line.hold_number === hold.number)
@@ -674,51 +683,53 @@ export async function ModulePage({
             Pencatatan pelanggan pada struk sedang tidak tersedia. Hubungi administrator untuk mengaktifkannya. Penjualan untuk pembeli umum tetap dapat dilakukan.
           </section>
         ) : null}
-        <Panel title="Buka sesi kasir">
+        {!activeSession ? <Panel title="Buka sesi kasir">
           <Form action={openPosSessionAction} submitLabel="Buka sesi">
-            <CurrencyInput label="Kas awal dari konfigurasi POS" name="opening_cash" allowZero defaultValue={configuration.data.opening_cash} />
+            <CurrencyInput label="Opening Cash" name="opening_cash" allowZero defaultValue={configuration.data.opening_cash} />
           </Form>
-        </Panel>
-        <Panel title="Penjualan POS">
+        </Panel> : null}
+        {activeSession?.status === "Pending Approval" ? <section className="notice notice-info">Sesi {activeSession.number} menunggu persetujuan Owner. Selesaikan persetujuan sebelum membuka sesi baru.</section> : !activeSession ? <section className="notice notice-info">Buka sesi kasir untuk mulai mencatat penjualan.</section> : null}
+        {activeSession?.status === "Open" ? <><Panel title="Penjualan POS">
           <Form action={createPosSaleAction} submitLabel="Selesaikan penjualan">
             <Select label="Produk" name="sku" options={products.data.map((item) => option(item.sku, `${item.sku} · ${item.name} · ${money(item.sales_price)}`))} />
             <NumberInput label="Kuantitas" name="quantity" />
-            <Select label="Metode pembayaran" name="payment_method" options={methods.data.map((item) => option(item.id, item.name))} />
+            <Select label="Metode pembayaran" name="payment_method" options={methods.data.filter(item => ["CASH", "BANK"].includes(item.id)).map((item) => option(item.id, item.name))} />
             <Select label="Pelanggan (opsional)" name="customer_id" options={[option("", "Pembeli umum"), ...customers.data.map((item) => option(item.id, `${item.id} · ${item.name} · limit ${money(item.credit_limit)}`))]} required={false} />
-            <p className="muted-copy">Penjualan POS langsung lunas dan tidak menambah piutang atau memakai batas kredit. Pilih pelanggan untuk mencatatnya pada struk.</p>
+            <p className="muted-copy">Penjualan POS langsung lunas dan tidak menambah piutang atau memakai batas kredit. Pilih pelanggan untuk mencatatnya pada struk. Untuk Cash + Bank, gunakan Hold Order lalu Checkout Hold.</p>
           </Form>
         </Panel>
         <Panel title="Hold pesanan POS">
-          <PosCart products={products.data} action={createPosHoldAction} transactionKey={crypto.randomUUID()} />
+          <PosCart products={products.data} customers={customers.data} action={createPosHoldAction} transactionKey={crypto.randomUUID()} />
           <p className="muted-copy">Hold kedaluwarsa 10 menit setelah dibuat oleh server; stok dilepas saat dibayar, dibatalkan, atau kedaluwarsa.</p>
-        </Panel>
-        {openHolds.length > 0 ? (
+        </Panel></> : null}
+        {checkoutHolds.length > 0 ? (
           <>
             <Panel title="Selesaikan hold · tender lunas">
               <Form action={completePosHoldAction} submitLabel="Bayar dan buat satu struk">
-                <Select label="Hold" name="hold_number" options={openHolds.map((item) => option(item.number, `${item.number} · total ${money(holdTotals.get(item.number) ?? 0)}`))} />
+                <Select label="Hold" name="hold_number" options={checkoutHolds.map((item) => option(item.number, `${item.number} · ${customers.data.find(c => c.id === item.customer_id)?.name ?? "Pembeli umum"} · total ${money(holdTotals.get(item.number) ?? 0)}`))} />
                 <CurrencyInput label="Tender Cash" allowZero name="cash_amount" defaultValue={0} />
                 <CurrencyInput label="Tender Bank" allowZero name="bank_amount" defaultValue={0} />
               </Form>
             </Panel>
-            <Panel title="Batalkan hold">
+          </>
+        ) : null}
+        {openHolds.length > 0 ? <Panel title="Batalkan hold">
               <Form action={cancelPosHoldAction} submitLabel="Batalkan dan lepas reservasi" idempotent={false}>
                 <Select label="Hold aktif" name="hold_number" options={openHolds.map((item) => option(item.number, item.number))} />
               </Form>
-            </Panel>
-          </>
-        ) : null}
+            </Panel> : null}
         <Panel title="Pelepasan hold kedaluwarsa">
           <Form action={expirePosHoldsAction} submitLabel="Periksa dan lepas hold expired" idempotent={false}>
             <p className="muted-copy">Hold yang masa berlakunya lewat akan ditandai Expired dan reservasinya dilepas.</p>
           </Form>
         </Panel>
-        {activeSession ? (
+        {activeSession?.status === "Open" ? (
           <Panel title={`Tutup sesi ${activeSession.number}`}>
             <Form action={closePosSessionAction} submitLabel="Tutup sesi" idempotent={false}>
               <input name="session_number" type="hidden" value={activeSession.number} />
-              <CurrencyInput label="Kas terhitung" name="counted_cash" allowZero />
-              <TextInput label="Alasan selisih kas" name="variance_reason" required={false} />
+              <p className="muted-copy">Expected Cash: {money(activeSession.expected_cash ?? activeSession.opening_cash)}. Masukkan hasil hitung kas fisik.</p>
+              <CurrencyInput label="Counted Cash" name="counted_cash" allowZero />
+              <TextInput label="Variance Reason" name="variance_reason" required={false} />
             </Form>
           </Panel>
         ) : null}
@@ -732,7 +743,7 @@ export async function ModulePage({
           </Panel>
         ))}
         <Panel title="Sesi POS">
-          <DataTable headers={["Sesi", "Kasir", "Status", "Dibuka", "Ditutup", "Kas awal", "Harapan", "Hitung", "Selisih", "Alasan", "Bukti persetujuan"]} rows={reconciledPos.sessions.map((item) => {
+          <DataTable headers={["Session", "Cashier", "Status", "Opened On", "Closed On", "Opening Cash", "Expected Cash", "Counted Cash", "Cash Difference", "Variance Reason", "Approval"]} rows={reconciledPos.sessions.filter(item => profile.role === "owner" || item.opened_by === profile.id).map((item) => {
             const approval = approvalEvents.get(item.number);
             const approver = approval?.actor_label ?? (item.approved_by ? `Owner · ${item.approved_by}` : item.status === "Pending Approval" ? "Menunggu Owner" : item.cash_difference === 0 ? "Tidak perlu (selisih nol)" : "—");
             const approvalTime = approval ? dateLabel(approval.occurred_at, true) : item.approved_by ? dateLabel(item.closed_at, true) : "—";
@@ -746,7 +757,7 @@ export async function ModulePage({
           })} />
         </Panel>
         {profile.role === "owner" ? <Panel title="Bukti persetujuan selisih kas">
-          <DataTable headers={["Sesi", "Persetujuan", "Disahkan oleh", "Waktu bukti", "Selisih", "Alasan kasir"]} rows={reconciledPos.sessions.filter((item) => item.approved_by).map((item) => {
+          <DataTable headers={["Session", "Approval", "Approved By", "Approved On", "Cash Difference", "Variance Reason"]} rows={reconciledPos.sessions.filter((item) => item.approved_by).map((item) => {
             const approval = approvalEvents.get(item.number);
             return [
               item.number, approval ? "Disetujui" : "Data persetujuan belum ditemukan",
@@ -757,14 +768,14 @@ export async function ModulePage({
           })} />
         </Panel> : null}
         <Panel title="Hold dan baris pesanan">
-          <DataTable headers={["Hold", "Sesi", "Status", "Kedaluwarsa", "Baris barang", "Total"]} rows={reconciledPos.holds.map((item) => [
-            item.number, item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
+          <DataTable headers={["Order on Hold", "Customer", "Session", "Status", "Expires On", "Order Lines", "Total"]} rows={reconciledPos.holds.map((item) => [
+            item.number, customers.data.find(c => c.id === item.customer_id)?.name ?? "Pembeli umum", item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
             holdLines.data.filter((line) => line.hold_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || "—",
             money(holdTotals.get(item.number) ?? 0),
           ])} />
         </Panel>
         <Panel title="Struk">
-          <DataTable linkColumn={{ index: 0, prefix: "/pos/receipt/" }} headers={["Nomor", "Sesi", "Pelanggan", "Baris", "Total", "Tender", "Waktu"]} rows={reconciledPos.receipts.map((item) => [
+          <DataTable linkColumn={{ index: 0, prefix: "/pos/receipt/" }} headers={["Reference", "Session", "Customer", "Order Lines", "Total", "Payments", "Sold On"]} rows={reconciledPos.receipts.map((item) => [
             item.number, item.session_number,
             item.customer_id ? `${item.customer_id} · ${customers.data.find((customer) => customer.id === item.customer_id)?.name ?? "Pelanggan"}` : "Pembeli umum",
             reconciledPos.receiptLines.filter((line) => line.receipt_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || `${item.sku} × ${item.quantity}`,

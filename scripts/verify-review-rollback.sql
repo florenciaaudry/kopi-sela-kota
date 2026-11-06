@@ -5,6 +5,7 @@ do $qa$
 declare
   actor uuid; stock_before text; stock_after text; counts_before text; counts_after text;
   so text; inv text; payment text; hold_no text; receipt text; sess text; lead_no text;
+  expiry_hold text; reserved_before integer;
   cash_before numeric; stock_qty integer; result jsonb := '[]'; rejected boolean;
   test_error text; test_state text; key_prefix text := 'review-' || gen_random_uuid()::text;
 begin
@@ -48,6 +49,13 @@ begin
     perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='qa-finance@kopiselakota.test'),true);
     inv := public.invoice_delivered_sales_order(so,key_prefix||'-invoice');
     if not exists(select 1 from public.customer_invoices where number=inv and total=33000 and amount_paid=0) then raise exception 'Delivered-only invoice not 33000'; end if;
+    if (select status from public.sales_orders where number=so)<>'Partial Delivery' then raise exception 'Partial invoice closed remaining delivery'; end if;
+    perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='qa-warehouse@kopiselakota.test'),true);
+    perform public.deliver_sales_order(so,1,key_prefix||'-remaining-delivery');
+    perform set_config('request.jwt.claim.sub',(select id::text from auth.users where email='qa-finance@kopiselakota.test'),true);
+    perform public.invoice_delivered_sales_order(so,key_prefix||'-remaining-invoice');
+    if (select status from public.sales_orders where number=so)<>'Invoiced' then raise exception 'Fully delivered/invoiced order did not close'; end if;
+    result:=result||jsonb_build_array('PASS partial invoice keeps remaining delivery open / second delivery and second invoice succeed');
     payment := public.record_customer_payment(inv,10000,'1102',key_prefix||'-payment');
     if public.record_customer_payment(inv,10000,'1102',key_prefix||'-payment')<>payment then raise exception 'Payment replay duplicated'; end if;
     if not exists(select 1 from public.customer_invoices where number=inv and total-amount_paid-amount_credited=23000) then raise exception 'Partial invoice remainder incorrect'; end if;
@@ -88,6 +96,11 @@ begin
     if not rejected then raise exception 'Replay with changed tender accepted'; end if;
     if exists(select 1 from public.journal_entries je join public.journal_lines jl on jl.journal_entry_id=je.id where je.source_reference=receipt group by je.id having sum(jl.debit)<>sum(jl.credit)) then raise exception 'Unbalanced POS journal'; end if;
     result:=result||jsonb_build_array('PASS incomplete tender no stock/receipt / closed session rejection / mixed tender 6600 / cash drawer +3300 only / stock -1 / Completed hold / replay no duplicate / changed replay rejected / balanced POS journal');
+    rejected:=false;
+    begin perform public.create_pos_sale('TEH-250',1,'MIXED',key_prefix||'-invalid-direct-mixed');
+    exception when others then if sqlerrm like '%Checkout Hold%' then rejected:=true; else raise; end if; end;
+    if not rejected then raise exception 'Direct mixed payment accepted without split tenders'; end if;
+    result:=result||jsonb_build_array('PASS direct MIXED rejected before posting; split checkout remains supported');
     receipt:=public.create_pos_sale('TEH-250',1,'BANK',key_prefix||'-direct');
     if (select count(*) from public.pos_receipt_lines where receipt_number=receipt)<>1
       or (select count(*) from public.pos_receipt_tenders where receipt_number=receipt and payment_method='BANK' and amount=6600)<>1 then
@@ -98,6 +111,26 @@ begin
       raise exception 'Direct sale replay duplicated details';
     end if;
     result:=result||jsonb_build_array('PASS direct BANK sale real line/tender and replay without duplicates');
+    expiry_hold:=public.create_pos_hold('[{"sku":"TEH-250","quantity":1}]'::jsonb,10,key_prefix||'-expiry');
+    select reserved into reserved_before from public.inventory_availability where sku='TEH-250' and location_code='CAFE-TBT';
+    update public.pos_holds set created_at=now()-interval '11 minutes',expires_at=now()-interval '1 minute' where number=expiry_hold;
+    if (select reserved from public.inventory_availability where sku='TEH-250' and location_code='CAFE-TBT')<>reserved_before-1 then raise exception 'Expired hold still reduces availability'; end if;
+    perform public._expire_pos_holds_system();
+    if not exists(select 1 from public.pos_holds where number=expiry_hold and status='Expired') or exists(select 1 from public.inventory_reservations where source_type='pos_hold' and source_reference=expiry_hold and status='active') then raise exception 'System cleanup did not release expired hold'; end if;
+    perform public._expire_pos_holds_system();
+    if (select count(*) from public.audit_events where action='expire' and document_number=expiry_hold)<>1 then raise exception 'Expiry audit duplicated'; end if;
+    if not exists(select 1 from cron.job where jobname='kopi-sela-expire-pos-holds' and active and schedule='* * * * *') then raise exception 'Expiry cron missing or inactive'; end if;
+    result:=result||jsonb_build_array('PASS expiry immediately restores availability / scheduled cleanup releases reservation / single audit / cron active');
+    hold_no:=public.create_pos_hold_for_customer('[{"sku":"TEH-250","quantity":1}]'::jsonb,10,key_prefix||'-customer-hold','C06');
+    if public.create_pos_hold_for_customer('[{"sku":"TEH-250","quantity":1}]'::jsonb,10,key_prefix||'-customer-hold','C06')<>hold_no then raise exception 'Customer Hold replay duplicated'; end if;
+    rejected:=false;
+    begin perform public.create_pos_hold_for_customer('[{"sku":"TEH-250","quantity":1}]'::jsonb,10,key_prefix||'-customer-hold','C05');
+    exception when others then if sqlerrm like '%Customer atau pelaku berbeda%' then rejected:=true; else raise; end if; end;
+    if not rejected then raise exception 'Hold customer replay changed'; end if;
+    receipt:=public.complete_pos_hold(hold_no,'[{"payment_method":"CASH","amount":3300},{"payment_method":"BANK","amount":3300}]'::jsonb,key_prefix||'-customer-checkout');
+    if not exists(select 1 from public.pos_receipts where number=receipt and customer_id='C06' and total=6600) then raise exception 'Hold customer missing from receipt'; end if;
+    if (select count(*) from public.customer_invoices)<>(split_part(counts_before,',',2)::integer+2) then raise exception 'POS created unexpected invoice'; end if;
+    result:=result||jsonb_build_array('PASS Hold Customer C06 / identical replay / changed Customer rejected / mixed receipt retains Customer / no duplicate invoice');
     raise exception using errcode='ZQ001',message='Intentional rollback of test documents';
   exception when sqlstate 'ZQ001' then null;
     when others then get stacked diagnostics test_error=message_text,test_state=returned_sqlstate;

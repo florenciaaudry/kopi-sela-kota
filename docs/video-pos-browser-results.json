@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "scope": "Cashier real browser login, open session, direct BANK sale C06, close at zero variance; independently checked against source records and ledger. Not all POS fixture cases.",
+  "references": {
+    "session": "POS/00005",
+    "receipt": "POSR00012"
+  },
+  "before": {
+    "bank": 10064230,
+    "cash": 577000,
+    "on_hand": 459,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4105000
+  },
+  "after": {
+    "bank": 10070830,
+    "cash": 577000,
+    "on_hand": 458,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4103000
+  },
+  "source_account_deltas": {
+    "1102": 6600,
+    "1301": -2000,
+    "2102": -600,
+    "4101": -6000,
+    "5101": 2000
+  },
+  "verified_at": "2026-11-06T23:46:20.491Z"
+}

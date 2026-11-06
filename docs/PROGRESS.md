@@ -213,3 +213,35 @@
 - Pesan error modul menyimpan rincian di log server dan menampilkan pemulihan ringkas kepada pengguna. Peringatan layanan yang tidak tersedia tetap ditampilkan; bukan menyembunyikan masalah.
 - PDF gabungan diperbarui menjadi v1.1, enam halaman, dengan panduan pengguna, cakupan 132 pemeriksaan dan susunan video progres. Layout semua halaman dirender dan diperiksa.
 - Seluruh perubahan agent sebelumnya dipertahankan. Tidak ada migrasi, seed, reset atau posting transaksi usaha pada pekerjaan ini. Gap Quotation/RFQ, approval diskon, inspeksi retur, Reporting lengkap dan T-01-T-36 tetap terbuka.
+
+
+## Kesiapan video dan Reporting - 7 November 2026
+
+- Reporting baru menghitung Net Sales, PBJT, COGS, Margin, AR/AP, Cash, Bank dan Inventory Value dari jurnal posted. KPI periode terpisah dari saldo akhir termasuk opening balance. Sumber jurnal dapat dibuka; invoice mengarah ke detail dan Sales Order tersaring untuk Owner. Finance tetap tidak memperoleh akses baru ke Sales.
+- Unit arithmetic memakai angka T-35 dan pembalikan Credit Note; semua kontribusi drill-down cocok total. Ini bukan pengujian seluruh fixture SQL T-35.
+- Latihan API lintas role benar-benar diposting: S00007 -> DN00007 -> INV00013 -> CP00014; PO00003 -> GR00002 -> BILL00003 -> VP00004; POS/00004, HOLD/00006, POSR00008 mixed Cash/Bank dan POSR00009 C06. Delapan jurnal seimbang, audit sesuai role, sesi Closed tanpa selisih. Dokumen permanen; before/after dicatat di video-rehearsal-results.json.
+- Form browser Owner juga diuji sukses: S00008 -> DN00008 -> INV00015 -> CP00016; PO00004 -> GR00003 -> BILL00005 -> VP00006. Invoice dan bill lunas; enam jurnal seimbang; Bank +18000, Cash/AR/AP/stok/nilai persediaan kembali sama dengan sebelum kedua alur UI. Bukti read-only: video-browser-results.json.
+- Migrasi 010 diterapkan di project Supabase yang sama: invoice parsial mempertahankan Partial Delivery saat ada sisa barang. Regresi delivery kedua dan invoice kedua lulus; seluruh transaksi tes rollback. stock_unchanged dan document_counts_unchanged true. Role/ACL dan RLS tetap; bukan seed/reset. Bukti: migration-010-regression.json.
+- UI Purchase: salah label Diterima=Receipt Date dan Sisa=Amount Due untuk kuantitas diperbaiki ke Accepted/Remaining Quantity. Vendor/Product memakai Inggris. Form Vendor Bill hanya menawarkan kuantitas diterima yang belum ditagih; PO lunas tidak terus ditawarkan.
+- Struk tidak lagi mengarang rincian dari rata-rata subtotal. Printing diblokir bila baris/tender hilang, jumlah/tax/total tidak cocok, atau nilai negatif. Receipt nyata C06 terbaca nama pelanggan/produk dan Bank 6600.
+- Uji role terakhir: 156 PASS, 0 FAIL, termasuk 12 URL per role dan RLS detail SO/PO. Test reporting, receipt integrity, kebijakan role, lint, typecheck dan build lulus. Indikator developer disembunyikan untuk preview; error aplikasi tetap terlihat.
+- PDF tunggal v1.2, 6 halaman, diperbarui dan seluruh halaman dirender/diperiksa. Panduan memuat lima unsur wajib video, durasi 9:30, YouTube Unlisted dan pengumpulan Moodle sesuai pengumuman.
+- Batas: hanya alur di atas telah diverifikasi. Quotation/RFQ, approval diskon, inspeksi retur, pengelolaan master/account dari UI, customer Hold dan expiry fixture/scheduler, Log Notes/relasi penuh, seluruh T-01-T-36 dan deployment publik belum lengkap. Jangan menyatakan seluruh PDF/produksi selesai.
+
+
+## Penyelesaian POS untuk video - 7 November 2026
+
+- Cashier Maya menjalani login browser, membuka POS/00005, menjual TEH-250 C06 via Bank pada POSR00012, kemudian Close dengan Counted Cash 100000 / difference 0. UI hanya memilih sesi milik akun sendiri; Owner yang mempunyai sesi lain tidak menutupi pembukaan Cashier. Verifikasi sumber: video-pos-browser-results.json.
+- Migrasi 011 menolak direct MIXED tanpa rincian tender; split Cash/Bank tetap lewat Checkout Hold atomik. Migrasi 012 mengecualikan Hold kedaluwarsa dari Available segera dan menjadwalkan cleanup/audit tiap menit via pg_cron. Fungsi housekeeping tidak dapat dieksekusi langsung oleh authenticated/anon. Migrasi 013 mempertahankan Customer dari Hold sampai Receipt dan memperbaiki benturan variabel pada replay Hold.
+- Ketiganya telah diterapkan pada proyek tswkkutgqayvxwzepqfs. Regresi terpadu migration-013-regression.json: 9 kelompok checks PASS, stock_unchanged=true, document_counts_unchanged=true. Skenario uji bisnis rollback; hanya fungsi/kolom/job yang dipertahankan. Ini bukan T-01-T-36 fixture bersih.
+- Form browser Owner: HOLD/00017 Customer C06, satu TEH-250, Checkout Cash 3300 + Bank 3300 -> POSR00022. Satu struk/jurnal, PBJT 600, stok berkurang 1, Expected Cash sesi bertambah 3300. Dokumen rehearsal ini permanen; bukan reset baseline.
+- CRM menampilkan Weighted Revenue dari Expected Revenue dan Probability. Reporting dan struk tetap memakai data nyata; tampilan tidak beralih diam-diam ke demo.
+- Cakupan video: overview, konfigurasi/master terbaca, Sales -> Delivery -> Invoice -> Payment, Purchase -> Receipt -> Bill -> Payment, POS -> stock/journal, Reporting/Audit, serta progres/kendala. Semua transaksi yang disebut di atas memiliki bukti aktual. Rekaman/upload YouTube/Moodle tetap perlu dilakukan kelompok.
+- Belum lengkap untuk final seluruh PDF: lifecycle Quotation/RFQ; master CRUD; approval diskon >5%; inspeksi retur terpisah; Log Notes/relasi semua dokumen; user management tulis; seluruh fixture T-01-T-36; deployment publik. Jangan menyebut aplikasi 100% atau siap produksi.
+
+
+### Verifikasi akhir paket video (7 November 2026)
+
+- Job expiry aktif; 319 eksekusi scheduler berhasil dan 0 gagal saat pemeriksaan. Tidak ada hak EXECUTE langsung untuk anon/authenticated. Bukti expiry-scheduler-results.json.
+- Pengujian akses ulang setelah migrasi 012/013: 156 PASS / 0 FAIL. Verifier read-only Sales/Purchase, Cashier dan Hold browser seluruhnya PASS.
+- PDF v1.3 enam halaman dirender dan diperiksa seluruhnya; memuat panduan transaksi dan kelima unsur video dosen. Dokumen tidak mengklaim seluruh ERP lengkap.

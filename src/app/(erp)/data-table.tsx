@@ -5,9 +5,9 @@ import { odooLabel } from "@/lib/erp-terminology";
 import { useId, useState } from "react";
 import Link from "next/link";
 
-export function DataTable({ headers, rows, linkColumn }: { headers: string[]; rows: (string | number)[][]; linkColumn?: { index: number; prefix: string } }) {
+export function DataTable({ headers, rows, linkColumn, initialQuery = "" }: { headers: string[]; rows: (string | number)[][]; initialQuery?: string; linkColumn?: { index: number; prefix: string } }) {
   const id = useId();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState("");
   const [groupBy, setGroupBy] = useState(-1);
   const statusIndex = headers.findIndex((header) => header === "Status" || header === "Tahap" || header === "Stage");

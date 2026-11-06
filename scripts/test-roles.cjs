@@ -13,9 +13,14 @@ const roleModule = new Module("role-policy");
 roleModule._compile(ts.transpileModule(fs.readFileSync("src/lib/roles.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, "role-policy.cjs");
 const { routeAccess } = roleModule.exports;
 const results = [];
+const documentRoutes = {};
+const rehearsalFile = "docs/video-rehearsal-results.json";
+const rehearsalInvoice = fs.existsSync(rehearsalFile) ? JSON.parse(fs.readFileSync(rehearsalFile,"utf8")).references?.invoice : null;
+if (rehearsalInvoice) documentRoutes["/documents/invoice/"+encodeURIComponent(rehearsalInvoice)] = ["finance","owner"];
 const termModule = new Module("erp-terminology");
 termModule._compile(ts.transpileModule(fs.readFileSync("src/lib/erp-terminology.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, "erp-terminology.cjs");
 const titles = Object.fromEntries(Object.entries(termModule.exports.moduleTitles).map(([key, value]) => ["/" + key, value]));
+if(rehearsalInvoice) titles["/documents/invoice/"+encodeURIComponent(rehearsalInvoice)] = rehearsalInvoice;
 function record(role, check, pass, detail) {
   results.push({ role, check, status: pass ? "PASS" : "FAIL", detail });
   const expectation = detail?.includes("expected=denied") ? " [harus ditolak]" : detail?.includes("expected=allowed") ? " [harus diizinkan]" : "";
@@ -45,7 +50,7 @@ async function main() {
     record(role, "profil sesuai", !profile.error && profile.data?.role === role, profile.error?.code || "profil cocok");
     record(role, "nama sesuai tokoh PDF", !profile.error && profile.data?.full_name === scenarioNames[role], profile.error?.code || scenarioNames[role]);
     const cookies = [...cookieJar].map(([name, value]) => `${name}=${value}`).join("; ");
-    for (const [route, roles] of Object.entries(routeAccess)) {
+    for (const [route, roles] of Object.entries({...routeAccess,...documentRoutes})) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const response = await fetch(base + route, { headers: { cookie: cookies }, redirect: "manual", signal: AbortSignal.timeout(45000) });
@@ -60,7 +65,7 @@ async function main() {
         }
       }
     }
-    for (const [table, roles] of [["journal_entries", ["finance", "owner"]], ["chart_of_accounts", ["finance", "owner"]], ["product_costs", ["warehouse", "procurement", "finance", "owner"]]]) {
+    for (const [table, roles] of [["journal_entries", ["finance", "owner"]], ["chart_of_accounts", ["finance", "owner"]], ["product_costs", ["warehouse", "procurement", "finance", "owner"]], ["purchase_order_lines", ["warehouse", "procurement", "finance", "owner"]], ["sales_order_lines", ["sales", "warehouse", "finance", "owner"]]]) {
       const read = await client.from(table).select("*").limit(1);
       const allowed = roles.includes(role);
       record(role, `RLS baca ${table}`, allowed ? !read.error && read.data?.length > 0 : Boolean(read.error) || read.data?.length === 0, read.error?.code || `${read.data?.length ?? 0} baris`);

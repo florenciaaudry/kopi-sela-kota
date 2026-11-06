@@ -4,7 +4,7 @@ export const moduleTitles: Record<string, string> = {
   sales: "Sales", crm: "CRM", purchase: "Purchase", inventory: "Inventory",
   accounting: "Accounting", invoicing: "Invoicing", pos: "Point of Sale",
   returns: "Returns & Credit Notes",
-  settings: "Users & Permissions", audit: "Audit Log",
+  settings: "Users & Permissions", audit: "Audit Log", reporting: "Reporting", documents: "Documents",
 };
 
 const labels: Record<string, string> = {

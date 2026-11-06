@@ -2188,4 +2188,881 @@ end;
 $repair$;
 
 
+-- MIGRATION: 202611070010_keep_partially_delivered_orders_open.sql
+-- Keep remaining goods deliverable after invoicing a partial delivery.
+begin;
+create or replace function public.invoice_delivered_sales_order(
+  p_sales_order_number text,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['finance', 'owner']::public.app_role[]);
+  order_row public.sales_orders%rowtype;
+  line_row record;
+  invoice_number text;
+  existing_number text;
+  invoice_subtotal numeric(14, 2) := 0;
+  invoice_tax numeric(14, 2) := 0;
+  line_subtotal numeric(14, 2);
+  line_tax numeric(14, 2);
+  delivered_qty integer := 0;
+  invoiced_qty integer;
+  due_days integer;
+begin
+  if p_idempotency_key is null then raise exception 'Idempotency key wajib'; end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select ci.number into existing_number from public.customer_invoices ci
+    where ci.source_document = p_sales_order_number || ':' || p_idempotency_key;
+  if existing_number is not null then return existing_number; end if;
+  select * into order_row from public.sales_orders where number = p_sales_order_number for update;
+  if not found then raise exception 'Sales Order tidak ditemukan'; end if;
+  select pt.days into due_days
+    from public.customers c join public.payment_terms pt on pt.code = c.payment_terms_code
+    where c.id = order_row.customer_id;
+
+  for line_row in
+    select sol.id, sol.sku, sol.quantity, sol.unit_price, sol.discount_percent,
+      coalesce((select sum(dnl.quantity) from public.delivery_note_lines dnl where dnl.sales_order_line_id = sol.id), 0)::integer as delivered,
+      coalesce((select sum(cil.quantity) from public.customer_invoice_lines cil where cil.sales_order_line_id = sol.id), 0)::integer as invoiced
+    from public.sales_order_lines sol
+    where sol.sales_order_number = p_sales_order_number
+    for update
+  loop
+    delivered_qty := delivered_qty + line_row.delivered - line_row.invoiced;
+  end loop;
+  if coalesce(delivered_qty, 0) <= 0 then raise exception 'Tidak ada kuantitas Delivered yang belum ditagih'; end if;
+
+  invoice_number := 'INV' || lpad(nextval('public.customer_invoice_number_seq')::text, 5, '0');
+  insert into public.customer_invoices (
+    number, customer_id, source_document, status, issue_date, due_date,
+    subtotal, tax_total, total, amount_paid
+  ) values (
+    invoice_number, order_row.customer_id,
+    p_sales_order_number || ':' || p_idempotency_key, 'Posted',
+    (now() at time zone 'Asia/Jakarta')::date,
+    (now() at time zone 'Asia/Jakarta')::date + due_days,
+    0, 0, 0, 0
+  );
+
+  for line_row in
+    select sol.id, sol.sku, sol.unit_price, sol.discount_percent,
+      (select sum(dnl.quantity) from public.delivery_note_lines dnl where dnl.sales_order_line_id = sol.id)::integer
+        - coalesce((select sum(cil.quantity) from public.customer_invoice_lines cil where cil.sales_order_line_id = sol.id), 0)::integer as qty
+    from public.sales_order_lines sol
+    where sol.sales_order_number = p_sales_order_number
+    for update
+  loop
+    if line_row.qty > 0 then
+      line_subtotal := round(line_row.unit_price * line_row.qty * (1 - line_row.discount_percent / 100), 0);
+      line_tax := round(line_subtotal * (select rate from public.tax_rates where id = 'PBJT10') / 100, 0);
+      insert into public.customer_invoice_lines (
+        invoice_number, sales_order_line_id, sku, quantity, unit_price,
+        discount_percent, subtotal, tax_amount
+      ) values (
+        invoice_number, line_row.id, line_row.sku, line_row.qty,
+        line_row.unit_price, line_row.discount_percent, line_subtotal, line_tax
+      );
+      invoice_subtotal := invoice_subtotal + line_subtotal;
+      invoice_tax := invoice_tax + line_tax;
+    end if;
+  end loop;
+  update public.customer_invoices set subtotal = invoice_subtotal, tax_total = invoice_tax,
+    total = invoice_subtotal + invoice_tax where number = invoice_number;
+  perform public.post_business_journal(
+    'customer_invoice', invoice_number, 'invoice:' || p_sales_order_number || ':' || p_idempotency_key,
+    'Faktur ' || p_sales_order_number,
+    jsonb_build_array(
+      jsonb_build_object('account_code', '1201', 'debit', invoice_subtotal + invoice_tax, 'credit', 0),
+      jsonb_build_object('account_code', '4101', 'debit', 0, 'credit', invoice_subtotal),
+      jsonb_build_object('account_code', '2102', 'debit', 0, 'credit', invoice_tax)
+    )
+  );
+  update public.sales_orders set status = case when exists (
+      select 1 from public.sales_order_lines pending
+      where pending.sales_order_number = p_sales_order_number
+        and pending.quantity > coalesce((select sum(done.quantity) from public.delivery_note_lines done where done.sales_order_line_id = pending.id),0)
+    ) then 'Partial Delivery' else 'Invoiced' end
+    where number = p_sales_order_number
+      and not exists (
+        select 1 from public.sales_order_lines sol
+        where sol.sales_order_number = p_sales_order_number
+          and coalesce((select sum(dnl.quantity) from public.delivery_note_lines dnl where dnl.sales_order_line_id = sol.id), 0)
+            > coalesce((select sum(cil.quantity) from public.customer_invoice_lines cil where cil.sales_order_line_id = sol.id), 0)
+      );
+  perform public.write_business_audit('invoice', 'customer_invoice', invoice_number,
+    jsonb_build_object('sales_order', p_sales_order_number, 'total', invoice_subtotal + invoice_tax));
+  return invoice_number;
+end;
+$$;
+revoke all on function public.invoice_delivered_sales_order(text,text) from public,anon;
+grant execute on function public.invoice_delivered_sales_order(text,text) to authenticated;
+
+-- Only document status is corrected; financial history and quantities remain intact.
+with changed as (
+ update public.sales_orders so set status='Partial Delivery'
+ where so.status='Invoiced' and exists (
+  select 1 from public.sales_order_lines sol where sol.sales_order_number=so.number
+   and sol.quantity>coalesce((select sum(d.quantity) from public.delivery_note_lines d where d.sales_order_line_id=sol.id),0)
+ ) returning number
+)
+insert into public.audit_events(actor_label,action,document_type,document_number,details)
+select 'Perbaikan status pengiriman bertahap','restore_partial_delivery_status','sales_order',number,
+ jsonb_build_object('old_status','Invoiced','new_status','Partial Delivery','financial_values_changed',false)
+from changed;
+notify pgrst,'reload schema';
+
+commit;
+
+
+-- MIGRATION: 202611070011_require_split_tenders_for_mixed_pos.sql
+-- Mixed payment requires explicit, reconciled tender lines via checkout hold.
+begin;
+create or replace function public.create_pos_sale(
+  p_sku text,
+  p_quantity integer,
+  p_payment_method text,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['cashier', 'owner']::public.app_role[]);
+  configuration public.pos_configuration%rowtype;
+  session_row public.pos_sessions%rowtype;
+  product_row public.products%rowtype;
+  stock_row public.stock_balances%rowtype;
+  payment_row public.pos_payment_methods%rowtype;
+  receipt_number text;
+  quantity_reserved integer;
+  subtotal numeric(14, 2);
+  tax_amount numeric(14, 2);
+  total_amount numeric(14, 2);
+  cogs numeric(14, 2);
+begin
+  if p_payment_method is null or p_payment_method not in ('CASH','BANK') then raise exception 'Untuk Cash + Bank, gunakan Checkout Hold dengan rincian tender'; end if;
+  if p_quantity is null or p_quantity <= 0 or p_idempotency_key is null then raise exception 'Kuantitas dan idempotency key wajib'; end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select pr.number into receipt_number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key;
+  if receipt_number is not null then
+    if not exists (
+      select 1 from public.pos_receipts pr where pr.number = receipt_number
+        and pr.sku = p_sku and pr.quantity = p_quantity
+        and pr.payment_method = p_payment_method
+    ) then raise exception 'Idempotency key sudah digunakan untuk transaksi POS berbeda'; end if;
+    return receipt_number;
+  end if;
+  select * into session_row from public.pos_sessions
+    where opened_by = actor_id and status = 'Open' for update;
+  if not found then raise exception 'Kasir belum membuka sesi POS'; end if;
+  select * into configuration from public.pos_configuration where id = 'POS-TBT';
+  select * into product_row from public.products where sku = p_sku;
+  if not found then raise exception 'SKU tidak ditemukan'; end if;
+  select * into payment_row from public.pos_payment_methods where id = p_payment_method;
+  if not found then raise exception 'Metode pembayaran POS tidak dikenal'; end if;
+  select * into stock_row from public.stock_balances
+    where sku = p_sku and location_code = configuration.location_code for update;
+  if not found then raise exception 'Saldo POS tidak ditemukan'; end if;
+  select coalesce(sum(ir.quantity), 0)::integer into quantity_reserved
+    from public.inventory_reservations ir
+    where ir.sku = p_sku and ir.location_code = configuration.location_code and ir.status = 'active';
+  if stock_row.on_hand - quantity_reserved < p_quantity then raise exception 'Available POS tidak mencukupi'; end if;
+  subtotal := p_quantity * product_row.sales_price;
+  tax_amount := round(subtotal * (select rate from public.tax_rates where id = 'PBJT10') / 100, 0);
+  total_amount := subtotal + tax_amount;
+  select standard_cost * p_quantity into cogs from public.product_costs where sku = p_sku;
+  receipt_number := 'POSR' || lpad(nextval('public.pos_receipt_number_seq')::text, 5, '0');
+  insert into public.pos_receipts (
+    number, session_number, sku, quantity, subtotal, tax_amount, total,
+    payment_method, idempotency_key, created_by
+  ) values (
+    receipt_number, session_row.number, p_sku, p_quantity, subtotal, tax_amount,
+    total_amount, p_payment_method, p_idempotency_key, actor_id
+  );
+  update public.stock_balances set on_hand = on_hand - p_quantity
+    where sku = p_sku and location_code = configuration.location_code;
+  if p_payment_method = 'CASH' then
+    update public.pos_sessions set expected_cash = coalesce(expected_cash, opening_cash) + total_amount
+      where number = session_row.number;
+  end if;
+  perform public.post_business_journal(
+    'pos_sale', receipt_number, 'pos-sale:' || p_idempotency_key,
+    'Penjualan POS ' || receipt_number,
+    jsonb_build_array(
+      jsonb_build_object('account_code', payment_row.account_code, 'debit', total_amount, 'credit', 0),
+      jsonb_build_object('account_code', '4101', 'debit', 0, 'credit', subtotal),
+      jsonb_build_object('account_code', '2102', 'debit', 0, 'credit', tax_amount),
+      jsonb_build_object('account_code', '5101', 'debit', cogs, 'credit', 0),
+      jsonb_build_object('account_code', '1301', 'debit', 0, 'credit', cogs)
+    )
+  );
+  perform public.write_business_audit('sell', 'pos_receipt', receipt_number,
+    jsonb_build_object('sku', p_sku, 'quantity', p_quantity, 'total', total_amount, 'method', p_payment_method));
+  return receipt_number;
+end;
+$$;
+revoke all on function public.create_pos_sale(text,integer,text,text) from public,anon;
+grant execute on function public.create_pos_sale(text,integer,text,text) to authenticated;
+notify pgrst,'reload schema';
+
+commit;
+
+
+-- MIGRATION: 202611070012_automatic_pos_hold_expiry.sql
+-- Expiry is enforced immediately in availability and stock operations; cron persists expiry/audit each minute.
+begin;
+create extension if not exists pg_cron;
+
+create or replace function public._expire_pos_holds_system(p_actor uuid default null,p_source text default 'scheduled')
+returns integer language plpgsql security definer set search_path='' as $$
+declare h public.pos_holds%rowtype; expired_count integer:=0; actor_name text;
+begin
+  if p_actor is not null then select full_name into actor_name from public.profiles where id=p_actor; end if;
+  for h in select * from public.pos_holds where status='Open' and expires_at<=now() order by expires_at,number for update loop
+    update public.inventory_reservations set status='expired' where source_type='pos_hold' and source_reference=h.number and status='active';
+    update public.pos_holds set status='Expired' where number=h.number;
+    insert into public.audit_events(actor_id,actor_label,action,document_type,document_number,details)
+      values(p_actor,coalesce(actor_name,'System'),'expire','pos_hold',h.number,jsonb_build_object('expires_at',h.expires_at,'trigger',p_source));
+    expired_count:=expired_count+1;
+  end loop;
+  return expired_count;
+end; $$;
+revoke all on function public._expire_pos_holds_system(uuid,text) from public,anon,authenticated;
+
+create or replace function public.expire_pos_holds()
+returns integer language plpgsql security definer set search_path='' as $$
+declare actor uuid:=public.require_transaction_role(array['cashier','owner']::public.app_role[]);
+begin return public._expire_pos_holds_system(actor,'cashier_check'); end; $$;
+revoke all on function public.expire_pos_holds() from public,anon;
+grant execute on function public.expire_pos_holds() to authenticated;
+
+create or replace function public._active_reservation_quantity(p_sku text,p_location text)
+returns integer language plpgsql stable security definer set search_path='' as $$
+declare actor uuid:=public.require_transaction_role(array['sales','warehouse','procurement','finance','cashier','owner']::public.app_role[]);
+begin
+ return (select coalesce(sum(ir.quantity),0)::integer from public.inventory_reservations ir
+  where ir.sku=p_sku and ir.location_code=p_location and ir.status='active'
+    and (ir.source_type<>'pos_hold' or exists(select 1 from public.pos_holds h where h.number=ir.source_reference and h.status='Open' and h.expires_at>now())));
+end; $$;
+revoke all on function public._active_reservation_quantity(text,text) from public,anon;
+grant execute on function public._active_reservation_quantity(text,text) to authenticated;
+
+create or replace view public.inventory_availability with(security_invoker=true) as
+ select sb.sku,sb.location_code,sb.on_hand,
+ public._active_reservation_quantity(sb.sku,sb.location_code) as reserved,
+ sb.on_hand-public._active_reservation_quantity(sb.sku,sb.location_code) as available
+ from public.stock_balances sb;
+
+create or replace function public.create_sales_order(
+  p_customer_id text,
+  p_sku text,
+  p_quantity integer,
+  p_discount_percent numeric default 0,
+  p_idempotency_key text default null,
+  p_source_lead_number text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['sales', 'owner']::public.app_role[]);
+  customer_row public.customers%rowtype;
+  product_row public.products%rowtype;
+  stock_row public.stock_balances%rowtype;
+  order_number text;
+  existing_number text;
+  outstanding numeric(14, 2);
+  committed numeric(14, 2);
+  subtotal numeric(14, 2);
+  tax_amount numeric(14, 2);
+  tax_rate numeric(5, 2);
+  available_quantity integer;
+begin
+  perform public._expire_pos_holds_system(actor_id,'create_sales_order');
+  if p_idempotency_key is null or length(trim(p_idempotency_key)) < 8 then
+    raise exception 'Idempotency key wajib diisi';
+  end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  if p_quantity is null or p_quantity <= 0 then raise exception 'Kuantitas harus lebih dari nol'; end if;
+  if p_discount_percent is null or p_discount_percent < 0 or p_discount_percent > 5 then
+    raise exception 'Diskon harus 0–5%%; persetujuan diskon lebih tinggi belum diaktifkan';
+  end if;
+
+  select so.number into existing_number from public.sales_orders so
+  where so.idempotency_key = p_idempotency_key;
+  if existing_number is not null then
+    if not exists (
+      select 1 from public.sales_orders so
+      join public.sales_order_lines sol on sol.sales_order_number = so.number
+      where so.number = existing_number and so.customer_id = p_customer_id
+        and sol.sku = p_sku and sol.quantity = p_quantity
+        and so.discount_percent = p_discount_percent
+        and so.source_lead_number is not distinct from p_source_lead_number
+    ) then raise exception 'Idempotency key sudah digunakan untuk Sales Order berbeda'; end if;
+    return existing_number;
+  end if;
+
+  select * into customer_row from public.customers where id = p_customer_id for update;
+  if not found then raise exception 'Pelanggan tidak ditemukan'; end if;
+  select * into product_row from public.products where sku = p_sku;
+  if not found then raise exception 'SKU tidak ditemukan'; end if;
+  if product_row.sales_price <= 0 then raise exception 'Harga jual harus lebih besar dari nol'; end if;
+  if p_source_lead_number is not null and not exists (
+    select 1 from public.leads l
+    where l.number = p_source_lead_number
+      and l.customer_id = p_customer_id
+      and l.stage = 'Won'
+  ) then raise exception 'Lead sumber harus berstatus Won dan milik pelanggan yang sama'; end if;
+  select * into stock_row from public.stock_balances
+  where sku = p_sku and location_code = 'WH-TBT' for update;
+  if not found then raise exception 'Saldo gudang tidak ditemukan'; end if;
+
+  select stock_row.on_hand - coalesce(sum(ir.quantity) filter (where ir.status = 'active'), 0)
+    into available_quantity
+  from public.inventory_reservations ir
+  where ir.sku = p_sku and ir.location_code = 'WH-TBT';
+  if available_quantity < p_quantity then raise exception 'Available WH-TBT tidak mencukupi'; end if;
+
+  select coalesce(sum(ci.total - ci.amount_paid - ci.amount_credited), 0)
+  into outstanding from public.customer_invoices ci
+  where ci.customer_id = p_customer_id and ci.status = 'Posted';
+  select coalesce(sum(so.total - coalesce(invoiced.amount, 0)), 0)
+  into committed
+  from public.sales_orders so
+  left join lateral (
+    select sum(ci.total) as amount from public.customer_invoices ci
+    where left(ci.source_document, length(so.number) + 1) = so.number || ':' and ci.status = 'Posted'
+  ) invoiced on true
+  where so.customer_id = p_customer_id and so.status in ('Sales Order', 'Partial Delivery', 'Delivered');
+
+  select rate into tax_rate from public.tax_rates where id = 'PBJT10';
+  subtotal := round(product_row.sales_price * p_quantity * (1 - p_discount_percent / 100), 0);
+  tax_amount := round(subtotal * tax_rate / 100, 0);
+  if outstanding + committed + subtotal + tax_amount > customer_row.credit_limit then
+    raise exception 'Limit kredit terlampaui: eksposur %, limit %',
+      outstanding + committed + subtotal + tax_amount, customer_row.credit_limit;
+  end if;
+
+  order_number := 'S' || lpad(nextval('public.sales_order_number_seq')::text, 5, '0');
+  insert into public.sales_orders (
+    number, customer_id, source_lead_number, status, order_date, location_code,
+    discount_percent, subtotal, tax_total, total, locked_at, idempotency_key, request_hash
+  ) values (
+    order_number, p_customer_id, p_source_lead_number, 'Sales Order',
+    (now() at time zone 'Asia/Jakarta')::date, 'WH-TBT',
+    p_discount_percent, subtotal, tax_amount, subtotal + tax_amount, now(),
+    p_idempotency_key, md5(p_customer_id::text || '|' || p_sku || '|' || p_quantity::text || '|' || p_discount_percent::text)
+  );
+  insert into public.sales_order_lines (
+    sales_order_number, sku, quantity, unit_price, discount_percent,
+    tax_code, subtotal, tax_amount
+  ) values (
+    order_number, p_sku, p_quantity, product_row.sales_price, p_discount_percent,
+    'PBJT10', subtotal, tax_amount
+  );
+  insert into public.inventory_reservations (
+    sku, location_code, source_type, source_reference, quantity, status
+  ) values (p_sku, 'WH-TBT', 'sales_order', order_number, p_quantity, 'active');
+  perform public.write_business_audit('create', 'sales_order', order_number,
+    jsonb_build_object('customer_id', p_customer_id, 'sku', p_sku, 'quantity', p_quantity, 'total', subtotal + tax_amount));
+  return order_number;
+end;
+$$;
+
+create or replace function public.transfer_inventory(
+  p_sku text,
+  p_source_location text,
+  p_destination_location text,
+  p_quantity integer,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['warehouse', 'owner']::public.app_role[]);
+  source_row public.stock_balances%rowtype;
+  transfer_number text;
+  reserved_quantity integer;
+begin
+  perform public._expire_pos_holds_system(actor_id,'transfer_inventory');
+  if p_quantity is null or p_quantity <= 0 or p_source_location = p_destination_location or p_idempotency_key is null then
+    raise exception 'SKU, lokasi berbeda, kuantitas positif, dan idempotency key wajib';
+  end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select it.number into transfer_number from public.inventory_transfers it where it.idempotency_key = p_idempotency_key;
+  if transfer_number is not null then
+    if not exists (
+      select 1 from public.inventory_transfers it where it.number = transfer_number
+        and it.sku = p_sku and it.source_location = p_source_location
+        and it.destination_location = p_destination_location and it.quantity = p_quantity
+    ) then raise exception 'Idempotency key sudah digunakan untuk transfer berbeda'; end if;
+    return transfer_number;
+  end if;
+  perform 1 from public.stock_balances
+    where sku = p_sku and location_code in (p_source_location, p_destination_location)
+    order by location_code for update;
+  select * into source_row from public.stock_balances
+    where sku = p_sku and location_code = p_source_location;
+  if not found then raise exception 'Saldo lokasi sumber tidak ditemukan'; end if;
+  perform 1 from public.stock_balances
+    where sku = p_sku and location_code = p_destination_location;
+  if not found then raise exception 'Saldo lokasi tujuan tidak ditemukan'; end if;
+  select coalesce(sum(ir.quantity), 0)::integer into reserved_quantity
+    from public.inventory_reservations ir
+    where ir.sku = p_sku and ir.location_code = p_source_location and ir.status = 'active';
+  if source_row.on_hand - reserved_quantity < p_quantity then raise exception 'Transfer melebihi Available pada lokasi sumber'; end if;
+  transfer_number := 'TRF' || lpad(nextval('public.transfer_number_seq')::text, 5, '0');
+  update public.stock_balances set on_hand = on_hand - p_quantity
+    where sku = p_sku and location_code = p_source_location;
+  update public.stock_balances set on_hand = on_hand + p_quantity
+    where sku = p_sku and location_code = p_destination_location;
+  insert into public.inventory_transfers (
+    number, sku, source_location, destination_location, quantity, idempotency_key, created_by
+  ) values (
+    transfer_number, p_sku, p_source_location, p_destination_location, p_quantity, p_idempotency_key, actor_id
+  );
+  perform public.write_business_audit('transfer', 'inventory_transfer', transfer_number,
+    jsonb_build_object('sku', p_sku, 'source', p_source_location, 'destination', p_destination_location, 'quantity', p_quantity));
+  return transfer_number;
+end;
+$$;
+
+create or replace function public.create_pos_sale(
+  p_sku text,
+  p_quantity integer,
+  p_payment_method text,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['cashier', 'owner']::public.app_role[]);
+  configuration public.pos_configuration%rowtype;
+  session_row public.pos_sessions%rowtype;
+  product_row public.products%rowtype;
+  stock_row public.stock_balances%rowtype;
+  payment_row public.pos_payment_methods%rowtype;
+  receipt_number text;
+  quantity_reserved integer;
+  subtotal numeric(14, 2);
+  tax_amount numeric(14, 2);
+  total_amount numeric(14, 2);
+  cogs numeric(14, 2);
+begin
+  perform public._expire_pos_holds_system(actor_id,'create_pos_sale');
+  if p_payment_method is null or p_payment_method not in ('CASH','BANK') then raise exception 'Untuk Cash + Bank, gunakan Checkout Hold dengan rincian tender'; end if;
+  if p_quantity is null or p_quantity <= 0 or p_idempotency_key is null then raise exception 'Kuantitas dan idempotency key wajib'; end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select pr.number into receipt_number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key;
+  if receipt_number is not null then
+    if not exists (
+      select 1 from public.pos_receipts pr where pr.number = receipt_number
+        and pr.sku = p_sku and pr.quantity = p_quantity
+        and pr.payment_method = p_payment_method
+    ) then raise exception 'Idempotency key sudah digunakan untuk transaksi POS berbeda'; end if;
+    return receipt_number;
+  end if;
+  select * into session_row from public.pos_sessions
+    where opened_by = actor_id and status = 'Open' for update;
+  if not found then raise exception 'Kasir belum membuka sesi POS'; end if;
+  select * into configuration from public.pos_configuration where id = 'POS-TBT';
+  select * into product_row from public.products where sku = p_sku;
+  if not found then raise exception 'SKU tidak ditemukan'; end if;
+  select * into payment_row from public.pos_payment_methods where id = p_payment_method;
+  if not found then raise exception 'Metode pembayaran POS tidak dikenal'; end if;
+  select * into stock_row from public.stock_balances
+    where sku = p_sku and location_code = configuration.location_code for update;
+  if not found then raise exception 'Saldo POS tidak ditemukan'; end if;
+  select coalesce(sum(ir.quantity), 0)::integer into quantity_reserved
+    from public.inventory_reservations ir
+    where ir.sku = p_sku and ir.location_code = configuration.location_code and ir.status = 'active';
+  if stock_row.on_hand - quantity_reserved < p_quantity then raise exception 'Available POS tidak mencukupi'; end if;
+  subtotal := p_quantity * product_row.sales_price;
+  tax_amount := round(subtotal * (select rate from public.tax_rates where id = 'PBJT10') / 100, 0);
+  total_amount := subtotal + tax_amount;
+  select standard_cost * p_quantity into cogs from public.product_costs where sku = p_sku;
+  receipt_number := 'POSR' || lpad(nextval('public.pos_receipt_number_seq')::text, 5, '0');
+  insert into public.pos_receipts (
+    number, session_number, sku, quantity, subtotal, tax_amount, total,
+    payment_method, idempotency_key, created_by
+  ) values (
+    receipt_number, session_row.number, p_sku, p_quantity, subtotal, tax_amount,
+    total_amount, p_payment_method, p_idempotency_key, actor_id
+  );
+  update public.stock_balances set on_hand = on_hand - p_quantity
+    where sku = p_sku and location_code = configuration.location_code;
+  if p_payment_method = 'CASH' then
+    update public.pos_sessions set expected_cash = coalesce(expected_cash, opening_cash) + total_amount
+      where number = session_row.number;
+  end if;
+  perform public.post_business_journal(
+    'pos_sale', receipt_number, 'pos-sale:' || p_idempotency_key,
+    'Penjualan POS ' || receipt_number,
+    jsonb_build_array(
+      jsonb_build_object('account_code', payment_row.account_code, 'debit', total_amount, 'credit', 0),
+      jsonb_build_object('account_code', '4101', 'debit', 0, 'credit', subtotal),
+      jsonb_build_object('account_code', '2102', 'debit', 0, 'credit', tax_amount),
+      jsonb_build_object('account_code', '5101', 'debit', cogs, 'credit', 0),
+      jsonb_build_object('account_code', '1301', 'debit', 0, 'credit', cogs)
+    )
+  );
+  perform public.write_business_audit('sell', 'pos_receipt', receipt_number,
+    jsonb_build_object('sku', p_sku, 'quantity', p_quantity, 'total', total_amount, 'method', p_payment_method));
+  return receipt_number;
+end;
+$$;
+
+create or replace function public.get_owner_dashboard()
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  result jsonb;
+begin
+  perform public.require_transaction_role(array['owner', 'finance']::public.app_role[]);
+  perform public._expire_pos_holds_system(auth.uid(),'dashboard_check');
+  select jsonb_build_object(
+    'sku_count', (select count(*) from public.products),
+    'location_count', (select count(*) from public.locations),
+    'on_hand', (select coalesce(sum(on_hand), 0) from public.stock_balances),
+    'reserved', (select coalesce(sum(quantity), 0) from public.inventory_reservations where status = 'active'),
+    'receivables', (select coalesce(sum(total - amount_paid - amount_credited), 0) from public.customer_invoices where status = 'Posted'),
+    'payables', (select coalesce(sum(total - amount_paid), 0) from public.vendor_bills where status = 'Posted'),
+    'cash', (select coalesce(sum(jl.debit - jl.credit), 0) from public.journal_lines jl join public.journal_entries je on je.id = jl.journal_entry_id where je.status = 'posted' and jl.account_code = '1101'),
+    'bank', (select coalesce(sum(jl.debit - jl.credit), 0) from public.journal_lines jl join public.journal_entries je on je.id = jl.journal_entry_id where je.status = 'posted' and jl.account_code = '1102'),
+    'inventory_value', (select coalesce(sum(sb.on_hand * pc.standard_cost), 0) from public.stock_balances sb join public.product_costs pc on pc.sku = sb.sku)
+  ) into result;
+  return result;
+end;
+$$;
+
+do $schedule$ begin
+ if to_regprocedure('cron.schedule(text,text,text)') is null then raise exception 'Named cron scheduling is required'; end if;
+ perform cron.schedule('kopi-sela-expire-pos-holds','* * * * *','select public._expire_pos_holds_system();');
+end $schedule$;
+notify pgrst,'reload schema';
+
+commit;
+
+
+-- MIGRATION: 202611070013_pos_hold_customer.sql
+begin;
+alter table public.pos_holds add column customer_id text references public.customers(id);
+
+create function public.create_pos_hold_for_customer(p_lines jsonb,p_expires_in_minutes integer,p_idempotency_key text,p_customer_id text default null)
+returns text language plpgsql security definer set search_path='' as $$
+declare actor uuid:=public.require_transaction_role(array['cashier','owner']::public.app_role[]); prior public.pos_holds%rowtype; hold_number text;
+begin
+  if p_customer_id is not null and not exists(select 1 from public.customers where id=p_customer_id) then raise exception 'Customer tidak ditemukan'; end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select * into prior from public.pos_holds where idempotency_key=p_idempotency_key;
+  if found and (prior.created_by<>actor or prior.customer_id is distinct from p_customer_id) then raise exception 'Customer atau pelaku berbeda untuk Hold yang sama'; end if;
+  hold_number:=public.create_pos_hold(p_lines,p_expires_in_minutes,p_idempotency_key);
+  if prior.number is null then
+    update public.pos_holds set customer_id=p_customer_id where number=hold_number;
+    if p_customer_id is not null then perform public.write_business_audit('link_customer','pos_hold',hold_number,jsonb_build_object('customer_id',p_customer_id)); end if;
+  end if;
+  return hold_number;
+end; $$;
+revoke all on function public.create_pos_hold_for_customer(jsonb,integer,text,text) from public,anon;
+grant execute on function public.create_pos_hold_for_customer(jsonb,integer,text,text) to authenticated;
+
+create or replace function public.create_pos_hold(
+  p_lines jsonb,
+  p_expires_in_minutes integer,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['cashier', 'owner']::public.app_role[]);
+  configuration public.pos_configuration%rowtype;
+  session_row public.pos_sessions%rowtype;
+  item record;
+  stock_row public.stock_balances%rowtype;
+  product_row public.products%rowtype;
+  cost numeric(14, 2);
+  tax_rate numeric(5, 2);
+  new_hold_number text;
+  hold_expires_at timestamptz;
+  existing_lines jsonb;
+  requested_lines jsonb;
+  reserved integer;
+begin
+  if p_idempotency_key is null or btrim(p_idempotency_key) = ''
+     or p_lines is null or jsonb_typeof(p_lines) <> 'array'
+     or jsonb_array_length(p_lines) = 0 then
+    raise exception 'Barang dan idempotency key wajib diisi';
+  end if;
+  if p_expires_in_minutes is null or p_expires_in_minutes not between 1 and 1440 then
+    raise exception 'Durasi hold harus antara 1 dan 1440 menit';
+  end if;
+  if exists (
+    select 1 from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer)
+    where requested.sku is null or requested.quantity is null or requested.quantity <= 0
+  ) then raise exception 'Setiap baris hold harus memiliki SKU dan kuantitas positif'; end if;
+  if (select count(*) from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer))
+     <> (select count(distinct requested.sku) from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer)) then
+    raise exception 'SKU duplikat harus digabung menjadi satu baris';
+  end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  perform public.expire_pos_holds();
+  select ph.number into new_hold_number from public.pos_holds ph where ph.idempotency_key = p_idempotency_key;
+  if new_hold_number is not null then
+    select jsonb_agg(jsonb_build_object('sku', phl.sku, 'quantity', phl.quantity) order by phl.sku)
+      into existing_lines from public.pos_hold_lines phl where phl.hold_number = new_hold_number;
+    select jsonb_agg(jsonb_build_object('sku', requested.sku, 'quantity', requested.quantity) order by requested.sku)
+      into requested_lines from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer);
+    if not exists (
+      select 1 from public.pos_holds ph where ph.number = new_hold_number
+        and ph.created_by = actor_id and ph.expires_in_minutes = p_expires_in_minutes
+    ) or existing_lines is distinct from requested_lines then
+      raise exception 'Idempotency key sudah digunakan untuk hold berbeda';
+    end if;
+    return new_hold_number;
+  end if;
+  hold_expires_at := clock_timestamp() + make_interval(mins => p_expires_in_minutes);
+  select * into session_row from public.pos_sessions
+    where opened_by = actor_id and status = 'Open' for update;
+  if not found then raise exception 'Kasir belum membuka sesi POS'; end if;
+  select * into configuration from public.pos_configuration where id = 'POS-TBT';
+  if not found then raise exception 'Konfigurasi POS tidak ditemukan'; end if;
+  for item in
+    select requested.sku, requested.quantity
+    from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer)
+    order by requested.sku
+  loop
+    select * into product_row from public.products where sku = item.sku;
+    if not found or product_row.sales_price <= 0 then raise exception 'SKU % tidak ditemukan atau harga tidak valid', item.sku; end if;
+    select standard_cost into cost from public.product_costs where sku = item.sku;
+    if not found then raise exception 'Biaya standar SKU % tidak ditemukan', item.sku; end if;
+    select rate into tax_rate from public.tax_rates where id = 'PBJT10';
+    select * into stock_row from public.stock_balances
+      where sku = item.sku and location_code = configuration.location_code for update;
+    if not found then raise exception 'Saldo POS SKU % tidak ditemukan', item.sku; end if;
+    select coalesce(sum(ir.quantity), 0)::integer into reserved
+      from public.inventory_reservations ir
+      where ir.sku = item.sku and ir.location_code = configuration.location_code and ir.status = 'active';
+    if stock_row.on_hand - reserved < item.quantity then
+      raise exception 'Available POS SKU % tidak mencukupi', item.sku;
+    end if;
+  end loop;
+  new_hold_number := 'HOLD/' || lpad(nextval('public.pos_hold_number_seq')::text, 5, '0');
+  insert into public.pos_holds (
+    number, session_number, idempotency_key, status, expires_in_minutes, expires_at, created_by
+  ) values (
+    new_hold_number, session_row.number, p_idempotency_key, 'Open', p_expires_in_minutes, hold_expires_at, actor_id
+  );
+  for item in
+    select requested.sku, requested.quantity
+    from jsonb_to_recordset(p_lines) as requested(sku text, quantity integer)
+    order by requested.sku
+  loop
+    select sales_price into product_row.sales_price from public.products where sku = item.sku;
+    select standard_cost into cost from public.product_costs where sku = item.sku;
+    select rate into tax_rate from public.tax_rates where id = 'PBJT10';
+    insert into public.pos_hold_lines (hold_number, sku, quantity, unit_price, subtotal, tax_amount, standard_cost)
+    values (
+      new_hold_number, item.sku, item.quantity, product_row.sales_price,
+      item.quantity * product_row.sales_price,
+      round(item.quantity * product_row.sales_price * tax_rate / 100, 0), cost
+    );
+    insert into public.inventory_reservations (
+      sku, location_code, source_type, source_reference, quantity, status, expires_at
+    ) values (
+      item.sku, configuration.location_code, 'pos_hold', new_hold_number, item.quantity, 'active', hold_expires_at
+    );
+  end loop;
+  perform public.write_business_audit('create', 'pos_hold', new_hold_number,
+    jsonb_build_object('expires_at', hold_expires_at, 'lines', p_lines));
+  return new_hold_number;
+end;
+$$;
+
+create or replace function public.complete_pos_hold(
+  p_hold_number text,
+  p_tenders jsonb,
+  p_idempotency_key text
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  actor_id uuid := public.require_transaction_role(array['cashier', 'owner']::public.app_role[]);
+  hold_row public.pos_holds%rowtype;
+  configuration public.pos_configuration%rowtype;
+  item record;
+  tender_row record;
+  payment_count integer;
+  quantity_total integer := 0;
+  subtotal_total numeric(14, 2) := 0;
+  tax_total numeric(14, 2) := 0;
+  cogs_total numeric(14, 2) := 0;
+  tender_total numeric(14, 2);
+  cash_tender numeric(14, 2);
+  receipt_number text;
+  first_sku text;
+  first_quantity integer;
+  payment_method text;
+  journal_lines jsonb := '[]'::jsonb;
+  existing_hold text;
+begin
+  if nullif(trim(p_hold_number), '') is null or p_idempotency_key is null
+     or length(trim(p_idempotency_key)) < 8 or p_tenders is null
+     or jsonb_typeof(p_tenders) <> 'array' or jsonb_array_length(p_tenders) = 0 then
+    raise exception 'Hold, tender, dan idempotency key wajib diisi';
+  end if;
+  if exists (
+    select 1 from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+    where requested_tender.payment_method is null
+      or requested_tender.payment_method not in ('CASH', 'BANK')
+      or requested_tender.amount is null or requested_tender.amount <= 0
+      or requested_tender.amount::text in ('NaN', 'Infinity', '-Infinity')
+      or requested_tender.amount <> trunc(requested_tender.amount)
+  ) then raise exception 'Tender hanya menerima Cash/Bank dengan nominal positif'; end if;
+  if (select count(*) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
+     <> (select count(distinct requested_tender.payment_method) from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)) then
+    raise exception 'Metode tender duplikat harus digabung';
+  end if;
+  perform public.lock_transaction_key(p_idempotency_key);
+  select pr.number into receipt_number from public.pos_receipts pr
+    where pr.idempotency_key = p_idempotency_key;
+  if receipt_number is not null then
+    if not exists (
+      select 1 from public.pos_receipts pr where pr.number = receipt_number
+        and pr.hold_number = p_hold_number and pr.created_by = actor_id
+    ) then raise exception 'Idempotency key sudah digunakan untuk transaksi POS berbeda'; end if;
+    if exists (
+      (select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+       except select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key))
+      union all
+      (select t.payment_method, t.amount from public.pos_receipt_tenders t
+       where t.receipt_number = (select pr.number from public.pos_receipts pr where pr.idempotency_key = p_idempotency_key)
+       except select requested_tender.payment_method, requested_tender.amount
+       from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric))
+    ) then raise exception 'Idempotency key sudah digunakan dengan tender berbeda'; end if;
+    return receipt_number;
+  end if;
+  perform public.expire_pos_holds();
+  select * into hold_row from public.pos_holds where number = p_hold_number for update;
+  if not found or hold_row.status <> 'Open' or hold_row.expires_at <= now() then
+    raise exception 'Hold POS tidak aktif atau sudah kedaluwarsa';
+  end if;
+  if hold_row.created_by <> actor_id then raise exception 'Hold POS bukan milik sesi kasir ini'; end if;
+  perform 1 from public.pos_sessions ps
+    where ps.number = hold_row.session_number and ps.opened_by = actor_id
+      and ps.status = 'Open' for update;
+  if not found then raise exception 'Sesi POS sudah ditutup atau bukan milik kasir ini'; end if;
+  select * into configuration from public.pos_configuration where id = 'POS-TBT';
+  select coalesce(sum(phl.quantity), 0)::integer,
+         coalesce(sum(phl.subtotal), 0), coalesce(sum(phl.tax_amount), 0),
+         coalesce(sum(phl.standard_cost * phl.quantity), 0)
+    into quantity_total, subtotal_total, tax_total, cogs_total
+    from public.pos_hold_lines phl where phl.hold_number = p_hold_number;
+  if quantity_total <= 0 then raise exception 'Hold POS tidak memiliki barang'; end if;
+  select phl.sku, phl.quantity into first_sku, first_quantity
+    from public.pos_hold_lines phl where phl.hold_number = p_hold_number order by phl.sku limit 1;
+  select coalesce(sum(requested_tender.amount), 0), count(*),
+         coalesce(sum(requested_tender.amount) filter (where requested_tender.payment_method = 'CASH'), 0)
+    into tender_total, payment_count, cash_tender
+    from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric);
+  if tender_total <> subtotal_total + tax_total then
+    raise exception 'Total tender % harus sama dengan total struk %', tender_total, subtotal_total + tax_total;
+  end if;
+  for item in
+    select phl.sku, phl.quantity from public.pos_hold_lines phl
+    where phl.hold_number = p_hold_number order by phl.sku
+  loop
+    perform 1 from public.stock_balances
+      where sku = item.sku and location_code = configuration.location_code for update;
+    if not found then raise exception 'Saldo POS SKU % tidak ditemukan', item.sku; end if;
+    if not exists (
+      select 1 from public.inventory_reservations ir
+      where ir.source_type = 'pos_hold' and ir.source_reference = p_hold_number
+        and ir.sku = item.sku and ir.quantity = item.quantity and ir.status = 'active'
+    ) then raise exception 'Reservasi hold SKU % tidak aktif', item.sku; end if;
+  end loop;
+  receipt_number := 'POSR' || lpad(nextval('public.pos_receipt_number_seq')::text, 5, '0');
+  payment_method := case when payment_count = 1
+    then (select requested_tender.payment_method from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric) limit 1)
+    else 'MIXED' end;
+  insert into public.pos_receipts (
+    number, session_number, sku, quantity, subtotal, tax_amount, total,
+    payment_method, idempotency_key, created_by, hold_number, customer_id
+  ) values (
+    receipt_number, hold_row.session_number, first_sku, quantity_total,
+    subtotal_total, tax_total, subtotal_total + tax_total,
+    payment_method, p_idempotency_key, actor_id, p_hold_number, hold_row.customer_id
+  );
+  for item in
+    select phl.sku, phl.quantity, phl.unit_price, phl.subtotal, phl.tax_amount
+    from public.pos_hold_lines phl where phl.hold_number = p_hold_number order by phl.sku
+  loop
+    insert into public.pos_receipt_lines (receipt_number, sku, quantity, unit_price, subtotal, tax_amount)
+    values (receipt_number, item.sku, item.quantity, item.unit_price, item.subtotal, item.tax_amount);
+    update public.stock_balances set on_hand = on_hand - item.quantity
+      where sku = item.sku and location_code = configuration.location_code;
+    update public.inventory_reservations set status = 'consumed'
+      where source_type = 'pos_hold' and source_reference = p_hold_number
+        and sku = item.sku and status = 'active';
+  end loop;
+  for tender_row in
+    select requested_tender.payment_method, requested_tender.amount, pm.account_code
+    from jsonb_to_recordset(p_tenders) as requested_tender(payment_method text, amount numeric)
+    join public.pos_payment_methods pm on pm.id = requested_tender.payment_method
+    order by requested_tender.payment_method
+  loop
+    insert into public.pos_receipt_tenders (receipt_number, payment_method, amount)
+    values (receipt_number, tender_row.payment_method, tender_row.amount);
+    journal_lines := journal_lines || jsonb_build_array(jsonb_build_object(
+      'account_code', tender_row.account_code, 'debit', tender_row.amount, 'credit', 0
+    ));
+  end loop;
+  journal_lines := journal_lines || jsonb_build_array(
+    jsonb_build_object('account_code', '4101', 'debit', 0, 'credit', subtotal_total),
+    jsonb_build_object('account_code', '2102', 'debit', 0, 'credit', tax_total),
+    jsonb_build_object('account_code', '5101', 'debit', cogs_total, 'credit', 0),
+    jsonb_build_object('account_code', '1301', 'debit', 0, 'credit', cogs_total)
+  );
+  update public.pos_sessions set expected_cash = coalesce(expected_cash, opening_cash) + cash_tender
+    where number = hold_row.session_number;
+  update public.pos_holds set status = 'Completed' where number = p_hold_number;
+  perform public.post_business_journal(
+    'pos_sale', receipt_number, 'pos-hold-sale:' || p_idempotency_key,
+    'Penjualan POS ' || receipt_number, journal_lines
+  );
+  perform public.write_business_audit('complete', 'pos_hold', p_hold_number,
+    jsonb_build_object('receipt', receipt_number, 'tenders', p_tenders));
+  return receipt_number;
+end;
+$$;
+notify pgrst,'reload schema';
+commit;
+
+
 commit;

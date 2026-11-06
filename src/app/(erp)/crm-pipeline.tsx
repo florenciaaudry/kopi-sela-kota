@@ -33,7 +33,7 @@ export function CrmPipeline({ opportunities }: { opportunities: Opportunity[] })
           <header><h3>{labels[stage]} <span>({items.length})</span></h3><p>{currency(items.reduce((sum, item) => sum + item.revenue, 0))}</p></header>
           {items.length ? items.map((item) => <article className="opportunity-card" key={item.number}>
             <span className="demo-status">{item.stage}</span><h4>{item.number} · {item.customer}</h4><p>{item.product} × {item.quantity}</p>
-            <strong>{currency(item.revenue)}</strong><p>Probability {item.probability}%</p>
+            <strong>{currency(item.revenue)}</strong><p>Probability {item.probability}%</p><p>Weighted Revenue <strong>{currency(Math.round(item.revenue * item.probability / 100))}</strong></p>
             {item.lostReason ? <p>Alasan: {item.lostReason}</p> : null}
           </article>) : <p className="muted-copy">Belum ada peluang pada tahap ini.</p>}
         </section>;

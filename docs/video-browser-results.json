@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "checked_at": "2026-11-06T23:46:16.171Z",
+  "scope": "Actual Owner browser submissions for full Sales/Purchase qty 1, independently reconciled read-only against database; separate from six-role RPC rehearsal and PDF fixtures.",
+  "references": {
+    "sales": "S00008",
+    "delivery": "DN00008",
+    "invoice": "INV00015",
+    "customer_payment": "CP00016",
+    "purchase": "PO00004",
+    "goods_receipt": "GR00003",
+    "vendor_bill": "BILL00005",
+    "vendor_payment": "VP00006"
+  },
+  "invoice_total": 33000,
+  "invoice_due": 0,
+  "bill_total": 15000,
+  "bill_due": 0,
+  "balanced_journals": 6,
+  "bank_delta": 18000,
+  "company_stock_and_value_unchanged": true,
+  "source_account_deltas": {
+    "1102": 18000,
+    "1201": 0,
+    "1301": 0,
+    "2101": 0,
+    "2102": -3000,
+    "2103": 0,
+    "4101": -30000,
+    "5101": 15000
+  },
+  "snapshot": {
+    "bank": 10074130,
+    "cash": 580300,
+    "on_hand": 457,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4101000
+  }
+}

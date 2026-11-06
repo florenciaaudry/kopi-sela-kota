@@ -20,6 +20,7 @@ export const routeAccess = {
   "/returns": ["warehouse", "finance", "owner"],
   "/settings": ["owner"],
   "/audit": ["owner"],
+  "/reporting": ["finance", "owner"],
 } satisfies Record<string, AppRole[]>;
 
 export const applicationAccess: {

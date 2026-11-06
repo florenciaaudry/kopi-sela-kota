@@ -16,7 +16,7 @@ export function PurchaseOrderFields({ vendors, prices, products }: {
   const selected = available.find((price) => price.sku === sku);
   return <>
     <SelectField
-      label="Pemasok"
+      label="Vendor"
       name="vendor_id"
       placeholder="Pilih pemasok…"
       value={vendor}
@@ -28,7 +28,7 @@ export function PurchaseOrderFields({ vendors, prices, products }: {
       }}
     />
     <SelectField
-      label="Produk pemasok"
+      label="Vendor Product"
       name="sku"
       placeholder={vendor ? "Pilih produk…" : "Pilih pemasok terlebih dahulu"}
       disabled={!vendor}
@@ -44,6 +44,6 @@ export function PurchaseOrderFields({ vendors, prices, products }: {
       }}
     />
     <label className="demo-field"><span>Quantity</span><input name="quantity" required type="number" min={selected?.minimum_quantity ?? 1} step={1} value={Number.isNaN(quantity) ? "" : quantity} onChange={(event) => setQuantity(event.target.valueAsNumber)} /></label>
-    <p className="muted-copy">{selected ? `Minimum pembelian ${selected.minimum_quantity} unit. Estimasi total ${formatRupiah(Number.isSafeInteger(quantity) && quantity > 0 ? quantity * Number(selected.purchase_price) : 0)}; pajak beli 0 sesuai dataset. Harga dan minimum diperiksa ulang saat disimpan.` : vendor && available.length === 0 ? "Belum ada produk pada daftar harga pemasok ini." : "Produk dan harga mengikuti pemasok yang dipilih."}</p>
+    <p className="muted-copy">{selected ? `Minimum pembelian ${selected.minimum_quantity} unit. Estimasi total ${formatRupiah(Number.isSafeInteger(quantity) && quantity > 0 ? quantity * Number(selected.purchase_price) : 0)}; Purchase Tax 0%. Harga dan minimum diperiksa ulang saat disimpan.` : vendor && available.length === 0 ? "Belum ada produk pada daftar harga pemasok ini." : "Produk dan harga mengikuti pemasok yang dipilih."}</p>
   </>;
 }

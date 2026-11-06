@@ -315,6 +315,7 @@ export async function createPosSaleAction(form: FormData) {
   const sku = required(form, "sku", "SKU", path);
   const quantity = positiveInteger(form, "quantity", "Kuantitas", path);
   const paymentMethod = required(form, "payment_method", "Metode pembayaran", path);
+  if (!["CASH", "BANK"].includes(paymentMethod)) showMessage(path, "error", "Untuk Cash + Bank, gunakan Checkout Hold dengan rincian tender.");
   const customerId = text(form, "customer_id");
   const key = idempotencyKey(form, path);
   if (!customerId) {
@@ -349,7 +350,8 @@ export async function createPosHoldAction(form: FormData) {
   const key = idempotencyKey(form, path);
   const jsonLines: Json = lines.map((line) => ({ sku: line.sku, quantity: line.quantity }));
   return submitRpc(path, ["cashier", "owner"], (client) =>
-    client.rpc("create_pos_hold", {
+    client.rpc("create_pos_hold_for_customer", {
+      p_customer_id: text(form, "customer_id") || null,
       p_lines: jsonLines,
       p_expires_in_minutes: 10,
       p_idempotency_key: key,

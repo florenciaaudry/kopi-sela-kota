@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "scope": "Actual Owner browser Hold with Customer C06, full mixed tender, receipt and single balanced journal; not all PDF POS fixtures.",
+  "references": {
+    "hold": "HOLD/00017",
+    "receipt": "POSR00022",
+    "session": "POS/00003"
+  },
+  "tenders": [
+    {
+      "payment_method": "BANK",
+      "amount": 3300
+    },
+    {
+      "payment_method": "CASH",
+      "amount": 3300
+    }
+  ],
+  "source_account_deltas": {
+    "1101": 3300,
+    "1102": 3300,
+    "1301": -2000,
+    "2102": -600,
+    "4101": -6000,
+    "5101": 2000
+  },
+  "snapshot": {
+    "bank": 10074130,
+    "cash": 580300,
+    "on_hand": 457,
+    "payables": 300000,
+    "reserved": 0,
+    "sku_count": 15,
+    "receivables": 549670,
+    "location_count": 2,
+    "inventory_value": 4101000
+  },
+  "verified_at": "2026-11-06T23:46:12.572Z"
+}

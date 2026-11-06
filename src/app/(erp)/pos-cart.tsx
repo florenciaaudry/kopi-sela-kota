@@ -1,5 +1,7 @@
 "use client";
 
+import { SelectField } from "./select-field";
+
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -10,8 +12,9 @@ function SubmitHold() {
   return <button className="primary-button" disabled={pending} type="submit">{pending ? "Menyimpan…" : "Hold Order · 10 menit"}</button>;
 }
 
-export function PosCart({ products, action, transactionKey }: {
+export function PosCart({ products, customers, action, transactionKey }: {
   products: Product[];
+  customers: { id: string; name: string }[];
   action: (form: FormData) => Promise<void>;
   transactionKey: string;
 }) {
@@ -28,6 +31,7 @@ export function PosCart({ products, action, transactionKey }: {
     <form action={action} className="pos-cart">
       <input name="idempotency_key" type="hidden" value={transactionKey} />
       <p className="muted-copy">Tambah produk sesuai pesanan. Menahan pesanan mencadangkan stok, belum mencatat pembayaran.</p>
+      <SelectField label="Customer (optional)" name="customer_id" required={false} options={[{ value: "", label: "Pembeli umum" }, ...customers.map(item => ({ value: item.id, label: `${item.id} · ${item.name}` }))]} />
       {lines.map((line, index) => (
         <div className="pos-cart-line" key={line.id}>
           <label className="demo-field"><span>Product {index + 1}</span>

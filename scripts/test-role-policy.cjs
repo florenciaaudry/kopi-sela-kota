@@ -11,7 +11,7 @@ const expected = {
   sales: ["/sales", "/crm"],
   warehouse: ["/sales", "/purchase", "/inventory", "/returns"],
   procurement: ["/purchase", "/inventory"],
-  finance: ["/accounting", "/invoicing", "/returns"],
+  finance: ["/accounting", "/invoicing", "/returns", "/reporting"],
   cashier: ["/pos"],
   owner: Object.keys(routeAccess),
 };

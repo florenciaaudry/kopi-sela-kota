@@ -322,6 +322,7 @@ export type Database = {
         customer_id: string | null;
       }>;
       pos_holds: Table<{
+        customer_id: string | null;
         number: string;
         session_number: string;
         idempotency_key: string;
@@ -487,6 +488,9 @@ export type Database = {
       }, string>;
       get_owner_dashboard: Rpc<Record<string, never>, OwnerDashboard>;
       expire_pos_holds: Rpc<Record<string, never>, number>;
+      create_pos_hold_for_customer: Rpc<{
+        p_lines: Json; p_expires_in_minutes: number; p_idempotency_key: string; p_customer_id: string | null;
+      }, string>;
       create_pos_hold: Rpc<{
         p_lines: Json;
         p_expires_in_minutes: number;

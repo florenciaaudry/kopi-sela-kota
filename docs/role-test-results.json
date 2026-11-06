@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T16:18:04.441Z",
+  "checkedAt": "2026-11-06T23:49:47.171Z",
   "scope": "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.",
   "results": [
     {
@@ -88,6 +88,18 @@
     },
     {
       "role": "sales",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "0 baris"
@@ -103,6 +115,18 @@
       "check": "RLS baca product_costs",
       "status": "PASS",
       "detail": "0 baris"
+    },
+    {
+      "role": "sales",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "sales",
+      "check": "RLS baca sales_order_lines",
+      "status": "PASS",
+      "detail": "1 baris"
     },
     {
       "role": "sales",
@@ -220,6 +244,18 @@
     },
     {
       "role": "warehouse",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "0 baris"
@@ -233,6 +269,18 @@
     {
       "role": "warehouse",
       "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "warehouse",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "warehouse",
+      "check": "RLS baca sales_order_lines",
       "status": "PASS",
       "detail": "1 baris"
     },
@@ -352,6 +400,18 @@
     },
     {
       "role": "procurement",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "0 baris"
@@ -367,6 +427,18 @@
       "check": "RLS baca product_costs",
       "status": "PASS",
       "detail": "1 baris"
+    },
+    {
+      "role": "procurement",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "procurement",
+      "check": "RLS baca sales_order_lines",
+      "status": "PASS",
+      "detail": "0 baris"
     },
     {
       "role": "procurement",
@@ -484,6 +556,18 @@
     },
     {
       "role": "finance",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Reporting; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=INV00013; network_attempt=1"
+    },
+    {
+      "role": "finance",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "1 baris"
@@ -497,6 +581,18 @@
     {
       "role": "finance",
       "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "finance",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "finance",
+      "check": "RLS baca sales_order_lines",
       "status": "PASS",
       "detail": "1 baris"
     },
@@ -616,6 +712,18 @@
     },
     {
       "role": "cashier",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "0 baris"
@@ -629,6 +737,18 @@
     {
       "role": "cashier",
       "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "cashier",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "0 baris"
+    },
+    {
+      "role": "cashier",
+      "check": "RLS baca sales_order_lines",
       "status": "PASS",
       "detail": "0 baris"
     },
@@ -748,6 +868,18 @@
     },
     {
       "role": "owner",
+      "check": "URL /reporting",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Reporting; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /documents/invoice/INV00013",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=INV00013; network_attempt=1"
+    },
+    {
+      "role": "owner",
       "check": "RLS baca journal_entries",
       "status": "PASS",
       "detail": "1 baris"
@@ -761,6 +893,18 @@
     {
       "role": "owner",
       "check": "RLS baca product_costs",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "owner",
+      "check": "RLS baca purchase_order_lines",
+      "status": "PASS",
+      "detail": "1 baris"
+    },
+    {
+      "role": "owner",
+      "check": "RLS baca sales_order_lines",
       "status": "PASS",
       "detail": "1 baris"
     },

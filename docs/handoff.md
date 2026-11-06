@@ -59,54 +59,31 @@ npm run build
 
 Hasil pemeriksaan ulang 6 Nov 2026: typecheck, lint, test:pos-cart, test:rupiah-format, test:role-policy, dan production build Webpack lulus. Build verifikasi memakai `ERP_VERIFY_BUILD=1` dan output `.next-check` agar tidak berbagi folder dengan preview.
 
-## Status database bersama dan migrasi
+## Status database bersama dan migrasi — 7 November 2026
 
-- Pengguna sebelumnya melaporkan `supabase/setup.sql` berhasil dijalankan, termasuk foundation dan seed baseline, serta user Auth Owner/profil dibuat.
-- Pengguna melaporkan foundation/seed dan migrasi 002–003 telah diterapkan; migrasi 004–005 dikonfirmasi diterapkan. Migrasi 006 (batas role posting Credit Note) juga dikonfirmasi berhasil diterapkan.
-- Migrasi 007 yang sempat dirancang untuk mengubah pembayaran historis telah dipensiunkan sebelum deployment. Jangan mengubah CP00004 atau jurnalnya tanpa bukti/konfirmasi nominal yang dimaksud.
-- Migrasi 008 untuk checkout hold/tender telah diterapkan dan fungsi `complete_pos_hold` aktif cocok dengan sumber lokal setelah normalisasi whitespace. Migrasi 009 untuk detail receipt POS direct-sale dan backfill data lama diverifikasi sesuai jurnal. Detail backfill menambah audit event, tanpa mengubah saldo, stok, waktu transaksi, atau jurnal.
-- Bundle [`apply-transactions.sql`](../supabase/apply-transactions.sql) saat ini berisi migrasi lama 002–009 (007 berupa catatan retired/no-op). Bundle ini bukan patch aman untuk project bersama yang sudah menerapkan migrasi; jangan jalankan ulang.
-- Regresi terbaru menguji hold multi-tender, sesi tertutup, tender tidak lengkap, replay, direct BANK sale, serta validasi CRM/Sales/pembayaran melalui RPC dalam transaksi rollback. Data stok, jumlah sales, dan jurnal kembali sama setelah rollback. Ini bukan transaksi persisten dan bukan uji PDF baseline.
-- UI memilih customer POS dan query schema `pos_receipts.customer_id` berhasil. Posting receipt POS dengan customer terpilih belum dibuktikan terpisah. Uji Cashier end-to-end sukses melalui browser juga belum dilakukan.
-- Dalam verifikasi 5 November, login Owner, `get_owner_dashboard`, pembacaan modul, serta RPC Sales/Delivery/Invoice/Customer Payment/Purchase Order/Receipt/Vendor Bill/Vendor Payment berhasil digunakan.
-- Keberhasilan tiap alur yang dipanggil adalah bukti fungsi yang dibutuhkan alur tersebut tersedia. Tidak ada audit independen terhadap seluruh object/function database.
+Migrasi aktif 001–006, 008–013 diterapkan; 007 adalah retired/no-op. Perbaikan terbaru 010–013 sudah teruji di project yang sama. Jangan menjalankan ulang seed, setup.sql, apply-transactions.sql, atau migrasi lama pada database bersama. Bundle untuk instalasi project baru memerlukan pg_cron. Job expiry aktif tiap menit; fungsi housekeeping tidak bisa dipanggil langsung oleh anon/authenticated.
 
-**Jangan jalankan** `supabase/setup.sql`, `supabase/seed.sql`, atau `supabase/apply-transactions.sql` pada database bersama. Data bersama tidak lagi sama dengan seed awal; jangan reset, reseed, atau hapus transaksi.
+Database berisi transaksi rehearsal permanen. Jangan mengembalikan saldo ke baseline PDF. CP00004 tercatat Rp330 dan tidak dikoreksi diam-diam. Gunakan data saat ini sebelum/sesudah demonstrasi.
 
-Untuk project Supabase baru yang terisolasi, ikuti [checklist setup](./supabase-setup.md), tinjau file SQL yang akan dijalankan, buat user Auth, lalu buat profil sesuai skema. Jangan menyalin `.env.local` antar laptop atau memasukkan kredensial ke Git.
+## Bukti yang berhasil diverifikasi
 
-## Yang berhasil diuji live
+- 156 PASS / 0 FAIL untuk login/profil/nama enam role, 12 URL, batas akses/RLS tertentu dan logout. Ini bukan seluruh 36 tes bisnis.
+- Sales formulir browser: S00008 → DN00008 → INV00015 → CP00016, satu CBW-250, total Rp33.000 via Bank.
+- Purchase formulir browser: PO00004 → GR00003 → BILL00005 → VP00006, satu CBW-250 diterima baik, dibayar Rp15.000 via Bank. Enam jurnal kedua alur seimbang; Bank +18000, stok/nilai persediaan netral.
+- Cashier Maya melalui browser: POS/00005 → POSR00012, TEH-250 C06 Bank Rp6.600, kemudian Closed dengan kas Rp100.000 / selisih nol. Cashier menggunakan sesi sendiri.
+- Owner melalui browser: HOLD/00017 C06 → POSR00022, Cash Rp3.300 + Bank Rp3.300. Satu receipt/jurnal, PBJT Rp600, reservation consumed. Customer tersimpan sampai struk.
+- Sembilan kelompok regresi SQL rollback lulus, termasuk partial Delivery/invoice lanjutan, pembayaran parsial/overpay, replay, expiry dan Customer Hold. Stok dan jumlah dokumen tetap. Lihat migration-013-regression.json.
+- Reporting periode/saldo, drill-down jurnal dan detail invoice/payment diuji. Struk menolak printing bila rincian/tender tidak lengkap. Users & Permissions baca-saja dan Audit Log berjalan untuk Owner.
+- Pemeriksaan teknis, sumber saldo, dan bukti berada pada test-results.md, role-test-results.json, video-*-results.json, expiry-scheduler-results.json. PDF pengguna tunggal: Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf v1.3.
 
-- Login Owner dan persistensi sesi setelah reload.
-- Dashboard: 15 SKU, 2 lokasi; setelah dua transaksi uji, 480 unit on hand, 10 reserved, 470 available; nilai persediaan Rp4.290.000.
-- Sales `S00002` → Delivery `DN00001` → Invoice `INV00001` → Customer Payment `CP00002`: satu CBW-250, invoice Rp33.000 (net Rp30.000 + PBJT Rp3.000), dibayar penuh via Bank.
-- Purchase `PO00002` → Goods Receipt `GR00001` → Vendor Bill `BILL00001` → Vendor Payment `VP00002`: satu CBW-250 dari V01 senilai Rp15.000, diterima dan dibayar penuh via Bank.
-- Enam jurnal seimbang untuk delivery, invoice, customer payment, receipt, vendor bill, dan vendor payment.
-- Saldo akhir setelah Sales dan Purchase: AR Rp220.000, AP Rp300.000, Kas Rp500.000, Bank Rp10.018.000. Piutang dan utang baru lunas; saldo opening AR/AP tetap.
-- Penolakan tanpa perubahan data: T-04 kredit melampaui limit, T-08 Lost tanpa alasan (validasi server action), T-14 transfer melebihi Available, dan T-18 jumlah receipt melebihi PO.
-- Login/akses role: laporan terbaru 120 PASS / 0 FAIL. Hasil ini mencakup policy/route/auth yang diuji, bukan seluruh alur transaksi melalui UI setiap role.
-- Regresi SQL rollback: CRM, Sales, pengiriman parsial/berlebih, invoice, pembayaran parsial/berlebih, hold POS mixed-tender dan direct sale diuji; keadaan stok, sales, dan jurnal tidak berubah setelah rollback.
-- POS direct-sale sudah memiliki tampilan detail struk untuk diperiksa/cetak; browser test transaksi tidak mem-posting penjualan.
+## Batasan dan lanjutan
 
-Rincian, nomor jurnal, dan perhitungan tersedia di [docs/test-results.md](./test-results.md).
+Belum lengkap terhadap seluruh PDF: lifecycle Quotation/RFQ; master CRUD; approval diskon >5–10%; inspeksi retur terpisah; Log Notes dan seluruh relasi/detail dokumen; user management tulis; kuantitas stok historis; semua fixture T-01–T-36; deployment publik. F-21 optional ditunda. Jangan menyatakan 100% atau siap produksi.
 
-## Pekerjaan tersisa dan batasan
+Preview terbaru http://127.0.0.1:3000. Server yang tetap hidup adalah preview, bukan pekerjaan coding yang masih berjalan. Port 3001 adalah preview lama dan tidak menjadi rujukan video terbaru.
 
-- T-01–T-36 belum dijalankan seluruhnya terhadap fixture bersih. Tes transaksi sukses lain dapat menambah dokumen/stok/jurnal persisten.
-- SO kredit untuk C06 (COD, limit Rp0) tetap ditolak ketika eksposur melampaui limit. POS langsung lunas menyediakan selector pelanggan dan kolom receipt; persistence dengan customer terpilih belum diuji terpisah.
-- Approval diskon di atas 5% belum tersedia (T-10); pengeditan katalog/harga belum dibangun (T-06).
-- Contacts lengkap, lifecycle Quotation/RFQ, inspeksi retur Warehouse, laporan periode/drill-down, dan Log Notes/smart buttons lintas dokumen belum lengkap.
-- POS hold dan split tender telah memiliki regresi RPC rollback, tetapi checkout sukses Cashier belum diuji melalui browser. Detail customer-linked belum diuji terpisah. Jangan menambah transaksi ke database bersama hanya untuk menandai tes lulus.
-- Pintasan tugas per role ditambahkan pada Beranda. Purchase menampilkan tanggal order/terima, jumlah per PO dan bukti audit penerimaan yang hanya dibaca Owner; POS menampilkan bukti actor/waktu audit untuk persetujuan kas. Pemeriksaan browser dengan sesi aktif belum dilakukan setelah perubahan; pengujian login tetap harus memakai akun test/fixture, bukan mengubah transaksi bersama.
-- Belum ada lampiran file/foto bukti atau catatan persetujuan Owner yang wajib diisi; bukti yang ditampilkan adalah metadata audit dan alasan selisih kas yang sudah dicatat.
-- Build terbaru tersedia pada `http://127.0.0.1:3001` (preview PID 15660); diperlukan login ulang untuk memeriksa layar Purchase/POS pascaperubahan. Server preview lama 3000 juga tetap aktif.
-- Ekspor F-21 bersifat opsional pada PDF, dan belum dibuat.
-- Semua enam role sudah diuji pada akses/login, tetapi seluruh workflow transaksi per role belum diuji end-to-end di browser.
-- UI list, Kanban CRM, form dialog, Search/Filters/Group By sudah ada pada bagian yang dicatat; app switcher mobile bergaya grid dan navigasi role-based telah diperjelas. Kesesuaian field wajib semua wireframe dan inspeksi visual setiap state belum selesai.
-- Pemeriksaan visual beranda, menu, Sales, Returns, dialog dan viewport mobile tercatat; login anonim serta semua layar/state belum diperiksa lengkap.
-
-Handoff developer untuk melanjutkan proyek dapat dilakukan tanpa error yang menghalangi login Owner atau alur Sales/Purchase yang telah diuji. Ini **bukan** pernyataan bahwa aplikasi lengkap, seluruh test lulus, atau siap produksi.
+Kelompok masih perlu merekam maksimal 10 menit, upload YouTube Unlisted, menguji link, dan mengumpulkan link saja di Moodle Session 12 sebelum 7 November 2026 pukul 24.00 WIB. Lima unsur wajib dan susunan 9:30 tersedia pada PDF.
 
 ## Petunjuk sesi berikutnya
 
-Lanjutkan dari commit Git terbaru dan baca `docs/PROGRESS.md`, `docs/handoff.md`, `docs/test-results.md`, `docs/requirements-traceability.md`, serta panduan PDF. Jangan membuat ulang proyek. Jangan mengulang seed, setup, bundle transaksi, atau migrasi 002–009 pada Supabase bersama. Migrasi 007 adalah retired/no-op dan bukan koreksi data. Jangan melakukan mutasi pada database bersama tanpa izin eksplisit. Siapkan project uji terisolasi dan fixture PDF bersih untuk menyelesaikan verifikasi transaksi dan T-01–T-36. Catat hasil aktual; jangan mengklaim aplikasi lengkap atau siap produksi.
+Pull versi Git terbaru; baca PROGRESS.md, test-results.md dan requirements-traceability.md. Pertahankan perubahan teman, jangan membuat ulang proyek atau seed database bersama. Untuk fixture PDF bersih gunakan project uji terisolasi. Simpan kredensial hanya pada file lokal yang diabaikan Git; jangan memasukkan key administrator ke server aplikasi, PDF atau video.
