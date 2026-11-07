@@ -24,7 +24,7 @@ async function main(){
  const sourcePages=['/sales','/crm','/purchase','/inventory','/invoicing','/accounting','/pos','/returns'];
  const links=new Set();for(const route of sourcePages){const page=await get(route,owner.cookie);record(route+' document links rendered',page.status===200&&/class="record-link"/.test(page.html));for(const m of page.html.matchAll(/href="(\/documents\/[^"#?]+)"/g))links.add(m[1].replace(/&amp;/g,'&'));}
  await batch([...links],async link=>{const p=await get(link,owner.cookie);record('linked record '+link,p.status===200&&!denied(p.status,p.raw)&&!p.html.includes('Dokumen gagal dimuat'));});
- const expected={sales:['sales','delivery','lead','product','customer','vendor'],warehouse:['sales','delivery','purchase','receipt','transfer','product','customer','vendor'],procurement:['purchase','receipt','transfer','product','customer','vendor'],finance:['bill','payment','vendor-payment','credit-note','journal','product','customer','vendor'],cashier:['product','customer','vendor','hold','session']};
+ const expected={sales:['quotation','sales','delivery','lead','product','customer','vendor'],warehouse:['return-inspection','return-move','sales','delivery','purchase','receipt','transfer','product','customer','vendor'],procurement:['rfq','purchase','receipt','transfer','product','customer','vendor'],finance:['return-inspection','return-move','bill','payment','vendor-payment','credit-note','journal','product','customer','vendor'],cashier:['product','customer','vendor','hold','session']};
  for(const account of stored.accounts.filter(a=>a.role!=='owner')){
   const user=await session(account);
   await batch(Object.entries(references),async ([kind,reference])=>{

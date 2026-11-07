@@ -1,5 +1,11 @@
 # Panduan handoff — Kopi Sela Kota ERP
 
+## Pembaruan workflow terbaru
+
+Migrasi 014–018 telah diterapkan dan diverifikasi. Login/akses enam role 180 PASS, detail/link 204 PASS, fixture backend T-01–T-36 36 PASS, enam regresi workflow terisolasi PASS. Quotation, approval, RFQ, master CRUD, Log Notes dan inspeksi retur tersedia. Alur aktual Q00003 → S00014 → DN00019 → INV00032 → RI00001 → CN00001 berhasil, stok/piutang/saldo akun kembali persis semula sesudah retur penuh tersegel. Bukti di workflow-return-live-results.json.
+
+Jangan jalankan ulang setup.sql, seed, apply-transactions.sql, atau apply-pending-workflows.sql pada database bersama. Laptop baru cukup pull/clone, npm ci, .env.local pribadi, npm run dev. File kredensial QA/admin tetap lokal, bukan Git. Editor multi-line Sales/Purchase, seluruh uji visual dan deployment publik belum lengkap; angka tes backend bukan sertifikasi seluruh PDF.
+
 ## Status handoff
 
 Status diperbarui 7 November 2026. Login enam role, alur browser Sales/Purchase/POS, Reporting dan integritas Hold memiliki bukti pengujian. Navigasi memakai Apps switcher pada topbar dan area kerja lebar penuh; CRM menyediakan List dan Kanban. Seluruh PDF/T-01–T-36 belum lengkap; lihat gap dan hasil terbaru di bawah.

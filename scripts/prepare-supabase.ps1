@@ -49,6 +49,9 @@ if ($incrementalMigrations.Count -gt 0) {
   )
   foreach ($migration in $incrementalMigrations) {
     $migrationSql = [System.IO.File]::ReadAllText($migration.FullName, [System.Text.Encoding]::UTF8)
+    # Keep a single outer transaction: source migrations contain their own BEGIN/COMMIT.
+    $migrationSql = [System.Text.RegularExpressions.Regex]::Replace($migrationSql, '(?im)^begin;[ \t]*\r?$', '')
+    $migrationSql = [System.Text.RegularExpressions.Regex]::Replace($migrationSql, '(?im)^commit;[ \t]*\r?$', '')
     $upgradeSql += @("-- MIGRATION: $($migration.Name)", $migrationSql, "")
   }
   $upgradeSql += @("commit;")

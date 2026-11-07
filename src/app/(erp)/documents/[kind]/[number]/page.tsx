@@ -57,6 +57,7 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
   sections.push({title,fields,rows:(result.data??[]) as unknown as Row[],kind:target,error:Boolean(result.error)});
  }
  if("lines" in definition)await related(kind==="journal"?"Journal Items":"Order Lines",definition.lines.table,definition.lines.foreign,kind==="journal"?String(row.id):number,definition.lines.fields);
+ if(kind==="credit-note")await related("Return Inspection","return_inspections","credit_note_number",number,[{key:"number",label:"Reference"},{key:"sku",label:"Product",document:"product"},{key:"quantity",label:"Return Quantity"},{key:"item_condition",label:"Inspection"},{key:"status",label:"Status"}],"return-inspection");
  if(kind==="return-inspection")await related("Return Stock Moves","return_stock_moves","inspection_number",number,[{key:"number",label:"Reference"},{key:"restock_quantity",label:"Restocked Quantity"},{key:"rejected_quantity",label:"Rejected Quantity"},{key:"stock_value",label:"Stock Value",format:"money"}],"return-move");
  if(kind==="sales") {
   await related("Deliveries","delivery_notes","sales_order_number",number,[{key:"number",label:"Reference"},{key:"delivered_at",label:"Delivered On",format:"time"}],"delivery");
@@ -116,6 +117,10 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
    const commitments=(orders.data??[]).filter(o=>["Sales Order","Partial Delivery","Delivered","Invoiced"].includes(o.status)).reduce((n,o)=>n+Math.max(0,Number(o.total)-posted.filter(i=>i.source_document?.split(":")[0]===o.number).reduce((a,i)=>a+Number(i.total),0)),0);
    sections.push({title:"Credit Exposure",fields:[{key:"receivable",label:"Unpaid Invoices",format:"money"},{key:"commitments",label:"Uninvoiced Sales Commitments",format:"money"},{key:"exposure",label:"Total Exposure",format:"money"},{key:"limit",label:"Credit Limit",format:"money"},{key:"remaining",label:"Remaining Credit",format:"money"}],rows:[{receivable,commitments,exposure:receivable+commitments,limit:row.credit_limit,remaining:Number(row.credit_limit)-receivable-commitments}]});
   }
+ }
+ if(kind==="product"&&["warehouse","procurement","finance","owner"].includes(profile.role)) {
+  const cost=await client.from("product_costs").select("standard_cost").eq("sku",number).maybeSingle();
+  sections.push({title:"Costing",fields:[{key:"standard_cost",label:"Standard Cost",format:"money"}],rows:cost.data?[cost.data]:[],error:Boolean(cost.error)});
  }
  if(kind==="product"&&["warehouse","procurement","owner"].includes(profile.role)) {
   const stock=await client.from("inventory_availability").select("location_code,on_hand,reserved,available").eq("sku",number);

@@ -35,3 +35,9 @@ Jika Project URL/key sama sekali belum dikonfigurasi, aplikasi lokal berjalan pa
 ## Laptop baru untuk database yang sudah ada
 
 Jika project Supabase bersama sudah disiapkan, jangan jalankan `setup.sql`, `seed.sql`, atau `apply-transactions.sql` lagi. Clone repository, jalankan `npm ci`, buat `.env.local` dari `.env.example`, isi URL dan publishable/anon key, lalu jalankan `npm run dev` dan login dengan user yang sudah ada. Detail langkah dan hasil verifikasi tersedia di [panduan handoff](./handoff.md).
+
+## Upgrade workflow 014–018 — sudah diterapkan 7 November 2026
+
+`supabase/apply-pending-workflows.sql` hanya menggabungkan migrasi 014–018, atomic tanpa seed. Telah dijalankan pengguna pada database 001–013 dan tabel/RPC diverifikasi aktual. Jangan jalankan ulang. Untuk project kosong gunakan jalur clean install; jangan mencampurkan seed dengan upgrade database bersama.
+
+Perintah uji aman tanpa jaringan/database bersama: `npm run test:pdf-fixtures`, `npm run test:workflow-controls`. Keduanya memakai PostgreSQL memori dan identitas Auth fixture, bukan akun produksi. `scripts/test-live-workflows.cjs` berbeda: login aktual, membuat draft QA/Log Note/audit, lalu membatalkan draft; tidak boleh disamakan dengan tes read-only.

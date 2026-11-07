@@ -1,7 +1,9 @@
 {
   "scope": "Read-only actual document pages, links, role boundaries and missing records. Not full PDF business fixtures; no transaction posted.",
-  "checked_at": "2026-11-07T02:12:49.365Z",
+  "checked_at": "2026-11-07T05:19:05.574Z",
   "references": {
+    "quotation": "Q00001",
+    "rfq": "RFQ00001",
     "sales": "S00002",
     "delivery": "DN00001",
     "purchase": "PO00001",
@@ -18,6 +20,22 @@
     "session": "POS/00001"
   },
   "results": [
+    {
+      "check": "quotation actual record details",
+      "status": "PASS"
+    },
+    {
+      "check": "rfq actual record details",
+      "status": "PASS"
+    },
+    {
+      "check": "return-inspection no existing sample",
+      "status": "NOT_TESTED"
+    },
+    {
+      "check": "return-move no existing sample",
+      "status": "NOT_TESTED"
+    },
     {
       "check": "sales actual record details",
       "status": "PASS"
@@ -123,7 +141,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/sales/S00002",
+      "check": "linked record /documents/sales/S00007",
       "status": "PASS"
     },
     {
@@ -131,11 +149,11 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/sales/S00008",
+      "check": "linked record /documents/sales/S00002",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/sales/S00007",
+      "check": "linked record /documents/sales/S00008",
       "status": "PASS"
     },
     {
@@ -155,15 +173,15 @@
       "status": "PASS"
     },
     {
+      "check": "linked record /documents/delivery/DN00001",
+      "status": "PASS"
+    },
+    {
       "check": "linked record /documents/delivery/DN00002",
       "status": "PASS"
     },
     {
       "check": "linked record /documents/delivery/DN00007",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/delivery/DN00001",
       "status": "PASS"
     },
     {
@@ -191,7 +209,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/purchase/PO00003",
+      "check": "linked record /documents/purchase/PO00004",
       "status": "PASS"
     },
     {
@@ -199,15 +217,15 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/purchase/PO00004",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/receipt/GR00003",
+      "check": "linked record /documents/purchase/PO00003",
       "status": "PASS"
     },
     {
       "check": "linked record /documents/receipt/GR00002",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/receipt/GR00003",
       "status": "PASS"
     },
     {
@@ -235,10 +253,6 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/product/CBW-500",
-      "status": "PASS"
-    },
-    {
       "check": "linked record /documents/product/CKB-PCS",
       "status": "PASS"
     },
@@ -251,15 +265,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/product/KAP-250",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/product/KFV-250",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/product/KMC-250",
+      "check": "linked record /documents/product/CBW-500",
       "status": "PASS"
     },
     {
@@ -267,11 +273,15 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/product/LEM-250",
+      "check": "linked record /documents/product/KFV-250",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/product/KUK-PCS",
+      "check": "linked record /documents/product/KAP-250",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/product/KMC-250",
       "status": "PASS"
     },
     {
@@ -283,11 +293,11 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/product/TEH-250",
+      "check": "linked record /documents/product/KUK-PCS",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/invoice/OPEN-AR-C02",
+      "check": "linked record /documents/product/LEM-250",
       "status": "PASS"
     },
     {
@@ -295,11 +305,15 @@
       "status": "PASS"
     },
     {
+      "check": "linked record /documents/invoice/OPEN-AR-C02",
+      "status": "PASS"
+    },
+    {
       "check": "linked record /documents/invoice/INV00003",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/invoice/INV00013",
+      "check": "linked record /documents/product/TEH-250",
       "status": "PASS"
     },
     {
@@ -307,11 +321,15 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/bill/OPEN-AP-V02",
+      "check": "linked record /documents/invoice/INV00013",
       "status": "PASS"
     },
     {
       "check": "linked record /documents/bill/BILL00001",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/bill/OPEN-AP-V02",
       "status": "PASS"
     },
     {
@@ -331,7 +349,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/payment/CP00004",
+      "check": "linked record /documents/vendor-payment/VP00004",
       "status": "PASS"
     },
     {
@@ -339,15 +357,11 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/vendor-payment/VP00004",
-      "status": "PASS"
-    },
-    {
       "check": "linked record /documents/payment/CP00002",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/vendor-payment/VP00002",
+      "check": "linked record /documents/payment/CP00004",
       "status": "PASS"
     },
     {
@@ -359,15 +373,11 @@
       "status": "PASS"
     },
     {
+      "check": "linked record /documents/vendor-payment/VP00002",
+      "status": "PASS"
+    },
+    {
       "check": "linked record /documents/journal/JRN~20261106~00041",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/journal/JRN~20261106~00050",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/journal/JRN~20261106~00037",
       "status": "PASS"
     },
     {
@@ -375,11 +385,15 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261106~00009",
+      "check": "linked record /documents/journal/JRN~20261106~00037",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261106~00039",
+      "check": "linked record /documents/journal/JRN~20261106~00050",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/journal/JRN~20261106~00009",
       "status": "PASS"
     },
     {
@@ -387,7 +401,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261106~00030",
+      "check": "linked record /documents/journal/JRN~20261106~00039",
       "status": "PASS"
     },
     {
@@ -395,15 +409,11 @@
       "status": "PASS"
     },
     {
+      "check": "linked record /documents/journal/JRN~20261106~00030",
+      "status": "PASS"
+    },
+    {
       "check": "linked record /documents/journal/JRN~20261106~00035",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/journal/JRN~20261106~00033",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/journal/JRN~20261106~00036",
       "status": "PASS"
     },
     {
@@ -411,11 +421,19 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261106~00040",
+      "check": "linked record /documents/journal/JRN~20261106~00036",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/journal/JRN~20261106~00033",
       "status": "PASS"
     },
     {
       "check": "linked record /documents/journal/JRN~20261106~00007",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/journal/JRN~20261106~00040",
       "status": "PASS"
     },
     {
@@ -427,14 +445,6 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261105~00006",
-      "status": "PASS"
-    },
-    {
-      "check": "linked record /documents/journal/JRN~20261106~00011",
-      "status": "PASS"
-    },
-    {
       "check": "linked record /documents/journal/JRN~20261106~00029",
       "status": "PASS"
     },
@@ -443,11 +453,11 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261105~00002",
+      "check": "linked record /documents/journal/JRN~20261105~00006",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/journal/JRN~20261105~00001",
+      "check": "linked record /documents/journal/JRN~20261106~00011",
       "status": "PASS"
     },
     {
@@ -459,11 +469,19 @@
       "status": "PASS"
     },
     {
+      "check": "linked record /documents/journal/JRN~20261105~00002",
+      "status": "PASS"
+    },
+    {
+      "check": "linked record /documents/journal/JRN~20261105~00001",
+      "status": "PASS"
+    },
+    {
       "check": "linked record /documents/journal/JRN~OPEN~20261020",
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/session/POS~00005",
+      "check": "linked record /documents/session/POS~00004",
       "status": "PASS"
     },
     {
@@ -471,7 +489,7 @@
       "status": "PASS"
     },
     {
-      "check": "linked record /documents/session/POS~00004",
+      "check": "linked record /documents/session/POS~00005",
       "status": "PASS"
     },
     {
@@ -495,11 +513,11 @@
       "status": "PASS"
     },
     {
-      "check": "sales purchase role boundary",
+      "check": "sales rfq role boundary",
       "status": "PASS"
     },
     {
-      "check": "sales receipt role boundary",
+      "check": "sales quotation role boundary",
       "status": "PASS"
     },
     {
@@ -511,11 +529,15 @@
       "status": "PASS"
     },
     {
+      "check": "sales receipt role boundary",
+      "status": "PASS"
+    },
+    {
       "check": "sales payment role boundary",
       "status": "PASS"
     },
     {
-      "check": "sales journal role boundary",
+      "check": "sales purchase role boundary",
       "status": "PASS"
     },
     {
@@ -523,11 +545,11 @@
       "status": "PASS"
     },
     {
-      "check": "sales vendor-payment role boundary",
+      "check": "sales journal role boundary",
       "status": "PASS"
     },
     {
-      "check": "sales vendor role boundary",
+      "check": "sales vendor-payment role boundary",
       "status": "PASS"
     },
     {
@@ -539,7 +561,7 @@
       "status": "PASS"
     },
     {
-      "check": "sales customer role boundary",
+      "check": "sales session role boundary",
       "status": "PASS"
     },
     {
@@ -547,11 +569,35 @@
       "status": "PASS"
     },
     {
-      "check": "sales session role boundary",
+      "check": "sales vendor role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "sales customer role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse quotation role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse rfq role boundary",
       "status": "PASS"
     },
     {
       "check": "warehouse delivery role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse sales role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse bill role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse payment role boundary",
       "status": "PASS"
     },
     {
@@ -563,23 +609,7 @@
       "status": "PASS"
     },
     {
-      "check": "warehouse sales role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "warehouse vendor-payment role boundary",
-      "status": "PASS"
-    },
-    {
       "check": "warehouse journal role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "warehouse payment role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "warehouse bill role boundary",
       "status": "PASS"
     },
     {
@@ -587,15 +617,11 @@
       "status": "PASS"
     },
     {
-      "check": "warehouse vendor role boundary",
+      "check": "warehouse vendor-payment role boundary",
       "status": "PASS"
     },
     {
       "check": "warehouse product role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "warehouse customer role boundary",
       "status": "PASS"
     },
     {
@@ -607,11 +633,35 @@
       "status": "PASS"
     },
     {
-      "check": "procurement sales role boundary",
+      "check": "warehouse customer role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "warehouse vendor role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "procurement quotation role boundary",
       "status": "PASS"
     },
     {
       "check": "procurement delivery role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "procurement sales role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "procurement rfq role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "procurement bill role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "procurement payment role boundary",
       "status": "PASS"
     },
     {
@@ -627,23 +677,11 @@
       "status": "PASS"
     },
     {
-      "check": "procurement vendor-payment role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "procurement payment role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "procurement bill role boundary",
-      "status": "PASS"
-    },
-    {
       "check": "procurement lead role boundary",
       "status": "PASS"
     },
     {
-      "check": "procurement customer role boundary",
+      "check": "procurement vendor-payment role boundary",
       "status": "PASS"
     },
     {
@@ -651,7 +689,7 @@
       "status": "PASS"
     },
     {
-      "check": "procurement vendor role boundary",
+      "check": "procurement session role boundary",
       "status": "PASS"
     },
     {
@@ -659,15 +697,27 @@
       "status": "PASS"
     },
     {
-      "check": "procurement session role boundary",
+      "check": "procurement customer role boundary",
       "status": "PASS"
     },
     {
-      "check": "finance sales role boundary",
+      "check": "procurement vendor role boundary",
       "status": "PASS"
     },
     {
       "check": "finance delivery role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "finance quotation role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "finance rfq role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "finance sales role boundary",
       "status": "PASS"
     },
     {
@@ -683,14 +733,6 @@
       "status": "PASS"
     },
     {
-      "check": "finance journal role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "finance vendor-payment role boundary",
-      "status": "PASS"
-    },
-    {
       "check": "finance bill role boundary",
       "status": "PASS"
     },
@@ -699,7 +741,11 @@
       "status": "PASS"
     },
     {
-      "check": "finance vendor role boundary",
+      "check": "finance journal role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "finance vendor-payment role boundary",
       "status": "PASS"
     },
     {
@@ -707,7 +753,7 @@
       "status": "PASS"
     },
     {
-      "check": "finance customer role boundary",
+      "check": "finance hold role boundary",
       "status": "PASS"
     },
     {
@@ -715,7 +761,11 @@
       "status": "PASS"
     },
     {
-      "check": "finance hold role boundary",
+      "check": "finance vendor role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "finance customer role boundary",
       "status": "PASS"
     },
     {
@@ -723,7 +773,11 @@
       "status": "PASS"
     },
     {
-      "check": "cashier receipt role boundary",
+      "check": "cashier rfq role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "cashier quotation role boundary",
       "status": "PASS"
     },
     {
@@ -731,15 +785,15 @@
       "status": "PASS"
     },
     {
+      "check": "cashier bill role boundary",
+      "status": "PASS"
+    },
+    {
       "check": "cashier purchase role boundary",
       "status": "PASS"
     },
     {
-      "check": "cashier vendor-payment role boundary",
-      "status": "PASS"
-    },
-    {
-      "check": "cashier bill role boundary",
+      "check": "cashier receipt role boundary",
       "status": "PASS"
     },
     {
@@ -747,19 +801,15 @@
       "status": "PASS"
     },
     {
-      "check": "cashier journal role boundary",
-      "status": "PASS"
-    },
-    {
       "check": "cashier lead role boundary",
       "status": "PASS"
     },
     {
-      "check": "cashier vendor role boundary",
+      "check": "cashier vendor-payment role boundary",
       "status": "PASS"
     },
     {
-      "check": "cashier customer role boundary",
+      "check": "cashier journal role boundary",
       "status": "PASS"
     },
     {
@@ -772,6 +822,14 @@
     },
     {
       "check": "cashier session role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "cashier vendor role boundary",
+      "status": "PASS"
+    },
+    {
+      "check": "cashier customer role boundary",
       "status": "PASS"
     },
     {

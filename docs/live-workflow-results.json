@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-11-07T05:15:14.654Z",
+  "scope": "Actual Supabase Auth/RPC/RLS and local HTTP-rendered pages. QA cancelled drafts/Log Note/audit retained, temporary unused Customer deleted. No business posting/stock/saldo changes. Not visual browser tests.",
+  "references": {
+    "quotation": "Q00002",
+    "rfq": "RFQ00002"
+  },
+  "results": [
+    {
+      "name": "All new database tables deployed",
+      "status": "PASS"
+    },
+    {
+      "name": "Sales Quotation 6% saved and blocked before approval",
+      "status": "PASS"
+    },
+    {
+      "name": "Owner approves actual saved revision; edit invalidates approval",
+      "status": "PASS"
+    },
+    {
+      "name": "Persistent Log Note shared with authorized Owner and hidden from Cashier",
+      "status": "PASS"
+    },
+    {
+      "name": "Procurement saves RFQ and cancels without creating PO",
+      "status": "PASS"
+    },
+    {
+      "name": "Owner CRUD unused QA master; historical Customer deletion rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Warehouse/Finance inspection pages and permitted forms render",
+      "status": "PASS"
+    },
+    {
+      "name": "QA Quotation cancelled; business documents and stock unchanged",
+      "status": "PASS"
+    }
+  ]
+}

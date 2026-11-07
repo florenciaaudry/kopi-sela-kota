@@ -14,3 +14,7 @@ Status keputusan berlaku untuk baseline simulasi. Alternatif yang mengubah atura
 - Perubahan yang ditolak tidak boleh meninggalkan perubahan saldo sebagian.
 - Pembalikan resmi digunakan untuk koreksi posting; histori terposting tidak dihapus.
 - Setiap penyimpangan baru dari keputusan ini harus menambahkan alternatif, pihak yang terdampak, mitigasi, uji tambahan, dan status persetujuan dosen.
+
+## D-05 — approval selisih POS (migrasi 017)
+
+Counted Cash berbeda dari Expected Cash selalu menjadi Pending Approval, termasuk penutupan oleh Owner. Persetujuan Owner secara eksplisit membuat satu jurnal selisih: Cash 1101 versus Expense 6101, dengan arah debit/kredit mengikuti surplus/kekurangan. Replay tidak membuat jurnal kedua. Tidak mem-posting ulang selisih sesi historis. T-28 terisolasi membuktikan selisih -1000 dan approval tepat sekali; approval selisih live baru belum dilakukan.

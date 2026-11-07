@@ -26,7 +26,9 @@
     "test:document-actions": "node scripts/test-document-actions.cjs",
     "test:document-links": "node scripts/test-document-navigation.cjs",
     "test:pdf-fixtures": "node scripts/test-pdf-fixtures.mjs",
-    "test:workflow-controls": "node scripts/test-workflow-controls.mjs"
+    "test:workflow-controls": "node scripts/test-workflow-controls.mjs",
+    "test:workflow-live": "node scripts/test-live-workflows.cjs",
+    "test:master-forms": "node scripts/test-master-form.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

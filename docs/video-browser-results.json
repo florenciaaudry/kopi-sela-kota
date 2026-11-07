@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "checked_at": "2026-11-07T02:17:10.387Z",
+  "checked_at": "2026-11-07T05:19:51.913Z",
   "scope": "Actual Owner browser submissions for full Sales/Purchase qty 1, independently reconciled read-only against database; separate from six-role RPC rehearsal and PDF fixtures.",
   "references": {
     "sales": "S00008",

@@ -1,5 +1,27 @@
 # Test Results
 
+## Verifikasi terbaru — workflow PDF (7 November 2026)
+
+- Migrasi 014–018 aktif: pengguna menjalankan bundle incremental, lalu kelima tabel baru dan RPC diverifikasi langsung lewat Supabase. Jangan jalankan bundle/seed ulang.
+- Quotation → approval Owner berbasis revision → Sales Order; RFQ → Purchase Order; master CRUD; Vendor Pricelist; Log Notes persisten; Warehouse Inspection → Return Move → Finance Credit Note sudah diimplementasikan dengan pemeriksaan role/status di database.
+- `test:pdf-fixtures`: **36/36 PASS** pada PostgreSQL terisolasi yang memuat migrasi produksi dan seed PDF. Setiap skenario memakai transaksi rollback. Auth memakai identitas uji; pg_cron hanya adapter registrasi; ini bukan 36 pengujian visual browser/live.
+- `test:workflow-controls`: **6/6 PASS**, mencakup CRUD, histori, stale approval, snapshot harga, pembatalan RFQ, Log Notes/replay/RLS/private RPC.
+- Supabase aktual: **8/8 kelompok PASS** di `live-workflow-results.json`. Q00002 dan RFQ00002 merupakan draft QA dibatalkan; Log Note/audit dipertahankan. Customer QA sementara dihapus. Jumlah dokumen usaha dan stok sebelum/sesudah identik; tidak ada SO/PO/Invoice/Payment baru dari tes ini.
+- Form HTML native ke Server Actions: create Customer COD/Credit Limit 0, edit, delete master belum dipakai **PASS** (`master-form-results.json`). Ini menguji jalur aplikasi, bukan hanya RPC.
+- Enam role: **180 PASS / 0 FAIL**, termasuk empat URL workflow baru, login/logout nyata, nama tokoh, RLS, dan penolakan aksi lintas role.
+- Regresi Receipt menemukan benturan nama variabel yang menyebabkan replay ambigu: diperbaiki migrasi 018. Clean install menemukan MIXED payment sebelum chart seed: migrasi 003 dibuat bergantung ketersediaan akun dan seed memasukkan MIXED setelah chart; **seed bersama tidak dijalankan**.
+
+**Batas yang masih nyata:** Quotation/RFQ baru masih satu Product per dokumen; editor multi-line Sales/Purchase yang diwajibkan wireframe belum selesai. Fixture backend yang lulus tidak menggantikan pengujian visual semua layar/state, Auth nyata untuk setiap transaksi fixture, pengujian seluruh variasi retur lewat browser, deployment publik, atau paket/video penyerahan. Settings user management tulis tetap perlu diselesaikan/verifikasi terpisah. F-21 ekspor Optional ditunda. Jangan menyebut seluruh PDF/produksi selesai.
+
+
+### Bukti retur terintegrasi aktual
+
+`workflow-return-live-results.json`: PASS. Sales membuat Quotation Q00003 dengan Discount 6%, Owner menyetujui, lalu Sales mengonfirmasi S00014. Warehouse mem-posting DN00019 (1 CBW-250), Finance membuat INV00032 senilai Rp31.020. Warehouse mencatat RI00001 sealed dan Return Move RM-RI00001; Finance mem-posting CN00001 Rp31.020. Replay posting Credit Note menghasilkan referensi sama. Detail Inspection, Return Move, Credit Note dan relasi SO dibaca dari aplikasi.
+
+Semua kuantitas stok perusahaan, piutang belum lunas, dan saldo setiap akun jurnal terposting cocok persis sebelum/sesudah alur. Dokumen bisnis QA dan audit tetap tersimpan; tidak dihapus/reset. Pemeriksaan ini memakai Auth/RPC nyata serta halaman HTTP, bukan klaim klik/visual browser. Pengujian akses enam role: 180 PASS; detail/link: 204 PASS sebelum contoh retur dibuat, 4 jenis tanpa sample saat itu ditandai NOT_TESTED. Kini retur/Return Move/Credit Note punya bukti aktual terpisah; Internal Transfer live belum ditambahkan hanya untuk mengisi laporan.
+
+## Catatan tahap sebelumnya (historis)
+
 T-01–T-36 belum dijalankan penuh sesuai fixture PDF. PDF sumber asli terbaca 43 halaman; matriks `docs/requirements-traceability.md` mencatat halaman, implementasi, tes, status, dan gap. Pada 5 Nov 2026 login Owner/dashboard serta satu siklus Sales/Purchase sampai lunas berhasil diuji live; transaksi itu persisten di database bersama. Pada 6 Nov pengguna mengonfirmasi migrasi 004–005 berhasil diterapkan; query halaman POS terautentikasi membaca kolom customer pada receipt tanpa error skema. Tidak ada seed, migrasi, atau transaksi POS baru yang dijalankan dalam pemeriksaan ini.
 
 ## Hasil terbaru yang menggantikan snapshot awal — 6 Nov 2026

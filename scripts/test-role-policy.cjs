@@ -8,10 +8,10 @@ const loaded = new Module("role-policy");
 loaded._compile(compiled, "role-policy.cjs");
 const { routeAccess, applicationAccess } = loaded.exports;
 const expected = {
-  sales: ["/sales", "/crm"],
-  warehouse: ["/sales", "/purchase", "/inventory", "/returns"],
-  procurement: ["/purchase", "/inventory"],
-  finance: ["/accounting", "/invoicing", "/returns", "/reporting"],
+  sales: ["/sales", "/crm", "/quotations", "/master-data"],
+  warehouse: ["/sales", "/purchase", "/inventory", "/returns", "/inspections"],
+  procurement: ["/purchase", "/inventory", "/rfqs", "/master-data"],
+  finance: ["/accounting", "/invoicing", "/returns", "/reporting", "/inspections", "/master-data"],
   cashier: ["/pos"],
   owner: Object.keys(routeAccess),
 };

@@ -1,0 +1,358 @@
+{
+  "run": "qa-return-1794028873815",
+  "references": {
+    "quotation": "Q00003",
+    "approval": "Q00003",
+    "salesOrder": "S00014",
+    "delivery": "DN00019",
+    "invoice": "INV00032",
+    "inspection": "RI00001",
+    "creditNote": "CN00001",
+    "returnMove": "RM-RI00001"
+  },
+  "status": "PASS",
+  "scope": "Persisted QA actual Supabase role RPCs and local HTTP pages. One approved Quotation/Delivery/Invoice is fully reversed by Warehouse sealed inspection and Finance Credit Note. Documents remain; no seed/reset/deletion of business history. Not a browser visual test.",
+  "before": {
+    "stock": [
+      {
+        "sku": "AIR-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 5
+      },
+      {
+        "sku": "AIR-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CBW-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CBW-250",
+        "location_code": "WH-TBT",
+        "on_hand": 30
+      },
+      {
+        "sku": "CBW-500",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "CBW-500",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CKB-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 6
+      },
+      {
+        "sku": "CKB-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CRO-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "CRO-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "GRN-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "GRN-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KAP-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KAP-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KFV-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KFV-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KLT-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KLT-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KMC-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KMC-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KSU-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KSU-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KUK-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KUK-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "LEM-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "LEM-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "MUF-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "MUF-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "TEH-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 6
+      },
+      {
+        "sku": "TEH-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      }
+    ],
+    "ar": 549670,
+    "ledger": {
+      "1101": 580300,
+      "1102": 10074130,
+      "1201": 549670,
+      "1301": 4101000,
+      "2101": -300000,
+      "2102": -48100,
+      "2103": 0,
+      "3101": -14710000,
+      "4101": -481000,
+      "5101": 234000
+    }
+  },
+  "after": {
+    "stock": [
+      {
+        "sku": "AIR-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 5
+      },
+      {
+        "sku": "AIR-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CBW-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CBW-250",
+        "location_code": "WH-TBT",
+        "on_hand": 30
+      },
+      {
+        "sku": "CBW-500",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "CBW-500",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CKB-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 6
+      },
+      {
+        "sku": "CKB-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "CRO-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "CRO-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "GRN-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "GRN-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KAP-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KAP-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KFV-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KFV-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KLT-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KLT-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KMC-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KMC-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KSU-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KSU-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "KUK-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "KUK-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "LEM-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "LEM-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "MUF-PCS",
+        "location_code": "CAFE-TBT",
+        "on_hand": 10
+      },
+      {
+        "sku": "MUF-PCS",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      },
+      {
+        "sku": "TEH-250",
+        "location_code": "CAFE-TBT",
+        "on_hand": 6
+      },
+      {
+        "sku": "TEH-250",
+        "location_code": "WH-TBT",
+        "on_hand": 20
+      }
+    ],
+    "ar": 549670,
+    "ledger": {
+      "1101": 580300,
+      "1102": 10074130,
+      "1201": 549670,
+      "1301": 4101000,
+      "2101": -300000,
+      "2102": -48100,
+      "2103": 0,
+      "3101": -14710000,
+      "4101": -481000,
+      "5101": 234000
+    }
+  },
+  "checkedAt": "2026-11-07T05:21:28.355Z",
+  "checks": [
+    "Owner approval6% -> SO saved price",
+    "Warehouse Delivery1 -> Finance Invoice31020",
+    "Warehouse sealed Inspection -> single Return Move1",
+    "Finance Credit Note31020 -> repeat no duplicate",
+    "Inspection/Credit Note/Return Move actual HTTP details",
+    "All company stock, unpaid AR and every posted ledger account restored exactly"
+  ]
+}

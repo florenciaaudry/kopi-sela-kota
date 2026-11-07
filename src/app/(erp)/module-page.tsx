@@ -298,7 +298,7 @@ export async function ModulePage({
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
-        {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/quotations">New Quotation</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
+        {workflowsReady ? (["sales","owner"].includes(profile.role) ? <section className="section-card"><a className="primary-button" href="/quotations">New Quotation</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : null) : <>
         <Panel title="Buat Sales Order">
           <Form action={createSalesOrderAction} submitLabel="Simpan Sales Order">
             <Select label="Pelanggan" name="customer_id" options={customers.data.map((item) => option(item.id, `${item.id} · ${item.name} · limit ${money(item.credit_limit)}`))} />
@@ -445,7 +445,7 @@ export async function ModulePage({
           {profile.role === "warehouse" ? <><strong>Untuk Warehouse:</strong> cocokkan nomor Purchase Order dengan barang fisik. Masukkan jumlah diterima baik dan ditolak sesuai hitungan; waktu penerimaan dicatat otomatis saat kamu posting.</> : null}
           {profile.role === "owner" ? <><strong>Untuk Owner:</strong> daftar menampilkan tanggal order, waktu penerimaan, serta jumlah diterima/ditolak. Bukti pelaku dan waktu posting tersedia pada Audit Penerimaan.</> : null}
         </section>
-        {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/rfqs">New RFQ</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
+        {workflowsReady ? (["procurement","owner"].includes(profile.role) ? <section className="section-card"><a className="primary-button" href="/rfqs">New RFQ</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : null) : <>
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
             <PurchaseOrderFields vendors={vendors.data} prices={prices.data} products={products.data} />
@@ -842,7 +842,7 @@ export async function ModulePage({
   return (
     <ModuleWorkspace role={profile.role}>
       <PageTitle module={module} /><MessageBanner message={message} />
-      {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/inspections">Return Inspections</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
+      {workflowsReady ? <section className="section-card"><a className="primary-button" href="/inspections">Return Inspections</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
       <Panel title="Buat Credit Note">
         <Form action={createCreditNoteAction} submitLabel="Posting Credit Note">
           <Select

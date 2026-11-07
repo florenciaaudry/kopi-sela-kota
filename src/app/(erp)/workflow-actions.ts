@@ -8,7 +8,7 @@ import type { Json } from "@/lib/supabase/database.types";
 import { parseRupiahInput } from "@/lib/format";
 const text=(f:FormData,k:string)=>String(f.get(k)??"").trim();
 function number(f:FormData,k:string){const n=Number(text(f,k));if(!Number.isFinite(n))throw Error(k+" tidak valid");return n;}
-function money(f:FormData,k:string){const n=parseRupiahInput(text(f,k));if(n===null)throw Error(k+" tidak valid");return n;}
+function money(f:FormData,k:string,allowZero=false){const n=parseRupiahInput(text(f,k),{allowZero});if(n===null)throw Error(k+" tidak valid");return n;}
 function safeReturn(f:FormData,fallback:string){const p=text(f,"return_to");return /^\/(quotations|rfqs|master-data|inspections)(\?[^#]*)?$/.test(p)||/^\/documents\/[a-z-]+\/[-A-Za-z0-9~%]+$/.test(p)?p:fallback;}
 function message(path:string,error:string):never{redirect(path+(path.includes("?")?"&":"?")+"error="+encodeURIComponent(error));}
 export async function workflowAction(f:FormData){
@@ -41,7 +41,7 @@ export async function masterAction(f:FormData){
  try {
   if(kind==="vendor-price")result=await c.rpc("save_vendor_price",{p_vendor_id:text(f,"vendor_id"),p_sku:text(f,"sku"),p_minimum_quantity:number(f,"minimum_quantity"),p_purchase_price:money(f,"purchase_price"),p_purchase_tax:text(f,"purchase_tax"),p_idempotency_key:text(f,"idempotency_key")});
   else {
-   const data:Record<string,Json>=op==="delete"?{}:{name:text(f,"name"),city:text(f,"city"),type:text(f,"customer_type"),credit_limit:kind==="customer"?money(f,"credit_limit"):0,payment_terms_code:text(f,"payment_terms_code"),tax_profile:text(f,"tax_profile"),size:text(f,"size"),color:text(f,"color"),default_vendor_id:text(f,"default_vendor_id"),sales_price:kind==="product"?money(f,"sales_price"):0,standard_cost:kind==="product"?money(f,"standard_cost"):0};
+   const data:Record<string,Json>=op==="delete"?{}:{name:text(f,"name"),city:text(f,"city"),type:text(f,"customer_type"),credit_limit:kind==="customer"?money(f,"credit_limit",true):0,payment_terms_code:text(f,"payment_terms_code"),tax_profile:text(f,"tax_profile"),size:text(f,"size"),color:text(f,"color"),default_vendor_id:text(f,"default_vendor_id"),sales_price:kind==="product"?money(f,"sales_price",true):0,standard_cost:kind==="product"?money(f,"standard_cost",true):0};
    result=await c.rpc("manage_master",{p_kind:kind,p_operation:op,p_id:id,p_data:op==="delete"?{}:data,p_idempotency_key:text(f,"idempotency_key")});
   }
  }catch(e){message(back,e instanceof Error?e.message:"Data master tidak valid.");}

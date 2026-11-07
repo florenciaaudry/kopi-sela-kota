@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-06T23:49:47.171Z",
+  "checkedAt": "2026-11-07T05:15:47.269Z",
   "scope": "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.",
   "results": [
     {
@@ -25,6 +25,30 @@
       "check": "nama sesuai tokoh PDF",
       "status": "PASS",
       "detail": "Arif Mahendra"
+    },
+    {
+      "role": "sales",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Quotations; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Master Data; network_attempt=1"
+    },
+    {
+      "role": "sales",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
     },
     {
       "role": "sales",
@@ -184,6 +208,30 @@
     },
     {
       "role": "warehouse",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Return Inspections; network_attempt=1"
+    },
+    {
+      "role": "warehouse",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=allowed; actual=allowed; title=Sales; network_attempt=1"
@@ -337,6 +385,30 @@
       "check": "nama sesuai tokoh PDF",
       "status": "PASS",
       "detail": "Bima Santoso"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Requests for Quotation; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Master Data; network_attempt=1"
+    },
+    {
+      "role": "procurement",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
     },
     {
       "role": "procurement",
@@ -496,6 +568,30 @@
     },
     {
       "role": "finance",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Master Data; network_attempt=1"
+    },
+    {
+      "role": "finance",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Return Inspections; network_attempt=1"
+    },
+    {
+      "role": "finance",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
@@ -652,6 +748,30 @@
     },
     {
       "role": "cashier",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
+    },
+    {
+      "role": "cashier",
       "check": "URL /sales",
       "status": "PASS",
       "detail": "HTTP 200; expected=denied; actual=denied; title=none; network_attempt=1"
@@ -805,6 +925,30 @@
       "check": "nama sesuai tokoh PDF",
       "status": "PASS",
       "detail": "Nadia Prameswari"
+    },
+    {
+      "role": "owner",
+      "check": "URL /quotations",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Quotations; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /rfqs",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Requests for Quotation; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /master-data",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Master Data; network_attempt=1"
+    },
+    {
+      "role": "owner",
+      "check": "URL /inspections",
+      "status": "PASS",
+      "detail": "HTTP 200; expected=allowed; actual=allowed; title=Return Inspections; network_attempt=1"
     },
     {
       "role": "owner",
