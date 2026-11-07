@@ -1,3 +1,4 @@
+import { ReturnContextField } from "./contextual-back-link";
 import { EditorToolbar } from "./editor-toolbar";
 import { EditSession } from "./edit-session";
 import Link from "next/link";
@@ -9,7 +10,7 @@ import { SubmitButton } from "./submit-button";
 import { workflowAction } from "./workflow-actions";
 import type { ReactNode } from "react";
 function WorkflowForm({kind,row,operation,label,children}:{kind:string;row:Record<string,unknown>;operation:string;label:string;children?:ReactNode}){
- return <form data-unsaved-guard={operation==="save"?"":undefined} action={workflowAction} className="demo-form workflow-command"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="number" value={String(row.number)}/><input type="hidden" name="revision" value={Number(row.revision??0)}/><input type="hidden" name="operation" value={operation}/><input type="hidden" name="return_to" value={documentHref(kind as DocumentKind,String(row.number))}/><input type="hidden" name="idempotency_key" value={crypto.randomUUID()}/>{operation==="save"?<EditorToolbar/>:null}{children}{operation!=="save"?<SubmitButton label={label}/>:null}</form>;
+ return <form data-unsaved-guard={operation==="save"?"":undefined} action={workflowAction} className="demo-form workflow-command"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="number" value={String(row.number)}/><input type="hidden" name="revision" value={Number(row.revision??0)}/><input type="hidden" name="operation" value={operation}/><input type="hidden" name="return_to" value={documentHref(kind as DocumentKind,String(row.number))}/><input type="hidden" name="idempotency_key" value={crypto.randomUUID()}/>{operation==="save"?<EditorToolbar/>:<ReturnContextField/>}{children}{operation!=="save"?<SubmitButton label={label}/>:null}</form>;
 }
 export async function WorkflowRecordControls({kind,row}:{kind:string;row:Record<string,unknown>}){
  const p=await requireRole(["sales","warehouse","procurement","finance","cashier","owner"]);

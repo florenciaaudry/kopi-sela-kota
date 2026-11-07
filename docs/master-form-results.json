@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-07T05:35:54.262Z",
+  "checkedAt": "2026-11-07T05:59:41.158Z",
   "status": "PASS",
-  "scope": "Actual native HTML forms POSTed to Next Server Actions: create COD credit0, update, confirmed delete. Temporary unused QA Customer deleted. No business transaction or stock posting."
+  "scope": "Actual native HTML forms POSTed to Next Server Actions: create COD credit0, update, confirmed delete. Back origin /sales retained after actual edit Save. Temporary unused QA Customer deleted. No business transaction or stock posting."
 }

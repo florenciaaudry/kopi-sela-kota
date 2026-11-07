@@ -1,5 +1,12 @@
 # Audit interaksi dokumen — 7 November 2026
 
+## Perbaikan Back mengikuti konteks asal
+
+Customer/Product/Vendor yang dibuka dari Sales, Purchase, atau dokumen terkait kini membawa parameter `from` internal tervalidasi. Back mengembalikan halaman asal beserta rantai sebelumnya: Sales → Sales Order → Customer → Back ke Sales Order → Back ke Sales. Buka master langsung tanpa konteks tetap memakai Master Data untuk role yang berhak. URL eksternal/protokol/route tidak dikenal ditolak; tujuan Back tidak memberi hak akses baru. Konteks bertahan setelah Save dan penolakan validasi. Tidak bergantung history browser/referrer/sessionStorage. Receipt, Invoice, CRM Kanban, Reporting dan tautan DataTable memakai konteks yang sama.
+
+Bukti: test:context-navigation memeriksa helper keamanan dan rantai tautan/Back lewat HTML aktual dengan Owner. Ini uji baca-saja, bukan klaim visual browser; tidak ada perubahan transaksi/database.
+
+
 ## Dashboard dan kontrol edit ringkas
 
 Dashboard menampilkan tujuh app sesuai role sebagai isi utama; kartu identitas/account/perusahaan serta pintasan berulang dihapus. Financial Summary selalu terbuka agar tidak terlewat; panduan alur tetap dapat dibuka bila diperlukan. Filter kelompok tetap tersedia dalam disclosure; pencarian app tetap langsung terlihat. Semua label Beranda pada navigasi aktif menjadi Dashboard; nama aplikasi/dokumen Odoo tetap Inggris.

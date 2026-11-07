@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "../record-link";
 import { requireRole } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/format";

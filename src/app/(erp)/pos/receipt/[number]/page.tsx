@@ -1,3 +1,4 @@
+import { ContextualBackLink } from "../../../contextual-back-link";
 import { DocumentNotes } from "../../../document-notes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,7 +31,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ number
   ]);
   const productNames=new Map((products.data??[]).map(product=>[product.sku,product.name]));
   return <div className="page-stack">
-    <div className="receipt-toolbar"><nav className="record-breadcrumb"><Link className="record-back" href="/pos">← Point of Sale</Link><span aria-hidden="true">/</span><span>{receipt.number}</span></nav><PrintButton /></div>
+    <div className="receipt-toolbar"><nav className="record-breadcrumb"><ContextualBackLink fallback="/pos" label="Point of Sale"/><span aria-hidden="true">/</span><span>{receipt.number}</span></nav><PrintButton /></div>
     <article className="section-card printable-receipt">
       <header className="receipt-heading"><p className="eyebrow">SALES RECEIPT</p><h1>Kopi Sela Kota</h1><p>Tebet, Jakarta</p><span className="demo-status">Paid</span></header>
       <dl className="receipt-meta"><div><dt>Reference</dt><dd>{receipt.number}</dd></div><div><dt>Date &amp; Time</dt><dd>{new Date(receipt.sold_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB</dd></div><div><dt>POS Session</dt><dd>{receipt.session_number}</dd></div><div><dt>Customer</dt><dd>{receipt.customer_id ? `${receipt.customer_id} · ${customer.data?.name ?? ""}` : "Pembeli umum"}</dd></div>{holdNumber ? <div><dt>Order on Hold</dt><dd>{holdNumber}</dd></div> : null}</dl>

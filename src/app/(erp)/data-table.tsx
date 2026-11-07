@@ -3,7 +3,7 @@
 import { odooLabel } from "@/lib/erp-terminology";
 
 import { useId, useState } from "react";
-import Link from "next/link";
+import Link from "./record-link";
 import { resolveDocumentLink, sourceDocumentKind, type DocumentKind } from "@/lib/document-navigation";
 import { useDocumentRole } from "./document-link-context";
 

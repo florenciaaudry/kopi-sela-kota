@@ -4,7 +4,7 @@ import { MasterRecordControls } from "../../../master-controls";
 import { DocumentNotes } from "../../../document-notes";
 import { WorkflowRecordControls } from "../../../workflow-record-controls";
 import { WorkflowNotice, type WorkflowMessage } from "../../../workflow-workspace";
-import Link from "next/link";
+import Link from "../../../record-link";
 import type { ReactNode } from "react";
 import { CurrencyInput } from "../../../currency-input";
 import { SubmitButton } from "../../../submit-button";

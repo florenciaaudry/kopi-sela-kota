@@ -1,6 +1,6 @@
 import { DocumentHeading } from "../../../document-heading";
 import { DocumentNotes } from "../../../document-notes";
-import Link from "next/link";
+import Link from "../../../record-link";
 import { CurrencyInput } from "../../../currency-input";
 import { SubmitButton } from "../../../submit-button";
 import { recordCustomerPaymentAction } from "../../../module-actions";

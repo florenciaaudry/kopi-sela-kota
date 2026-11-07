@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./record-link";
 import { documentHref } from "@/lib/document-navigation";
 import { useState } from "react";
 

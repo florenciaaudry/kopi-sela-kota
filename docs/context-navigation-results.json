@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-07T05:58:35.729Z",
+  "status": "PASS",
+  "scope": "Origin helper unit checks and authenticated Owner HTTP-rendered source-link/Back navigation. Read-only; no history/sessionStorage guessing. Not visual browser automation.",
+  "checks": [
+    "Sales -> Sales Order -> Customer -> Back to original order -> Back to Sales",
+    "/documents/customer/C03 opened from /sales returns there",
+    "/documents/product/CBW-250 opened from /purchase returns there",
+    "/documents/vendor/V01 opened from /purchase returns there",
+    "Direct master opening uses Master Data; external origin rejected"
+  ]
+}

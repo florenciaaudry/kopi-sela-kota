@@ -30,7 +30,8 @@
     "test:workflow-live": "node scripts/test-live-workflows.cjs",
     "test:master-forms": "node scripts/test-master-form.cjs",
     "test:unsaved-guard": "node scripts/test-unsaved-guard.cjs",
-    "test:compact-ui": "node scripts/test-compact-ui.cjs"
+    "test:compact-ui": "node scripts/test-compact-ui.cjs",
+    "test:context-navigation": "node scripts/test-context-navigation.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
