@@ -1,3 +1,5 @@
+import { EditorToolbar } from "./editor-toolbar";
+import { EditSession } from "./edit-session";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -7,7 +9,7 @@ import { SubmitButton } from "./submit-button";
 import { workflowAction } from "./workflow-actions";
 import type { ReactNode } from "react";
 function WorkflowForm({kind,row,operation,label,children}:{kind:string;row:Record<string,unknown>;operation:string;label:string;children?:ReactNode}){
- return <form action={workflowAction} className="demo-form workflow-command"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="number" value={String(row.number)}/><input type="hidden" name="revision" value={Number(row.revision??0)}/><input type="hidden" name="operation" value={operation}/><input type="hidden" name="return_to" value={documentHref(kind as DocumentKind,String(row.number))}/><input type="hidden" name="idempotency_key" value={crypto.randomUUID()}/>{children}<SubmitButton label={label}/></form>;
+ return <form data-unsaved-guard={operation==="save"?"":undefined} action={workflowAction} className="demo-form workflow-command"><input type="hidden" name="kind" value={kind}/><input type="hidden" name="number" value={String(row.number)}/><input type="hidden" name="revision" value={Number(row.revision??0)}/><input type="hidden" name="operation" value={operation}/><input type="hidden" name="return_to" value={documentHref(kind as DocumentKind,String(row.number))}/><input type="hidden" name="idempotency_key" value={crypto.randomUUID()}/>{operation==="save"?<EditorToolbar/>:null}{children}{operation!=="save"?<SubmitButton label={label}/>:null}</form>;
 }
 export async function WorkflowRecordControls({kind,row}:{kind:string;row:Record<string,unknown>}){
  const p=await requireRole(["sales","warehouse","procurement","finance","cashier","owner"]);
@@ -22,5 +24,5 @@ export async function WorkflowRecordControls({kind,row}:{kind:string;row:Record<
  {approvalNeeded&&p.role==="owner"?<WorkflowForm kind={kind} row={row} operation="approve" label="Approve Discount"/>:null}
  {!approvalNeeded?<><WorkflowForm kind={kind} row={row} operation="confirm" label={kind==="quotation"?"Confirm Sales Order":"Confirm Purchase Order"}/>{row.status!=="Sent"?<WorkflowForm kind={kind} row={row} operation="Sent" label={kind==="quotation"?"Mark Quotation Sent":"Mark RFQ Sent"}/>:null}</>:null}
  <WorkflowForm kind={kind} row={row} operation="Cancelled" label="Cancel Draft"/></div>
- <details className="document-action-form"><summary>Edit Draft</summary><WorkflowForm kind={kind} row={row} operation="save" label="Save Draft"><DraftFields kind={kind} customers={customers.data??[]} products={products.data??[]} vendors={vendors.data??[]} prices={prices.data??[]} initial={row}/><p>Perubahan draft memakai harga katalog saat disimpan dan membatalkan approval versi sebelumnya.</p></WorkflowForm></details></section>;
+ <details className="document-action-form"><summary>Edit</summary><EditSession><WorkflowForm kind={kind} row={row} operation="save" label="Save Draft"><DraftFields kind={kind} customers={customers.data??[]} products={products.data??[]} vendors={vendors.data??[]} prices={prices.data??[]} initial={row}/><p>Perubahan draft memakai harga katalog saat disimpan dan membatalkan approval versi sebelumnya.</p></WorkflowForm></EditSession></details></section>;
 }

@@ -31,7 +31,7 @@ export async function workflowAction(f:FormData){
  revalidatePath("/", "layout");
  const target=op==="confirm"?(kind==="quotation"?"sales":"purchase"):op==="post"?"credit-note":kind;
  if(!knownDocumentKind(target))message(back,"Referensi dokumen tidak valid.");
- redirect(documentHref(target,result.data));
+ redirect(documentHref(target,result.data)+"?success="+encodeURIComponent(op==="save"?"Changes saved.":"Action completed."));
 }
 export async function masterAction(f:FormData){
  const kind=text(f,"kind"),op=text(f,"operation"),id=text(f,"reference");const back=safeReturn(f,"/master-data");
@@ -47,7 +47,7 @@ export async function masterAction(f:FormData){
  }catch(e){message(back,e instanceof Error?e.message:"Data master tidak valid.");}
  if(result.error||!result.data)message(back,result.error?.message??"Master belum tersimpan.");
  revalidatePath("/","layout");if(kind==="vendor-price"||op==="delete")redirect("/master-data?success="+encodeURIComponent("Perubahan master tersimpan."));
- redirect(documentHref(kind as "customer"|"vendor"|"product",result.data));
+ redirect(documentHref(kind as "customer"|"vendor"|"product",result.data)+"?success="+encodeURIComponent("Changes saved."));
 }
 export type NoteState={error?:string;success?:string};
 export async function addNoteAction(_previous:NoteState,f:FormData):Promise<NoteState>{

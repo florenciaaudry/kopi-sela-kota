@@ -1,5 +1,16 @@
 # Audit interaksi dokumen — 7 November 2026
 
+## Dashboard dan kontrol edit ringkas
+
+Dashboard menampilkan tujuh app sesuai role sebagai isi utama; kartu identitas/account/perusahaan serta pintasan berulang dihapus. Ringkasan finansial dan panduan alur dapat dibuka bila perlu. Filter kelompok tetap tersedia dalam disclosure; pencarian app tetap langsung terlihat. Semua label Beranda pada navigasi aktif menjadi Dashboard; nama aplikasi/dokumen Odoo tetap Inggris.
+
+Dokumen memakai Back berupa breadcrumb menuju daftar asal; invoice kembali ke Invoicing, Receipt ke Point of Sale, master menuju Master Data untuk role yang diizinkan. Form Quotation/RFQ serta master baru/edit memiliki Save dan Discard di kiri atas form. Save tetap Server Action/RPC yang ada, menampilkan pending dan konfirmasi sukses; Discard hanya me-reset/remount input lokal dan menutup editor, tanpa menulis database. Dokumen posted/confirmed tetap terkunci sesuai aturan; tidak menambahkan Save palsu pada dokumen baca-saja. Register Payment ditampilkan dalam disclosure.
+
+Peringatan perubahan belum disimpan berlaku pada Back/tautan navigasi, reload/penutupan halaman, serta tindakan lain seperti Confirm/Logout saat ada editor kotor. Save dan Discard tidak memicu peringatan yang tidak perlu. Tombol Back selalu menuju daftar sumber, bukan riwayat browser yang tidak pasti.
+
+Verifikasi: pengujian perilaku guard, HTML route aktual, dan native master forms (create COD0/edit/delete master QA sementara). Visual/viewport otomatis belum diverifikasi karena host browser automation tidak tersedia. Tidak ada migrasi/seed/reset atau perubahan transaksi usaha pada perapian UI ini.
+
+
 ## Verifikasi terbaru — workflow PDF (7 November 2026)
 
 - Migrasi 014–018 aktif: pengguna menjalankan bundle incremental, lalu kelima tabel baru dan RPC diverifikasi langsung lewat Supabase. Jangan jalankan bundle/seed ulang.

@@ -1,3 +1,5 @@
+import { DocumentHeading } from "../../../document-heading";
+import { moduleTitles } from "@/lib/erp-terminology";
 import { MasterRecordControls } from "../../../master-controls";
 import { DocumentNotes } from "../../../document-notes";
 import { WorkflowRecordControls } from "../../../workflow-record-controls";
@@ -161,7 +163,8 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
  const history=profile.role==="owner" ? await client.from("audit_events").select("actor_label,action,occurred_at").eq("document_number",number).order("occurred_at",{ascending:false}).limit(100) : null;
  const status=row.status??row.stage;
  return <div className="page-stack module-workspace">
-  <div className="page-heading"><div><p className="eyebrow">{definition.title}</p><h1>{number}</h1><p>{definition.title}</p>{status?<span className="demo-status">{String(status)}</span>:null}</div><Link className="secondary-button" href={definition.back}>← {definition.back === "/" ? "Apps" : definition.title+" / List"}</Link></div>
+  <DocumentHeading back={definition.back==="/"&&["sales","finance","procurement","owner"].includes(profile.role)?"/master-data":definition.back} backLabel={definition.back==="/"?(["sales","finance","procurement","owner"].includes(profile.role)?"Master Data":"Dashboard"):moduleTitles[definition.back.slice(1)]??definition.title} title={definition.title} reference={number} status={status?String(status):undefined}/>
+
   <WorkflowNotice message={message}/><WorkflowRecordControls kind={kind} row={row}/><MasterRecordControls kind={kind} row={row}/>
   {actions.length?<section className="section-card document-actions-panel" aria-label="Document Actions"><h2>Actions</h2>{actions}</section>:null}
   <nav className="document-smart-buttons" aria-label="Related Documents">{sections.map((s,i)=>({s,i})).filter(({s})=>s.kind).map(({s,i})=><a className="secondary-button" key={i} href={"#related-"+i}>{s.title}{!s.error ? ` (${s.rows.length>500?"500+":s.rows.length})`:""}</a>)}</nav>
