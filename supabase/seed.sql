@@ -239,7 +239,8 @@ on conflict (id) do update set
 
 insert into public.pos_payment_methods (id, name, account_code, settlement) values
   ('CASH', 'Cash', '1101', 'Langsung'),
-  ('BANK', 'Bank', '1102', 'Langsung; tanpa biaya transaksi')
+  ('BANK', 'Bank', '1102', 'Langsung; tanpa biaya transaksi'),
+  ('MIXED', 'Cash + Bank', '1101', 'Split tender')
 on conflict (id) do update set
   name = excluded.name, account_code = excluded.account_code,
   settlement = excluded.settlement;

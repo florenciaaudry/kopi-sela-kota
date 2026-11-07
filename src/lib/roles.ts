@@ -10,6 +10,10 @@ export const roleLabels: Record<AppRole, string> = {
 };
 
 export const routeAccess = {
+  "/quotations": ["sales", "owner"],
+  "/rfqs": ["procurement", "owner"],
+  "/master-data": ["sales", "procurement", "finance", "owner"],
+  "/inspections": ["warehouse", "finance", "owner"],
   "/sales": ["sales", "warehouse", "owner"],
   "/crm": ["sales", "owner"],
   "/purchase": ["procurement", "warehouse", "owner"],

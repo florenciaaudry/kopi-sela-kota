@@ -1,6 +1,7 @@
 // Bahasa skenario Indonesia; nama aplikasi, dokumen, field dan status Odoo Inggris.
 // Pemetaan ini hanya untuk presentasi, bukan nilai database atau identitas aksi.
 export const moduleTitles: Record<string, string> = {
+  quotations: "Quotations", rfqs: "Requests for Quotation", "master-data": "Master Data", inspections: "Return Inspections",
   sales: "Sales", crm: "CRM", purchase: "Purchase", inventory: "Inventory",
   accounting: "Accounting", invoicing: "Invoicing", pos: "Point of Sale",
   returns: "Returns & Credit Notes",

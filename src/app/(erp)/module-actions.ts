@@ -265,12 +265,11 @@ export async function createVendorBillAction(form: FormData) {
   const path = "/invoicing";
   const purchaseOrder = required(form, "purchase_order_number", "Purchase Order", path);
   const key = idempotencyKey(form, path);
-  return submitRpc(path, ["finance", "owner"], (client) =>
-    client.rpc("create_vendor_bill", {
-      p_purchase_order_number: purchaseOrder,
-      p_idempotency_key: key,
-    }),
-  );
+  const quantity = form.has("bill_quantity") ? positiveInteger(form, "bill_quantity", "Bill Quantity", path) : null;
+  return submitRpc(path, ["finance", "owner"], (client) => quantity !== null
+    ? client.rpc("create_vendor_bill_for_quantity", {p_purchase_order_number:purchaseOrder,p_quantity:quantity,p_idempotency_key:key})
+    : client.rpc("create_vendor_bill", {p_purchase_order_number:purchaseOrder,p_idempotency_key:key}));
+
 }
 
 export async function recordVendorPaymentAction(form: FormData) {

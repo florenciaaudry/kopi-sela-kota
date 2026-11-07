@@ -1,0 +1,189 @@
+{
+  "scope": "Isolated real PostgreSQL (PGlite) backend fixtures using production migration functions and fresh PDF seed per test transaction. Auth identities are a test harness, not real Supabase login; pg_cron registration stubbed, not background execution. Calendar uses current clock; expiry tested by elapsed time. UI visual and live deployment verification remain separate.",
+  "checked_at": "2026-11-07T02:57:35.041Z",
+  "results": [
+    {
+      "id": "T-01",
+      "name": "Seven applications / six roles / opening snapshot",
+      "status": "PASS"
+    },
+    {
+      "id": "T-02",
+      "name": "Cashier denied journal/posting; reload retains S00001",
+      "status": "PASS"
+    },
+    {
+      "id": "T-03",
+      "name": "Sales saves C06 COD zero / C02 terms and exposure",
+      "status": "PASS"
+    },
+    {
+      "id": "T-04",
+      "name": "C02 99000 exceeds 300000 credit with opening AR220000",
+      "status": "PASS"
+    },
+    {
+      "id": "T-05",
+      "name": "Distinct CBW250/500 dimensions and costs",
+      "status": "PASS"
+    },
+    {
+      "id": "T-06",
+      "name": "Duplicate SKU rejected; catalogue edit preserves locked order",
+      "status": "PASS"
+    },
+    {
+      "id": "T-07",
+      "name": "Qualified opportunity retains expected revenue/probability",
+      "status": "PASS"
+    },
+    {
+      "id": "T-08",
+      "name": "Lost reason required and persisted",
+      "status": "PASS"
+    },
+    {
+      "id": "T-09",
+      "name": "Quotation 5 percent preview, reset zero, confirmed reservation",
+      "status": "PASS"
+    },
+    {
+      "id": "T-10",
+      "name": "Six percent requires revision-specific Owner approval and locks",
+      "status": "PASS"
+    },
+    {
+      "id": "T-11",
+      "name": "Eight delivered and two backordered / COGS",
+      "status": "PASS"
+    },
+    {
+      "id": "T-12",
+      "name": "Over-delivery blocked, remainder two can be delivered once",
+      "status": "PASS"
+    },
+    {
+      "id": "T-13",
+      "name": "Transfer five preserves total company quantity/value",
+      "status": "PASS"
+    },
+    {
+      "id": "T-14",
+      "name": "Transfer thirty-one exceeds Available thirty",
+      "status": "PASS"
+    },
+    {
+      "id": "T-15",
+      "name": "RFQ twenty becomes PO300000 without stock/AP",
+      "status": "PASS"
+    },
+    {
+      "id": "T-16",
+      "name": "RFQ confirmation replay and locked edits",
+      "status": "PASS"
+    },
+    {
+      "id": "T-17",
+      "name": "Receipt accepts sixteen rejects four",
+      "status": "PASS"
+    },
+    {
+      "id": "T-18",
+      "name": "Receipt twenty-one on order twenty rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "T-19",
+      "name": "Delivered-based invoice eight / 240000 plus24000",
+      "status": "PASS"
+    },
+    {
+      "id": "T-20",
+      "name": "No final invoice before delivery",
+      "status": "PASS"
+    },
+    {
+      "id": "T-21",
+      "name": "Bill sixteen / GRNI cleared / AP540000",
+      "status": "PASS"
+    },
+    {
+      "id": "T-22",
+      "name": "Supplier bill twenty held by three-way match",
+      "status": "PASS"
+    },
+    {
+      "id": "T-23",
+      "name": "Customer payment100000 / due164000 / AR384000",
+      "status": "PASS"
+    },
+    {
+      "id": "T-24",
+      "name": "Vendor partial100000 and overpayment140001 rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "T-25",
+      "name": "All sales journals balanced with exact ledger amounts",
+      "status": "PASS"
+    },
+    {
+      "id": "T-26",
+      "name": "Receipt/Bill replay creates no duplicate stock/journal",
+      "status": "PASS"
+    },
+    {
+      "id": "T-27",
+      "name": "Opening control POS00001 without new money/journal",
+      "status": "PASS"
+    },
+    {
+      "id": "T-28",
+      "name": "Cash variance pending then Owner approval exactly once",
+      "status": "PASS"
+    },
+    {
+      "id": "T-29",
+      "name": "Hold2CBW+1TEH ten minutes and zero sale posting",
+      "status": "PASS"
+    },
+    {
+      "id": "T-30",
+      "name": "Hold replay / oversell / cancel twice / expiry twice",
+      "status": "PASS"
+    },
+    {
+      "id": "T-31",
+      "name": "Mixed tender39600+33000 one receipt / exact cash-bank-stock",
+      "status": "PASS"
+    },
+    {
+      "id": "T-32",
+      "name": "Partial tender39600 never posts a paid receipt or stock",
+      "status": "PASS"
+    },
+    {
+      "id": "T-33",
+      "name": "Warehouse sealed return2 then Finance credit66000",
+      "status": "PASS"
+    },
+    {
+      "id": "T-34",
+      "name": "Damaged return no restock, replay and excess seven rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "T-35",
+      "name": "Exact nine dashboard fixture totals",
+      "status": "PASS"
+    },
+    {
+      "id": "T-36",
+      "name": "Source trace, repeat reads stable, Cashier journal blocked",
+      "status": "PASS"
+    }
+  ],
+  "passed": 36,
+  "failed": 0,
+  "shared_database_mutated": false
+}

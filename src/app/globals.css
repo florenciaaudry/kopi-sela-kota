@@ -1393,3 +1393,12 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 .document-action-form > summary { cursor:pointer; padding:14px 16px; font-weight:600; color:#72502e; }
 .document-action-form > form { padding:0 16px 16px; }
 .document-action-form > summary:focus-visible { outline:2px solid #997653; outline-offset:3px; }
+
+.document-note-list { padding:0; list-style:none; }
+.document-note-list li { border-bottom:1px solid #e4ded4; padding:15px 0; }
+.document-note-list time { display:block; color:#786d62; font-size:12px; margin-top:5px; }
+.document-note-list p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
+.demo-field textarea { border:1px solid #d6cdc0; border-radius:6px; padding:12px; font:inherit; resize:vertical; width:100%; color:#302820; background:white; }
+.workflow-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.workflow-command { margin:12px 0; }
+@media print { #log-notes { display:none!important; } }

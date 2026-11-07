@@ -1,3 +1,4 @@
+import { DocumentNotes } from "../../../document-notes";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
@@ -38,5 +39,6 @@ export default async function ReceiptPage({ params }: { params: Promise<{ number
       <h2>Payments</h2>{tenders.length === 0 ? <p role="alert">Rincian tender belum tersedia di database. Periksa transaksi ini sebelum memakai struk sebagai bukti pembayaran.</p> : null}<dl className="receipt-meta">{tenders.map((tender) => <div key={tender.payment_method}><dt>{tender.payment_method === "CASH" ? "Cash" : tender.payment_method === "BANK" ? "Bank" : tender.payment_method}</dt><dd>{formatRupiah(Number(tender.amount))}</dd></div>)}</dl>
       <p className="muted-copy">Terima kasih. Struk ini adalah bukti penjualan POS yang telah dibukukan.</p>
     </article>
+    <DocumentNotes kind="pos-receipt" reference={number}/>
   </div>;
 }

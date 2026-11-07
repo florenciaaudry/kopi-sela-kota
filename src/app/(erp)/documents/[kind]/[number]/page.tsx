@@ -1,3 +1,7 @@
+import { MasterRecordControls } from "../../../master-controls";
+import { DocumentNotes } from "../../../document-notes";
+import { WorkflowRecordControls } from "../../../workflow-record-controls";
+import { WorkflowNotice, type WorkflowMessage } from "../../../workflow-workspace";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CurrencyInput } from "../../../currency-input";
@@ -30,7 +34,7 @@ function ActionForm({title,action,fields,children,idempotent=true}:{title:string
   {children}<SubmitButton label={title}/>
  </form></details>;
 }
-export default async function BusinessDocument({params}:{params:Promise<{kind:string;number:string}>}) {
+export default async function BusinessDocument({params,searchParams}:{params:Promise<{kind:string;number:string}>;searchParams:Promise<WorkflowMessage>}) {
  const {kind,number:rawNumber}=await params;
  let number:string;try {number=decodeURIComponent(rawNumber).replaceAll("~","/");}catch{notFound();}
  if(!Object.hasOwn(documentDefinitions,kind)||number.length>100||!/^[-A-Za-z0-9/]+$/.test(number))notFound();
@@ -43,6 +47,7 @@ export default async function BusinessDocument({params}:{params:Promise<{kind:st
  if(!head.data)notFound();const row=head.data as unknown as Row;
  if(kind==="session"&&row.expected_cash===null)row.expected_cash=row.opening_cash;
  if(profile.role==="cashier"&&((kind==="session"&&row.opened_by!==profile.id)||(kind==="hold"&&row.created_by!==profile.id)))notFound();
+ const message=await searchParams;
  const now=await readClock();
  const actions:ReactNode[]=[];
  const sections:{title:string;fields:Column[];rows:Row[];kind?:DocumentKind;error?:boolean}[]=[];
@@ -52,6 +57,7 @@ export default async function BusinessDocument({params}:{params:Promise<{kind:st
   sections.push({title,fields,rows:(result.data??[]) as unknown as Row[],kind:target,error:Boolean(result.error)});
  }
  if("lines" in definition)await related(kind==="journal"?"Journal Items":"Order Lines",definition.lines.table,definition.lines.foreign,kind==="journal"?String(row.id):number,definition.lines.fields);
+ if(kind==="return-inspection")await related("Return Stock Moves","return_stock_moves","inspection_number",number,[{key:"number",label:"Reference"},{key:"restock_quantity",label:"Restocked Quantity"},{key:"rejected_quantity",label:"Rejected Quantity"},{key:"stock_value",label:"Stock Value",format:"money"}],"return-move");
  if(kind==="sales") {
   await related("Deliveries","delivery_notes","sales_order_number",number,[{key:"number",label:"Reference"},{key:"delivered_at",label:"Delivered On",format:"time"}],"delivery");
   if(canOpenDocument("invoice",profile.role)) {
@@ -151,6 +157,7 @@ export default async function BusinessDocument({params}:{params:Promise<{kind:st
  const status=row.status??row.stage;
  return <div className="page-stack module-workspace">
   <div className="page-heading"><div><p className="eyebrow">{definition.title}</p><h1>{number}</h1><p>{definition.title}</p>{status?<span className="demo-status">{String(status)}</span>:null}</div><Link className="secondary-button" href={definition.back}>← {definition.back === "/" ? "Apps" : definition.title+" / List"}</Link></div>
+  <WorkflowNotice message={message}/><WorkflowRecordControls kind={kind} row={row}/><MasterRecordControls kind={kind} row={row}/>
   {actions.length?<section className="section-card document-actions-panel" aria-label="Document Actions"><h2>Actions</h2>{actions}</section>:null}
   <nav className="document-smart-buttons" aria-label="Related Documents">{sections.map((s,i)=>({s,i})).filter(({s})=>s.kind).map(({s,i})=><a className="secondary-button" key={i} href={"#related-"+i}>{s.title}{!s.error ? ` (${s.rows.length>500?"500+":s.rows.length})`:""}</a>)}</nav>
   <section className="section-card"><h2>Details</h2><dl className="receipt-meta">{definition.fields.map(col=>{
@@ -160,5 +167,6 @@ export default async function BusinessDocument({params}:{params:Promise<{kind:st
   })}{kind==="bill"?<div><dt>Amount Due</dt><dd>{formatRupiah(Number(row.total)-Number(row.amount_paid))}</dd></div>:null}</dl></section>
   {sections.map((section,index)=><section id={"related-"+index} className="section-card" key={index}><h2>{section.title}</h2>{section.error?<p role="alert" className="form-error">Bagian ini belum dapat dimuat. Coba muat ulang.</p>:<><DataTable documents={Object.fromEntries(section.fields.flatMap((col,i)=>col.document?[[i,col.document as DocumentKind]]:section.kind&&i===0?[[i,section.kind]]:[]))} headers={section.fields.map(f=>f.label)} rows={section.rows.slice(0,500).map(item=>section.fields.map(col=>formatted(item,col)))}/>{section.rows.length>500?<p>500 data pertama ditampilkan. Gunakan daftar modul untuk menelusuri lebih lanjut.</p>:null}</>}</section>)}
   {history?<section className="section-card"><h2>Audit / History</h2>{history.error?<p role="alert">Riwayat belum dapat dimuat.</p>:<DataTable headers={["User","Action","Date & Time (WIB)"]} rows={(history.data??[]).map(e=>[e.actor_label,e.action,new Date(e.occurred_at).toLocaleString("id-ID",{timeZone:"Asia/Jakarta"})])}/>}</section>:null}
+ <DocumentNotes kind={kind} reference={number}/>
  </div>;
 }

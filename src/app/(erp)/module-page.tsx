@@ -106,7 +106,7 @@ function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRol
     (isAction ? actions : views).push(section);
   });
   add(children);
-  return <div className="page-stack module-workspace">{Children.toArray(intro)}<WorkspaceViews actions={actions} views={views} /></div>;
+  return <div className="page-stack module-workspace">{Children.toArray(intro)}<nav className="document-smart-buttons" aria-label="Workflow Links">{["sales","owner"].includes(role)?<Link href="/quotations" className="secondary-button">Quotations</Link>:null}{["procurement","owner"].includes(role)?<Link href="/rfqs" className="secondary-button">Requests for Quotation</Link>:null}{["sales","procurement","finance","owner"].includes(role)?<Link href="/master-data" className="secondary-button">Master Data</Link>:null}{["warehouse","finance","owner"].includes(role)?<Link href="/inspections" className="secondary-button">Return Inspections</Link>:null}</nav><WorkspaceViews actions={actions} views={views} /></div>;
 }
 
 function Form({
@@ -248,6 +248,8 @@ export async function ModulePage({
   const message = searchParams ? await searchParams : undefined;
   const profile = await requireRole([...routeAccess[`/${module}`]]);
   const supabase = await createSupabaseServerClient();
+  const workflowProbe = await supabase.from("quotations").select("number").limit(0);
+  const workflowsReady = !workflowProbe.error;
 
   if (module === "sales") {
     const [customers, products, orders, orderLines, deliveries, deliveryLines] = await Promise.all([
@@ -296,6 +298,7 @@ export async function ModulePage({
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
+        {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/quotations">New Quotation</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
         <Panel title="Buat Sales Order">
           <Form action={createSalesOrderAction} submitLabel="Simpan Sales Order">
             <Select label="Pelanggan" name="customer_id" options={customers.data.map((item) => option(item.id, `${item.id} · ${item.name} · limit ${money(item.credit_limit)}`))} />
@@ -305,6 +308,7 @@ export async function ModulePage({
             <TextInput label="Lead sumber (opsional)" name="source_lead_number" required={false} />
           </Form>
         </Panel>
+        </>}
         <Panel title="Pengiriman dari Sales Order">
           <Form action={deliverSalesOrderAction} submitLabel="Posting pengiriman">
             <DeliveryOrderFields orders={deliverableOrders} />
@@ -441,12 +445,14 @@ export async function ModulePage({
           {profile.role === "warehouse" ? <><strong>Untuk Warehouse:</strong> cocokkan nomor Purchase Order dengan barang fisik. Masukkan jumlah diterima baik dan ditolak sesuai hitungan; waktu penerimaan dicatat otomatis saat kamu posting.</> : null}
           {profile.role === "owner" ? <><strong>Untuk Owner:</strong> daftar menampilkan tanggal order, waktu penerimaan, serta jumlah diterima/ditolak. Bukti pelaku dan waktu posting tersedia pada Audit Penerimaan.</> : null}
         </section>
+        {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/rfqs">New RFQ</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
             <PurchaseOrderFields vendors={vendors.data} prices={prices.data} products={products.data} />
           </Form>
           <p className="muted-copy">Tanggal order mengikuti tanggal server saat Purchase Order disimpan; jangan isi tanggal perkiraan sebagai tanggal transaksi.</p>
         </Panel>
+        </>}
         <Panel title="Penerimaan barang">
           <Form action={receivePurchaseOrderAction} submitLabel="Posting penerimaan">
             <Select label="Purchase Order" name="purchase_order_number" options={orders.data.filter((item) => ["Purchase Order", "Partial Receipt"].includes(item.status)).map((item) => {
@@ -577,6 +583,7 @@ export async function ModulePage({
         <Panel title="Buat Vendor Bill dari barang diterima">
           {billableOrders.length ? <Form action={createVendorBillAction} submitLabel="Posting Vendor Bill">
             <Select label="Purchase Order" name="purchase_order_number" options={billableOrders.map((item) => option(item.number, `${item.number} · ${item.status}`))} />
+            {workflowsReady ? <NumberInput label="Bill Quantity · harus sama dengan Accepted belum ditagih" name="bill_quantity" /> : null}
           </Form> : <p className="demo-empty">Tidak ada penerimaan baik yang belum ditagih. Periksa Goods Receipt sebelum membuat Vendor Bill.</p>}
         </Panel>
         <Panel title="Bayar Vendor Bill">
@@ -810,7 +817,7 @@ export async function ModulePage({
     if (error) return <DataLoadError error={error.message} />;
     return <ModuleWorkspace role={profile.role}>
       <PageTitle module={module} />
-      <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Pencatatan hasil inspeksi belum tersedia di halaman ini.</section>
+      <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Buka Return Inspections untuk mencatat kondisi barang dan menelusuri Return Move. Finance/Owner mem-posting Credit Note setelah inspeksi disetujui.</section>
       <Panel title="Referensi pengiriman untuk pemeriksaan retur">
         <DataTable documents={{0:"delivery",1:"sales"}} headers={["Delivery", "Sales Order", "Produk terkirim", "Waktu"]} rows={(deliveries.data ?? []).map((delivery) => [delivery.number, delivery.sales_order_number, (deliveryLines.data ?? []).filter((line) => line.delivery_number === delivery.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · "), new Date(delivery.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
       </Panel>
@@ -835,6 +842,7 @@ export async function ModulePage({
   return (
     <ModuleWorkspace role={profile.role}>
       <PageTitle module={module} /><MessageBanner message={message} />
+      {workflowsReady ? <section className="section-card"><a className="button button-primary" href="/inspections">Return Inspections</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
       <Panel title="Buat Credit Note">
         <Form action={createCreditNoteAction} submitLabel="Posting Credit Note">
           <Select
@@ -847,6 +855,7 @@ export async function ModulePage({
         </Form>
         <p className="muted-copy">Retur dibatasi pada nilai piutang belum dibayar; refund tunai belum diaktifkan.</p>
       </Panel>
+      </>}
       <Panel title="Invoice terkait">
         <DataTable documents={{0:"invoice",1:"customer"}} headers={["Invoice", "Pelanggan", "Status", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledReturnInvoices.map((item) => [
           item.number, item.customer_id, item.status, money(item.total), money(item.amount_paid), money(item.amount_credited),

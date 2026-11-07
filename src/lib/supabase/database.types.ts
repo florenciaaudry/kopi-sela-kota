@@ -76,6 +76,12 @@ export type OwnerDashboard = {
 export type Database = {
   public: {
     Tables: {
+      quotations: Table<{ number:string;customer_id:string;sku:string;quantity:number;unit_price:number;discount_percent:number;tax_rate:number;subtotal:number;tax_total:number;total:number;source_lead_number:string|null;status:string;revision:number;approved_revision:number|null;approved_by:string|null;approved_at:string|null;approved_label:string|null;sales_order_number:string|null;created_by:string;created_at:string;updated_at:string }>;
+      rfqs: Table<{ number:string;vendor_id:string;sku:string;quantity:number;unit_price:number;purchase_tax:string;total:number;status:string;revision:number;purchase_order_number:string|null;created_by:string;created_at:string;updated_at:string }>;
+      document_notes: Table<{id:string;document_kind:string;document_reference:string;body:string;actor_id:string;actor_label:string;created_at:string;idempotency_key:string}>;
+      return_inspections: Table<{number:string;invoice_number:string;invoice_line_id:string;sku:string;quantity:number;item_condition:string;subtotal:number;tax_amount:number;total:number;status:string;inspected_by:string;inspector_label:string;inspected_at:string;credit_note_number:string|null;idempotency_key:string}>;
+      return_stock_moves: Table<{number:string;inspection_number:string;sku:string;location_code:string;restock_quantity:number;rejected_quantity:number;stock_value:number;moved_at:string;created_by:string}>;
+
       profiles: Table<{
         id: string;
         full_name: string;
@@ -395,6 +401,20 @@ export type Database = {
       };
     };
     Functions: {
+      list_returnable_invoice_lines: Rpc<Record<string,never>,{invoice_number:string;sku:string;product_name:string;delivered_quantity:number;remaining_quantity:number}[]>;
+      save_vendor_price: Rpc<{p_vendor_id:string;p_sku:string;p_minimum_quantity:number;p_purchase_price:number;p_purchase_tax:string;p_idempotency_key:string},string>;
+      create_vendor_bill_for_quantity: Rpc<{p_purchase_order_number:string;p_quantity:number;p_idempotency_key:string},string>;
+      save_quotation: Rpc<{p_number:string|null;p_customer_id:string;p_sku:string;p_quantity:number;p_discount_percent:number;p_source_lead_number:string|null;p_expected_revision:number|null;p_idempotency_key:string},string>;
+      approve_quotation_discount: Rpc<{p_number:string;p_revision:number;p_idempotency_key:string},string>;
+      confirm_quotation: Rpc<{p_number:string;p_idempotency_key:string},string>;
+      save_rfq: Rpc<{p_number:string|null;p_vendor_id:string;p_sku:string;p_quantity:number;p_expected_revision:number|null;p_idempotency_key:string},string>;
+      confirm_rfq: Rpc<{p_number:string;p_idempotency_key:string},string>;
+      change_draft_status: Rpc<{p_kind:string;p_number:string;p_status:string;p_idempotency_key:string},string>;
+      manage_master: Rpc<{p_kind:string;p_operation:string;p_id:string;p_data:Json;p_idempotency_key:string},string>;
+      add_document_note: Rpc<{p_kind:string;p_reference:string;p_body:string;p_idempotency_key:string},string>;
+      inspect_customer_return: Rpc<{p_invoice_number:string;p_sku:string;p_quantity:number;p_item_condition:string;p_idempotency_key:string},string>;
+      post_return_inspection: Rpc<{p_number:string;p_idempotency_key:string},string>;
+
       create_sales_order: Rpc<{
         p_customer_id: string;
         p_sku: string;

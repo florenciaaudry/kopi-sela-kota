@@ -46,7 +46,8 @@ alter table public.pos_receipts
   add column hold_number text references public.pos_holds (number);
 
 insert into public.pos_payment_methods (id, name, account_code, settlement)
-values ('MIXED', 'Cash + Bank', '1101', 'Split tender')
+select 'MIXED', 'Cash + Bank', '1101', 'Split tender'
+where exists(select 1 from public.chart_of_accounts where code='1101')
 on conflict (id) do update set
   name = excluded.name, account_code = excluded.account_code, settlement = excluded.settlement;
 

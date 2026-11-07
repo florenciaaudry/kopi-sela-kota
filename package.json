@@ -24,7 +24,9 @@
     "test:quick-login": "node scripts/test-quick-login.cjs",
     "test:documents": "node scripts/test-document-details.cjs",
     "test:document-actions": "node scripts/test-document-actions.cjs",
-    "test:document-links": "node scripts/test-document-navigation.cjs"
+    "test:document-links": "node scripts/test-document-navigation.cjs",
+    "test:pdf-fixtures": "node scripts/test-pdf-fixtures.mjs",
+    "test:workflow-controls": "node scripts/test-workflow-controls.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -34,6 +36,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

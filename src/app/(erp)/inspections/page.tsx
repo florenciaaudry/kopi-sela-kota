@@ -1,0 +1,19 @@
+import Link from "next/link";
+import { requireRole } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatRupiah } from "@/lib/format";
+import { workflowAction } from "../workflow-actions";
+import { DataTable } from "../data-table";
+import { SubmitButton } from "../submit-button";
+import { WorkflowNotice,WorkflowPending,type WorkflowMessage } from "../workflow-workspace";
+export const metadata={title:"Return Inspections"};
+export default async function Inspections({searchParams}:{searchParams:Promise<WorkflowMessage>}){
+ const p=await requireRole(["warehouse","finance","owner"]);const c=await createSupabaseServerClient();const [inspections,moves,lines]=await Promise.all([c.from("return_inspections").select("number,invoice_number,sku,quantity,item_condition,status,total,inspector_label,inspected_at,credit_note_number").order("inspected_at",{ascending:false}),c.from("return_stock_moves").select("number,inspection_number,sku,restock_quantity,rejected_quantity,stock_value"),c.rpc("list_returnable_invoice_lines")]);
+ if(inspections.error?.code==="42P01"||inspections.error?.code==="PGRST205")return <WorkflowPending/>;
+ if(inspections.error||moves.error||lines.error)return <p role="alert">Data inspeksi belum dapat dimuat. Coba muat ulang.</p>;
+ const available=(lines.data??[]).filter(l=>l.remaining_quantity>0);
+ return <div className="page-stack module-workspace"><div className="page-heading"><div><h1>Return Inspections</h1><p>Warehouse memeriksa barang dan menerima stok yang layak. Finance mem-posting Credit Note berdasarkan inspeksi itu.</p></div><Link href="/returns" className="secondary-button">← Returns &amp; Credit Notes</Link></div><WorkflowNotice message={await searchParams}/>
+ {["warehouse","owner"].includes(p.role)?<section className="section-card"><h2>New Inspection</h2>{available.length?<form action={workflowAction} className="demo-form"><input type="hidden" name="kind" value="return-inspection"/><input type="hidden" name="operation" value="inspect"/><input type="hidden" name="idempotency_key" value={crypto.randomUUID()}/><label className="demo-field"><span>Original Invoice / Product</span><select name="invoice_sku" required>{available.map(l=><option key={l.invoice_number+l.sku} value={l.invoice_number+"|"+l.sku}>{l.invoice_number} · {l.sku} · {l.product_name} · dapat diretur {l.remaining_quantity}</option>)}</select></label><label className="demo-field"><span>Return Quantity</span><input name="quantity" type="number" required min={1} step={1} defaultValue={1}/></label><label className="demo-field"><span>Inspection Condition</span><select name="item_condition" required><option value="sealed">Sealed · lolos inspeksi, kembali ke stok jual</option><option value="damaged">Damaged / opened · tidak kembali ke stok jual</option></select></label><SubmitButton label="Approve Inspection & Return Move"/></form>:<p>Tidak ada jumlah terkirim yang memenuhi syarat retur saat ini. Invoice yang sudah lunas memerlukan prosedur refund tersendiri.</p>}</section>:null}
+ <section className="section-card"><h2>Inspections</h2><DataTable documents={{0:"return-inspection",1:"invoice",2:"product",8:"credit-note"}} headers={["Reference","Original Invoice","Product","Return Quantity","Condition","Status","Credit Value","Inspected By","Credit Note"]} rows={(inspections.data??[]).map(v=>[v.number,v.invoice_number,v.sku,v.quantity,v.item_condition,v.status,formatRupiah(v.total),v.inspector_label,v.credit_note_number??"—"])}/></section>
+ <section className="section-card"><h2>Return Stock Moves</h2><DataTable documents={{0:"return-move",1:"return-inspection",2:"product"}} headers={["Reference","Inspection","Product","Restocked Quantity","Rejected Quantity","Stock Value"]} rows={(moves.data??[]).map(v=>[v.number,v.inspection_number,v.sku,v.restock_quantity,v.rejected_quantity,formatRupiah(v.stock_value)])}/></section></div>;
+}
