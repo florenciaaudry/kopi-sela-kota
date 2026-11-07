@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-07T05:58:35.729Z",
+  "checkedAt": "2026-11-07T06:16:34.592Z",
   "status": "PASS",
   "scope": "Origin helper unit checks and authenticated Owner HTTP-rendered source-link/Back navigation. Read-only; no history/sessionStorage guessing. Not visual browser automation.",
   "checks": [

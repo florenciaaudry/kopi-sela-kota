@@ -1,5 +1,10 @@
 # Audit interaksi dokumen — 7 November 2026
 
+## Penyederhanaan visual Back
+
+Navigasi kembali seluruh detail, Quotations/RFQs, Master Data, Inspections dan Receipt memakai tautan ringan `← Sales / S00014`, tanpa kotak putih besar atau teks visual “Back to”. Label aksesibilitas tetap menyebut “Back to …”; hover underline dan fokus keyboard tetap jelas, area klik minimal 40px tinggi. Rantai asal, parameter from, validasi tujuan, serta Save/Discard tidak berubah. Jarak breadcrumb ke judul dipadatkan; tombol aksi utama tetap lebih menonjol.
+
+
 ## Perbaikan Back mengikuti konteks asal
 
 Customer/Product/Vendor yang dibuka dari Sales, Purchase, atau dokumen terkait kini membawa parameter `from` internal tervalidasi. Back mengembalikan halaman asal beserta rantai sebelumnya: Sales → Sales Order → Customer → Back ke Sales Order → Back ke Sales. Buka master langsung tanpa konteks tetap memakai Master Data untuk role yang berhak. URL eksternal/protokol/route tidak dikenal ditolak; tujuan Back tidak memberi hak akses baru. Konteks bertahan setelah Save dan penolakan validasi. Tidak bergantung history browser/referrer/sessionStorage. Receipt, Invoice, CRM Kanban, Reporting dan tautan DataTable memakai konteks yang sama.

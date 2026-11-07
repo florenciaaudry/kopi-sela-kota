@@ -1435,11 +1435,11 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 .dashboard-stock-bar strong { font-size:22px; color:#332b24; }
 .dashboard-stock-bar small { font-weight:400; font-size:12px; }
 .dashboard-stock-bar > a { margin-left:auto; }
-.record-heading { display:flex; flex-direction:column; gap:16px; }
+.record-heading { display:flex; flex-direction:column; gap:10px; }
 .record-breadcrumb { display:flex; align-items:center; gap:11px; font-size:13px; color:#756a60; flex-wrap:wrap; }
 .record-back { display:inline-flex; gap:8px; align-items:center; color:#634b38; text-decoration:none; min-height:36px; padding:4px 0; font-weight:600; }
 .record-back:hover { text-decoration:underline; text-underline-offset:4px; }
-.record-back > span { font-size:20px; }
+.record-back > span { font-size:18px; flex-shrink:0; }
 .record-title-row { display:flex; align-items:center; justify-content:space-between; gap:18px; }
 .record-title-row h1 { font-size:27px; margin:3px 0 0; letter-spacing:-.5px; overflow-wrap:anywhere; }
 .record-type { font-size:12px; color:#7a6e63; margin:0; }
@@ -1459,8 +1459,8 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 /* Discoverable creation and source-list navigation. */
 a.primary-button, a.secondary-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; line-height:1.35; min-height:40px; text-decoration:none; vertical-align:middle; }
 .module-create-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-.record-back { border:1px solid #d8cfc4; border-radius:7px; background:#fff; padding:7px 12px; min-height:40px; }
-.record-back:hover { background:#f4eee6; text-decoration:none; border-color:#b39a80; }
+.record-back { border:0; border-radius:3px; background:transparent; padding:5px 0; min-height:40px; font-size:13px; font-weight:500; line-height:1.4; gap:7px; max-width:100%; overflow-wrap:anywhere; }
+.record-back:hover { background:transparent; color:#3e2c1f; text-decoration:underline; text-underline-offset:4px; }
 .draft-editor .demo-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:20px; }
 .draft-editor .demo-field { min-width:0; font-size:12px; }
 .draft-editor .demo-form > p,.draft-editor .cart-summary,.draft-editor .editor-toolbar { grid-column:1/-1; }
