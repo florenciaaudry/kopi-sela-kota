@@ -82,7 +82,7 @@ const actionLabels: Record<string, string> = {
   "Buat Credit Note": "Create Credit Note",
 };
 
-function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRole }) {
+function ModuleWorkspace({ children, role, module }: { children: ReactNode; role: AppRole; module:Module }) {
   const actions: WorkspaceSection[] = [];
   const views: WorkspaceSection[] = [];
   const intro: ReactNode[] = [];
@@ -106,7 +106,7 @@ function ModuleWorkspace({ children, role }: { children: ReactNode; role: AppRol
     (isAction ? actions : views).push(section);
   });
   add(children);
-  return <div className="page-stack module-workspace">{Children.toArray(intro)}<nav className="document-smart-buttons" aria-label="Workflow Links">{["sales","owner"].includes(role)?<Link href="/quotations" className="secondary-button">Quotations</Link>:null}{["procurement","owner"].includes(role)?<Link href="/rfqs" className="secondary-button">Requests for Quotation</Link>:null}{["sales","procurement","finance","owner"].includes(role)?<Link href="/master-data" className="secondary-button">Master Data</Link>:null}{["warehouse","finance","owner"].includes(role)?<Link href="/inspections" className="secondary-button">Return Inspections</Link>:null}</nav><WorkspaceViews actions={actions} views={views} /></div>;
+  return <div className="page-stack module-workspace">{Children.toArray(intro)}<nav className="document-smart-buttons" aria-label="Workflow Links">{["sales","crm"].includes(module)&&["sales","owner"].includes(role)?<Link href="/quotations" className="secondary-button">Quotations</Link>:null}{module==="purchase"&&["procurement","owner"].includes(role)?<Link href="/rfqs" className="secondary-button">Requests for Quotation</Link>:null}{["sales","crm","purchase","invoicing"].includes(module)&&["sales","procurement","finance","owner"].includes(role)?<Link href="/master-data" className="secondary-button">Master Data</Link>:null}{["returns","invoicing"].includes(module)&&["warehouse","finance","owner"].includes(role)?<Link href="/inspections" className="secondary-button">Return Inspections</Link>:null}</nav><WorkspaceViews actions={actions} views={views} /></div>;
 }
 
 function Form({
@@ -296,9 +296,9 @@ export async function ModulePage({
       })
       .filter((item) => item.remainingQuantity > 0);
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
-        {workflowsReady ? (["sales","owner"].includes(profile.role) ? <section className="section-card"><a className="primary-button" href="/quotations">New Quotation</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : null) : <>
+        {workflowsReady ? (["sales","owner"].includes(profile.role) ? <div className="module-create-toolbar"><Link className="primary-button" href="/quotations?new=1">New Quotation</Link></div> : null) : <>
         <Panel title="Buat Sales Order">
           <Form action={createSalesOrderAction} submitLabel="Simpan Sales Order">
             <Select label="Pelanggan" name="customer_id" options={customers.data.map((item) => option(item.id, `${item.id} · ${item.name} · limit ${money(item.credit_limit)}`))} />
@@ -350,7 +350,7 @@ export async function ModulePage({
       <article><span>Weighted Revenue</span><strong>{money(leads.data.filter(l => !["Won", "Lost"].includes(l.stage)).reduce((n,l) => n + Math.round(Number(l.expected_revenue) * Number(l.probability_percent) / 100), 0))}</strong><small>Peluang terbuka × Probability</small></article>
     </section>;
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
         {crmSummary}
         <Panel title="Buat Lead">
@@ -438,14 +438,14 @@ export async function ModulePage({
       }
     }
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <section className="notice notice-info" aria-label="Panduan tugas Purchase">
           {profile.role === "procurement" ? <><strong>Untuk Procurement:</strong> buat Purchase Order dan pantau jumlah yang masih menunggu. Tanggal order dicatat otomatis; Warehouse mencatat hasil hitung fisik saat barang tiba.</> : null}
           {profile.role === "warehouse" ? <><strong>Untuk Warehouse:</strong> cocokkan nomor Purchase Order dengan barang fisik. Masukkan jumlah diterima baik dan ditolak sesuai hitungan; waktu penerimaan dicatat otomatis saat kamu posting.</> : null}
           {profile.role === "owner" ? <><strong>Untuk Owner:</strong> daftar menampilkan tanggal order, waktu penerimaan, serta jumlah diterima/ditolak. Bukti pelaku dan waktu posting tersedia pada Audit Penerimaan.</> : null}
         </section>
-        {workflowsReady ? (["procurement","owner"].includes(profile.role) ? <section className="section-card"><a className="primary-button" href="/rfqs">New RFQ</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : null) : <>
+        {workflowsReady ? (["procurement","owner"].includes(profile.role) ? <div className="module-create-toolbar"><Link className="primary-button" href="/rfqs?new=1">New RFQ</Link></div> : null) : <>
         <Panel title="Buat Purchase Order">
           <Form action={createPurchaseOrderAction} submitLabel="Simpan Purchase Order">
             <PurchaseOrderFields vendors={vendors.data} prices={prices.data} products={products.data} />
@@ -520,7 +520,7 @@ export async function ModulePage({
       linesByJournal.set(line.journal_entry_id, current);
     }
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <section className="metric-grid">
           {[
@@ -566,7 +566,7 @@ export async function ModulePage({
     const billableNumbers = new Set(billingLines.data.filter(line => line.received_quantity > line.billed_quantity).map(line => line.purchase_order_number));
     const billableOrders = purchaseOrders.data.filter(order => billableNumbers.has(order.number));
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <Panel title="Terbitkan invoice untuk delivery">
           <Form action={createInvoiceAction} submitLabel="Posting invoice">
@@ -694,7 +694,7 @@ export async function ModulePage({
       if (approved) approvalEvents.set(number, approved);
     }
     return (
-      <ModuleWorkspace role={profile.role}>
+      <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
         <section className="notice notice-info" aria-label="Panduan tugas POS">
           {profile.role === "cashier" ? <>Saat tutup sesi, masukkan hasil hitung kas dan jelaskan setiap selisih. Jika perlu persetujuan Owner, sesi tetap berstatus menunggu sampai keputusan tercatat.</> : <>Sebelum menyetujui selisih kas, periksa alasan kasir dan angka harapan/hitungan. Setiap persetujuan menyimpan pelaku, waktu, dan nomor sesi pada Audit Trail.</>}
@@ -815,7 +815,7 @@ export async function ModulePage({
     ]);
     const error = deliveries.error ?? deliveryLines.error;
     if (error) return <DataLoadError error={error.message} />;
-    return <ModuleWorkspace role={profile.role}>
+    return <ModuleWorkspace role={profile.role} module={module}>
       <PageTitle module={module} />
       <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Buka Return Inspections untuk mencatat kondisi barang dan menelusuri Return Move. Finance/Owner mem-posting Credit Note setelah inspeksi disetujui.</section>
       <Panel title="Referensi pengiriman untuk pemeriksaan retur">
@@ -840,9 +840,9 @@ export async function ModulePage({
     .filter((line) => returnableInvoices.some((invoice) => invoice.number === line.invoice_number))
     .map((line) => option(`${line.invoice_number}|${line.sku}`, `${line.invoice_number} · ${line.sku} · max ${line.quantity}`));
   return (
-    <ModuleWorkspace role={profile.role}>
+    <ModuleWorkspace role={profile.role} module={module}>
       <PageTitle module={module} /><MessageBanner message={message} />
-      {workflowsReady ? <section className="section-card"><a className="primary-button" href="/inspections">Return Inspections</a><p>Mulai dari dokumen sumber; konfirmasi dan posting mengikuti status serta hak akses.</p></section> : <>
+      {workflowsReady ? <div className="module-create-toolbar"><Link className="primary-button" href="/inspections">Return Inspections</Link></div> : <>
       <Panel title="Buat Credit Note">
         <Form action={createCreditNoteAction} submitLabel="Posting Credit Note">
           <Select

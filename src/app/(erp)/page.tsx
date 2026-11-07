@@ -32,14 +32,14 @@ export default async function DashboardPage() {
     {snapshot && "error" in snapshot ? <section className="notice notice-error" role="alert"><strong>Data stok belum dapat dimuat.</strong><p>{snapshot.error}</p></section> : null}
     {financialSummary?.error ? <section className="notice notice-error" role="alert">Financial Summary belum dapat dimuat. Buka Reporting atau coba muat ulang.</section> : null}
     <AppDirectory applications={visibleApplications.map(({ name, group, href }) => ({ name, group, href }))} />
-    {financialSummary ? <details id="reporting" className="ksk-reporting dashboard-secondary"><summary>Financial Summary</summary><div className="ksk-section-header"><div><p className="eyebrow">LAPORAN</p><h2 id="finance-heading">Reporting</h2><p>Saldo dari transaksi yang sudah dibukukan.</p></div><Link className="ksk-detail-link" href="/reporting">Lihat Reporting <span aria-hidden="true">↗</span></Link></div>
+    {financialSummary ? <section id="reporting" className="ksk-reporting dashboard-secondary" aria-labelledby="finance-heading"><div className="ksk-section-header"><div><h2 id="finance-heading">Financial Summary</h2><p>Saldo dari transaksi yang sudah dibukukan.</p></div><Link className="ksk-detail-link" href="/reporting">Lihat Reporting <span aria-hidden="true">↗</span></Link></div>
       {financialSummary.error ? <div className="notice notice-error" role="alert"><strong>Ringkasan keuangan belum dapat dimuat.</strong><p>{financialSummary.error}</p></div> : financialSummary.data ? <div className="ksk-overview-grid ksk-money-grid">{[
         ["Accounts Receivable", financialSummary.data.receivables, "Tagihan pelanggan yang belum lunas"],
         ["Accounts Payable", financialSummary.data.payables, "Tagihan pemasok yang belum lunas"],
         ["Cash", financialSummary.data.cash, "Saldo kas yang tercatat"],
         ["Bank", financialSummary.data.bank, "Saldo bank yang tercatat"],
       ].map(([label, value, detail]) => <article className="ksk-overview-card" key={String(label)}><span>{label}</span><strong>{formatRupiah(Number(value))}</strong><p>{detail}</p></article>)}</div> : <div className="notice notice-error" role="alert">Ringkasan keuangan belum tersedia.</div>}
-    </details> : null}
+    </section> : null}
     {stock ? <section className="dashboard-stock-bar" aria-label="Inventory summary"><div><span>Available Stock</span><strong>{stock.available.toLocaleString("id-ID")} <small>units</small></strong></div><span>On Hand {stock.onHand.toLocaleString("id-ID")} · Reserved {stock.reserved.toLocaleString("id-ID")}</span><span>{stock.productCount} Products · {stock.locationCount} Locations</span><Link href="/inventory" className="ksk-detail-link">Open Inventory →</Link></section> : null}
     <details className="dashboard-help"><summary>Business flow guide</summary><p>Sales: Quotation → Sales Order → Delivery → Invoice → Payment.</p><p>Purchase: RFQ → Purchase Order → Receipt → Vendor Bill → Payment.</p><p>Point of Sale: Open Session → Order → Payment → Receipt → Close Session.</p></details>
   </div>;

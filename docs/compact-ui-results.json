@@ -1,13 +1,16 @@
 {
-  "checkedAt": "2026-11-07T05:38:08.601Z",
+  "checkedAt": "2026-11-07T05:50:01.484Z",
   "status": "PASS",
-  "scope": "Read-only actual Supabase session and HTML route assertions; not screenshots or visual/viewport automation.",
+  "scope": "Actual Supabase session, HTML routes and rejected native New Quotation form; no successful data writes. Not screenshots or visual/viewport automation.",
   "checks": [
-    "Dashboard: seven compact app cards first, English Dashboard, no repeated profile/company/task cards",
-    "/quotations: source-list Back, Save/Discard toolbar and guarded edit form",
-    "/rfqs: source-list Back, Save/Discard toolbar and guarded edit form",
+    "Dashboard: visible Financial Summary; seven compact app cards first, English Dashboard, no repeated profile/company/task cards",
+    "/quotations?new=1: source-list Back, Save/Discard toolbar and guarded edit form",
+    "/rfqs?new=1: source-list Back, Save/Discard toolbar and guarded edit form",
     "/master-data: source-list Back, Save/Discard toolbar and guarded edit form",
     "/documents/customer/C02: source-list Back, Save/Discard toolbar and guarded edit form",
+    "/quotations: visible New button and Back; list separate from editor",
+    "/rfqs: visible New button and Back; list separate from editor",
+    "New Quotation Save: zero quantity rejected, editor stays open with validation, no draft created",
     "Posted invoice: correct Invoicing Back, collapsed Register Payment, no fake Save"
   ]
 }

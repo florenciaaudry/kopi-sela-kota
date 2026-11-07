@@ -1456,3 +1456,15 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 @media print { .record-breadcrumb,.editor-toolbar,.dashboard-help,.app-filter-options { display:none!important; } }
 
 .editor-toolbar { flex:1 0 100%; top:72px; } .editor-save-hint:empty { display:none; } .edit-session .cart-summary { flex-basis:100%; }
+/* Discoverable creation and source-list navigation. */
+a.primary-button, a.secondary-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; line-height:1.35; min-height:40px; text-decoration:none; vertical-align:middle; }
+.module-create-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.record-back { border:1px solid #d8cfc4; border-radius:7px; background:#fff; padding:7px 12px; min-height:40px; }
+.record-back:hover { background:#f4eee6; text-decoration:none; border-color:#b39a80; }
+.draft-editor .demo-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:20px; }
+.draft-editor .demo-field { min-width:0; font-size:12px; }
+.draft-editor .demo-form > p,.draft-editor .cart-summary,.draft-editor .editor-toolbar { grid-column:1/-1; }
+.editor-toolbar { position:static; top:auto; }
+.draft-editor .editor-toolbar { margin:0; padding:0 0 16px; }
+.dashboard-secondary .ksk-section-header { margin-top:0; }
+@media(max-width:700px) { .draft-editor .demo-form { grid-template-columns:1fr; } .record-back { font-size:13px; } }
