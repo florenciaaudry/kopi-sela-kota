@@ -4,8 +4,11 @@ import { odooLabel } from "@/lib/erp-terminology";
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { resolveDocumentLink, sourceDocumentKind, type DocumentKind } from "@/lib/document-navigation";
+import { useDocumentRole } from "./document-link-context";
 
-export function DataTable({ headers, rows, linkColumn, initialQuery = "" }: { headers: string[]; rows: (string | number)[][]; initialQuery?: string; linkColumn?: { index: number; prefix: string } }) {
+export function DataTable({ headers, rows, linkColumn, documents = {}, rowDocumentTypes, initialQuery = "" }: { headers: string[]; rows: (string | number)[][]; initialQuery?: string; documents?: Record<number, DocumentKind>; rowDocumentTypes?: { index: number; types: Record<string, string> }; linkColumn?: { index: number; prefix: string } }) {
+  const role = useDocumentRole();
   const id = useId();
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState("");
@@ -33,7 +36,7 @@ export function DataTable({ headers, rows, linkColumn, initialQuery = "" }: { he
         <div className="table-scroll"><table><thead><tr>{headers.map((header) => <th key={header} scope="col">{odooLabel(header)}</th>)}</tr></thead>
           {[...groups].map(([group, items]) => <tbody key={group}>
             {groupBy >= 0 ? <tr className="table-group"><th scope="rowgroup" colSpan={headers.length}>{odooLabel(headers[groupBy])}: {group} ({items.length})</th></tr> : null}
-            {items.map((row, index) => <tr key={`${String(row[0])}-${index}`}>{row.map((cell, cellIndex) => <td key={cellIndex}>{linkColumn?.index === cellIndex ? <Link className="text-button" href={`${linkColumn.prefix}${encodeURIComponent(String(cell))}`}>{cell}</Link> : cellIndex === statusIndex ? <span className="demo-status">{cell}</span> : cell}</td>)}</tr>)}
+            {items.map((row, index) => <tr key={`${String(row[0])}-${index}`}>{row.map((cell, cellIndex) => <td key={cellIndex}>{rowDocumentTypes?.index === cellIndex && role && sourceDocumentKind(rowDocumentTypes.types[String(cell)]) && resolveDocumentLink(sourceDocumentKind(rowDocumentTypes.types[String(cell)])!,String(cell),role) ? <Link className="record-link" href={resolveDocumentLink(sourceDocumentKind(rowDocumentTypes.types[String(cell)])!,String(cell),role)!}>{cell}</Link> : documents[cellIndex] && role && resolveDocumentLink(documents[cellIndex],String(cell),role) ? <Link className="record-link" href={resolveDocumentLink(documents[cellIndex],String(cell),role!)!}>{cell}</Link> : linkColumn?.index === cellIndex ? <Link className="text-button" href={`${linkColumn.prefix}${encodeURIComponent(String(cell))}`}>{cell}</Link> : cellIndex === statusIndex ? <span className="demo-status">{cell}</span> : cell}</td>)}</tr>)}
           </tbody>)}
         </table></div>
       )}

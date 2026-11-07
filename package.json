@@ -21,7 +21,10 @@
     "verify:video": "node scripts/verify-video-ui.cjs",
     "verify:video:pos": "node scripts/verify-video-pos.cjs",
     "verify:video:hold": "node scripts/verify-video-hold.cjs",
-    "test:quick-login": "node scripts/test-quick-login.cjs"
+    "test:quick-login": "node scripts/test-quick-login.cjs",
+    "test:documents": "node scripts/test-document-details.cjs",
+    "test:document-actions": "node scripts/test-document-actions.cjs",
+    "test:document-links": "node scripts/test-document-navigation.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { moduleTitles, odooLabel } from "@/lib/erp-terminology";
 import { Children, Fragment, isValidElement, type ReactNode } from "react";
 import type { AppRole } from "@/lib/supabase/database.types";
@@ -250,7 +251,7 @@ export async function ModulePage({
 
   if (module === "sales") {
     const [customers, products, orders, orderLines, deliveries, deliveryLines] = await Promise.all([
-      supabase.from("customers").select("id, name, credit_limit").order("name"),
+      supabase.from("customers").select("id, name, type, city, credit_limit, payment_terms_code").order("name"),
       supabase.from("products").select("sku, name, sales_price").order("sku"),
       supabase.from("sales_orders").select("number, customer_id, status, total, order_date").order("created_at", { ascending: false }),
       supabase.from("sales_order_lines").select("sales_order_number, sku, quantity"),
@@ -310,12 +311,15 @@ export async function ModulePage({
           </Form>
         </Panel>
         <Panel title="Sales Order">
-          <DataTable key={message?.document ?? "all-orders"} initialQuery={message?.document?.slice(0,100) ?? ""} headers={["Nomor", "Pelanggan", "Tanggal", "Status", "Total"]} rows={orders.data.map((item) => [
+          <DataTable key={message?.document ?? "all-orders"} initialQuery={message?.document?.slice(0,100) ?? ""} documents={{0:"sales",1:"customer"}} headers={["Nomor", "Pelanggan", "Tanggal", "Status", "Total"]} rows={orders.data.map((item) => [
             item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`, item.order_date, item.status, money(item.total),
           ])} />
         </Panel>
         <Panel title="Delivery">
-          <DataTable headers={["Nomor", "Sales Order", "Dibuat"]} rows={deliveries.data.map((item) => [item.number, item.sales_order_number, new Date(item.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
+          <DataTable documents={{0:"delivery",1:"sales"}} headers={["Nomor", "Sales Order", "Dibuat"]} rows={deliveries.data.map((item) => [item.number, item.sales_order_number, new Date(item.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
+        </Panel>
+        <Panel title="Customers">
+          <DataTable documents={{0:"customer"}} headers={["Reference","Name","Customer Type","City","Credit Limit","Payment Terms"]} rows={customers.data.map(c=>[c.id,c.name,c.type,c.city,money(c.credit_limit),c.payment_terms_code])}/>
         </Panel>
       </ModuleWorkspace>
     );
@@ -361,7 +365,7 @@ export async function ModulePage({
           </Form>
         </Panel>
         <Panel title="Daftar peluang">
-          <DataTable headers={["Reference", "Customer", "Product", "Quantity", "Stage", "Expected Revenue", "Probability", "Weighted Revenue", "Lost Reason"]} rows={leads.data.map((item) => [
+          <DataTable documents={{0:"lead",1:"customer",2:"product"}} headers={["Reference", "Customer", "Product", "Quantity", "Stage", "Expected Revenue", "Probability", "Weighted Revenue", "Lost Reason"]} rows={leads.data.map((item) => [
             item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
             `${item.sku} · ${productNames.get(item.sku) ?? "—"}`, item.quantity, item.stage,
             money(item.expected_revenue), `${item.probability_percent}%`, money(Math.round(Number(item.expected_revenue) * Number(item.probability_percent) / 100)), item.lost_reason ?? "—",
@@ -385,7 +389,7 @@ export async function ModulePage({
 
   if (module === "purchase") {
     const [vendors, prices, products, orders, receipts, orderLines, receiptLines] = await Promise.all([
-      supabase.from("vendors").select("id, name").order("name"),
+      supabase.from("vendors").select("id, name, city, payment_terms_code, tax_profile").order("name"),
       supabase.from("vendor_pricelist").select("vendor_id, sku, minimum_quantity, purchase_price").order("sku"),
       supabase.from("products").select("sku, name").order("sku"),
       supabase.from("purchase_orders").select("number, vendor_id, status, order_date, created_at, total").order("created_at", { ascending: false }),
@@ -455,7 +459,7 @@ export async function ModulePage({
           <p className="muted-copy">Tanggal dan waktu aktual dicatat oleh server ketika penerimaan diposting. Penerimaan tidak boleh dicatat sebelum barang dihitung.</p>
         </Panel>
         <Panel title="Purchase Order">
-          <DataTable headers={["Reference", "Vendor", "Order Date", "Status", "Ordered Quantity", "Accepted Quantity", "Rejected Quantity", "Remaining Quantity", "Total"]} rows={orders.data.map((item) => {
+          <DataTable documents={{0:"purchase",1:"vendor"}} headers={["Reference", "Vendor", "Order Date", "Status", "Ordered Quantity", "Accepted Quantity", "Rejected Quantity", "Remaining Quantity", "Total"]} rows={orders.data.map((item) => {
             const totals = orderLineTotals.get(item.number) ?? { ordered: 0, accepted: 0, rejected: 0 };
             return [
               item.number, `${item.vendor_id} · ${vendorNames.get(item.vendor_id) ?? "—"}`, dateLabel(item.order_date), item.status,
@@ -464,7 +468,7 @@ export async function ModulePage({
           })} />
         </Panel>
         <Panel title="Goods Receipt">
-          <DataTable headers={["Reference", "Purchase Order", "Order Date", "Received On (WIB)", "Received Quantities"]} rows={receipts.data.map((item) => [
+          <DataTable documents={{0:"receipt",1:"purchase"}} headers={["Reference", "Purchase Order", "Order Date", "Received On (WIB)", "Received Quantities"]} rows={receipts.data.map((item) => [
             item.number, item.purchase_order_number,
             dateLabel(orders.data.find((order) => order.number === item.purchase_order_number)?.order_date),
             dateLabel(item.received_at, true),
@@ -472,7 +476,7 @@ export async function ModulePage({
           ])} />
         </Panel>
         {profile.role === "owner" && receiptAudit?.data?.length ? <Panel title="Audit Penerimaan">
-          <DataTable headers={["Goods Receipt", "Action", "Recorded By", "Recorded On (WIB)", "Details"]} rows={receiptAudit.data.map((event) => {
+          <DataTable documents={{0:"receipt"}} headers={["Goods Receipt", "Action", "Recorded By", "Recorded On (WIB)", "Details"]} rows={receiptAudit.data.map((event) => {
             const details = event.details;
             return [
               event.document_number, event.action, event.actor_label, dateLabel(event.occurred_at, true),
@@ -480,6 +484,9 @@ export async function ModulePage({
             ];
           })} />
         </Panel> : null}
+        <Panel title="Vendors">
+          <DataTable documents={{0:"vendor"}} headers={["Reference","Name","City","Payment Terms","Tax Profile"]} rows={vendors.data.map(v=>[v.id,v.name,v.city,v.payment_terms_code,v.tax_profile])}/>
+        </Panel>
       </ModuleWorkspace>
     );
   }
@@ -516,12 +523,12 @@ export async function ModulePage({
             ["Nilai persediaan", totals.inventory_value], ["Unit On Hand", totals.on_hand],
           ].map(([label, amount]) => (
             <article className="metric-card" key={String(label)}>
-              <span>{odooLabel(label)}</span><strong>{label === "Unit On Hand" ? Number(amount).toLocaleString("id-ID") : money(Number(amount))}</strong>
+              <span>{odooLabel(label)}</span>{label === "Unit On Hand" ? profile.role==="owner" ? <Link className="record-link" href="/inventory"><strong>{Number(amount).toLocaleString("id-ID")}</strong></Link> : <strong>{Number(amount).toLocaleString("id-ID")}</strong> : <Link className="record-link" href={"/reporting?metric="+({Piutang:"receivable",Utang:"payable",Kas:"cash",Bank:"bank","Nilai persediaan":"inventory"} as Record<string,string>)[String(label)]+"#sources"}><strong>{money(Number(amount))}</strong></Link>}
             </article>
           ))}
         </section>
         <Panel title="Jurnal terposting">
-          <DataTable headers={["Nomor", "Tanggal", "Sumber", "Memo", "Rincian debit/kredit"]} rows={journals.data.map((item) => [
+          <DataTable documents={{0:"journal"}} headers={["Nomor", "Tanggal", "Sumber", "Memo", "Rincian debit/kredit"]} rows={journals.data.map((item) => [
             item.number, item.entry_date, `${item.source_type} · ${item.source_reference}`, item.memo,
             (linesByJournal.get(item.id) ?? []).join(" | "),
           ])} />
@@ -580,18 +587,18 @@ export async function ModulePage({
           </Form>
         </Panel>
         <Panel title="Piutang pelanggan">
-          <DataTable linkColumn={{index:0,prefix:"/documents/invoice/"}} headers={["Invoice", "Pelanggan", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledInvoices.map((item) => [
+          <DataTable linkColumn={{index:0,prefix:"/documents/invoice/"}} documents={{0:"invoice",1:"customer",2:"sales"}} headers={["Invoice", "Pelanggan", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledInvoices.map((item) => [
             item.number, item.customer_id, item.source_document?.split(":")[0] ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.amount_credited),
             money(item.total - item.amount_paid - item.amount_credited),
           ])} />
         </Panel>
         <Panel title="Utang pemasok">
-          <DataTable headers={["Bill", "Pemasok", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Sisa"]} rows={bills.data.map((item) => [
+          <DataTable documents={{0:"bill",1:"vendor",2:"purchase"}} headers={["Bill", "Pemasok", "Sumber", "Jatuh tempo", "Total", "Dibayar", "Sisa"]} rows={bills.data.map((item) => [
             item.number, item.vendor_id, item.source_document?.split(":")[0] ?? "—", item.due_date, money(item.total), money(item.amount_paid), money(item.total - item.amount_paid),
           ])} />
         </Panel>
         <Panel title="Riwayat pembayaran">
-          <DataTable headers={["Reference", "Document", "Type", "Amount", "Account", "Date & Time"]} rows={[
+          <DataTable documents={{0:"payment",1:"invoice"}} headers={["Reference", "Document", "Type", "Amount", "Account", "Date & Time"]} rows={[
             ...reconciledCustomerPayments.map((item) => [item.number, item.invoice_number, "Pelanggan", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
             ...vendorPayments.data.map((item) => [item.number, item.bill_number, "Pemasok", money(item.amount), item.account_code, new Date(item.paid_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"]),
           ]} />
@@ -607,7 +614,7 @@ export async function ModulePage({
       supabase.from("products").select("sku, name, sales_price").order("sku"),
       supabase.from("customers").select("id, name, credit_limit").order("id"),
       supabase.from("pos_payment_methods").select("id, name").order("id"),
-      supabase.from("pos_receipts").select("number, session_number, sku, quantity, total, payment_method, customer_id, sold_at, idempotency_key, hold_number").order("sold_at", { ascending: false }),
+      supabase.from("pos_receipts").select("number, session_number, sku, quantity, total, payment_method, customer_id, sold_at, idempotency_key, hold_number, created_by").order("sold_at", { ascending: false }),
       supabase.from("pos_holds").select("number, session_number, status, expires_at, created_by, customer_id").order("created_at", { ascending: false }),
       supabase.from("pos_hold_lines").select("hold_number, sku, quantity, subtotal, tax_amount").order("sku"),
       supabase.from("pos_receipt_lines").select("receipt_number, sku, quantity, subtotal, tax_amount").order("sku"),
@@ -618,7 +625,7 @@ export async function ModulePage({
     if (receiptResult.error?.message.includes("column pos_receipts.customer_id does not exist")) {
       customerLinkMigrationPending = true;
       const legacyReceiptResult = await supabase.from("pos_receipts")
-        .select("number, session_number, sku, quantity, total, payment_method, sold_at, idempotency_key, hold_number")
+        .select("number, session_number, sku, quantity, total, payment_method, sold_at, idempotency_key, hold_number, created_by")
         .order("sold_at", { ascending: false });
       if (legacyReceiptResult.error) return <DataLoadError error={legacyReceiptResult.error.message} />;
       receipts = legacyReceiptResult.data?.map((receipt) => ({ ...receipt, customer_id: null })) ?? null;
@@ -643,9 +650,9 @@ export async function ModulePage({
       return <DataLoadError error="Database mengembalikan data POS yang tidak lengkap." />;
     }
     const reconciledPos = {
-      holds: holds.data,
+      holds: holds.data.filter(item => profile.role === "owner" || item.created_by === profile.id),
       holdLines: holdLines.data,
-      receipts,
+      receipts: receipts.filter(item => profile.role === "owner" || item.created_by === profile.id),
       receiptLines: receiptLines.data,
       tenders: tenders.data,
       sessions: sessions.data,
@@ -750,7 +757,7 @@ export async function ModulePage({
           </Panel>
         ))}
         <Panel title="Sesi POS">
-          <DataTable headers={["Session", "Cashier", "Status", "Opened On", "Closed On", "Opening Cash", "Expected Cash", "Counted Cash", "Cash Difference", "Variance Reason", "Approval"]} rows={reconciledPos.sessions.filter(item => profile.role === "owner" || item.opened_by === profile.id).map((item) => {
+          <DataTable documents={{0:"session"}} headers={["Session", "Cashier", "Status", "Opened On", "Closed On", "Opening Cash", "Expected Cash", "Counted Cash", "Cash Difference", "Variance Reason", "Approval"]} rows={reconciledPos.sessions.filter(item => profile.role === "owner" || item.opened_by === profile.id).map((item) => {
             const approval = approvalEvents.get(item.number);
             const approver = approval?.actor_label ?? (item.approved_by ? `Owner · ${item.approved_by}` : item.status === "Pending Approval" ? "Menunggu Owner" : item.cash_difference === 0 ? "Tidak perlu (selisih nol)" : "—");
             const approvalTime = approval ? dateLabel(approval.occurred_at, true) : item.approved_by ? dateLabel(item.closed_at, true) : "—";
@@ -764,7 +771,7 @@ export async function ModulePage({
           })} />
         </Panel>
         {profile.role === "owner" ? <Panel title="Bukti persetujuan selisih kas">
-          <DataTable headers={["Session", "Approval", "Approved By", "Approved On", "Cash Difference", "Variance Reason"]} rows={reconciledPos.sessions.filter((item) => item.approved_by).map((item) => {
+          <DataTable documents={{0:"session"}} headers={["Session", "Approval", "Approved By", "Approved On", "Cash Difference", "Variance Reason"]} rows={reconciledPos.sessions.filter((item) => item.approved_by).map((item) => {
             const approval = approvalEvents.get(item.number);
             return [
               item.number, approval ? "Disetujui" : "Data persetujuan belum ditemukan",
@@ -775,14 +782,14 @@ export async function ModulePage({
           })} />
         </Panel> : null}
         <Panel title="Hold dan baris pesanan">
-          <DataTable headers={["Order on Hold", "Customer", "Session", "Status", "Expires On", "Order Lines", "Total"]} rows={reconciledPos.holds.map((item) => [
+          <DataTable documents={{0:"hold",2:"session"}} headers={["Order on Hold", "Customer", "Session", "Status", "Expires On", "Order Lines", "Total"]} rows={reconciledPos.holds.map((item) => [
             item.number, customers.data.find(c => c.id === item.customer_id)?.name ?? "Pembeli umum", item.session_number, item.status, new Date(item.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
             holdLines.data.filter((line) => line.hold_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || "—",
             money(holdTotals.get(item.number) ?? 0),
           ])} />
         </Panel>
         <Panel title="Struk">
-          <DataTable linkColumn={{ index: 0, prefix: "/pos/receipt/" }} headers={["Reference", "Session", "Customer", "Order Lines", "Total", "Payments", "Sold On"]} rows={reconciledPos.receipts.map((item) => [
+          <DataTable linkColumn={{ index: 0, prefix: "/pos/receipt/" }} documents={{1:"session",2:"customer"}} headers={["Reference", "Session", "Customer", "Order Lines", "Total", "Payments", "Sold On"]} rows={reconciledPos.receipts.map((item) => [
             item.number, item.session_number,
             item.customer_id ? `${item.customer_id} · ${customers.data.find((customer) => customer.id === item.customer_id)?.name ?? "Pelanggan"}` : "Pembeli umum",
             reconciledPos.receiptLines.filter((line) => line.receipt_number === item.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · ") || `${item.sku} × ${item.quantity}`,
@@ -805,7 +812,7 @@ export async function ModulePage({
       <PageTitle module={module} />
       <section className="notice notice-info">Warehouse memeriksa barang terhadap pengiriman asal. Posting Credit Note dan penyesuaian piutang dilakukan oleh Finance atau Owner. Pencatatan hasil inspeksi belum tersedia di halaman ini.</section>
       <Panel title="Referensi pengiriman untuk pemeriksaan retur">
-        <DataTable headers={["Delivery", "Sales Order", "Produk terkirim", "Waktu"]} rows={(deliveries.data ?? []).map((delivery) => [delivery.number, delivery.sales_order_number, (deliveryLines.data ?? []).filter((line) => line.delivery_number === delivery.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · "), new Date(delivery.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
+        <DataTable documents={{0:"delivery",1:"sales"}} headers={["Delivery", "Sales Order", "Produk terkirim", "Waktu"]} rows={(deliveries.data ?? []).map((delivery) => [delivery.number, delivery.sales_order_number, (deliveryLines.data ?? []).filter((line) => line.delivery_number === delivery.number).map((line) => `${line.sku} × ${line.quantity}`).join(" · "), new Date(delivery.delivered_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"])} />
       </Panel>
     </ModuleWorkspace>;
   }
@@ -841,13 +848,13 @@ export async function ModulePage({
         <p className="muted-copy">Retur dibatasi pada nilai piutang belum dibayar; refund tunai belum diaktifkan.</p>
       </Panel>
       <Panel title="Invoice terkait">
-        <DataTable headers={["Invoice", "Pelanggan", "Status", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledReturnInvoices.map((item) => [
+        <DataTable documents={{0:"invoice",1:"customer"}} headers={["Invoice", "Pelanggan", "Status", "Total", "Dibayar", "Dikreditkan", "Sisa"]} rows={reconciledReturnInvoices.map((item) => [
           item.number, item.customer_id, item.status, money(item.total), money(item.amount_paid), money(item.amount_credited),
           money(item.total - item.amount_paid - item.amount_credited),
         ])} />
       </Panel>
       <Panel title="Credit Note">
-        <DataTable headers={["Nomor", "Invoice", "Subtotal", "PBJT", "Total", "Dibuat"]} rows={creditNotes.data.map((item) => [
+        <DataTable documents={{0:"credit-note",1:"invoice"}} headers={["Nomor", "Invoice", "Subtotal", "PBJT", "Total", "Dibuat"]} rows={creditNotes.data.map((item) => [
           item.number, item.invoice_number, money(item.subtotal), money(item.tax_amount), money(item.total), new Date(item.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB",
         ])} />
       </Panel>

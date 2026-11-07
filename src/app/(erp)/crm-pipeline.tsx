@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { documentHref } from "@/lib/document-navigation";
 import { useState } from "react";
 
 type Opportunity = {
@@ -32,7 +34,7 @@ export function CrmPipeline({ opportunities }: { opportunities: Opportunity[] })
         return <section className="kanban-column" key={stage} aria-label={labels[stage]}>
           <header><h3>{labels[stage]} <span>({items.length})</span></h3><p>{currency(items.reduce((sum, item) => sum + item.revenue, 0))}</p></header>
           {items.length ? items.map((item) => <article className="opportunity-card" key={item.number}>
-            <span className="demo-status">{item.stage}</span><h4>{item.number} · {item.customer}</h4><p>{item.product} × {item.quantity}</p>
+            <span className="demo-status">{item.stage}</span><h4><Link className="record-link" href={documentHref("lead",item.number)}>{item.number} · {item.customer}</Link></h4><p>{item.product} × {item.quantity}</p>
             <strong>{currency(item.revenue)}</strong><p>Probability {item.probability}%</p><p>Weighted Revenue <strong>{currency(Math.round(item.revenue * item.probability / 100))}</strong></p>
             {item.lostReason ? <p>Alasan: {item.lostReason}</p> : null}
           </article>) : <p className="muted-copy">Belum ada peluang pada tahap ini.</p>}

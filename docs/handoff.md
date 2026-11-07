@@ -98,3 +98,12 @@ Pull versi Git terbaru; baca PROGRESS.md, test-results.md dan requirements-trace
 - Uji HTTP native-form Server Actions: keenam role masuk dan identitas benar; enam kartu tampil; password tidak ada dalam HTML; Host eksternal tidak menampilkan shortcut. Production build tidak menampilkan shortcut; /pos anonim tetap redirect login. Bukti: quick-login-results.json. npm run test:quick-login dapat mengulang pengujian di preview development 3000 tanpa transaksi usaha.
 - Typecheck, lint, role-policy dan production build lulus. Pemeriksaan visual otomatis belum dapat diselesaikan: Browser Use tidak tersedia, dan Windows Computer Use menghentikan akses karena tidak dapat memverifikasi URL browser. Jangan menganggap seluruh viewport/state sudah diperiksa visual.
 - Preview aktif pada http://127.0.0.1:3000/login. Akun lengkap tersedia hanya di laptop yang memiliki file lokal akun uji tersebut; file kredensial tidak ikut Git. Pada laptop lain siapkan file akun secara privat atau gunakan login biasa.
+
+
+## Dokumen dapat dibuka dan menjalankan aksi — 7 November 2026
+
+- Memperbaiki daftar teks pasif: nomor SO/PO/Delivery/Receipt/Bill/Payment/Credit Note/Transfer/Journal/Hold/Session, Product dan Contact kini memiliki detail berotorisasi. List dan Kanban CRM membuka Opportunity. Accounting KPI menuju Reporting; jurnal dan Audit menuju sumber yang sesuai.
+- Detail memakai baris nyata, kuantitas sumber, status, smart buttons, hubungan dokumen dan History Owner. Form tindakan dipasang berdasarkan role/status/sisa kuantitas/tagihan; bukan tombol hias. Detail terposting tetap terkunci. Cashier hanya melihat history Hold/Receipt sendiri pada daftar, dengan detail Session/Hold milik sendiri diperiksa di server; tidak ada klaim RLS baru.
+- Customer exposure/terms tampil; C02 NET7, limit 300000 dan exposure 220000 diverifikasi. URL nomor bergaris miring diperbaiki. Opening AR/AP dapat dibuka; vendor payment tidak salah menuju customer invoice.
+- 192 pemeriksaan detail/link/role lulus, 0 gagal, 2 jenis tanpa record aktual ditandai NOT_TESTED. Penolakan Lost tanpa alasan dan overpayment melalui form detail lulus tanpa perubahan data. Lihat document-details-results.json, document-actions-results.json dan interaction-audit.md.
+- Verifier Sales/Purchase, Cashier dan Hold tetap PASS setelah perubahan. Tidak menjalankan migrasi, seed/reset, atau posting sukses baru. Seluruh PDF/T-01–T-36 belum lengkap; gap terperinci tetap dicatat.
