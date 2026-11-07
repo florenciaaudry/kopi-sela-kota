@@ -260,3 +260,14 @@ Uji pada komponen sebenarnya melalui harness sementara dengan data contoh, tanpa
 - Job expiry aktif; 319 eksekusi scheduler berhasil dan 0 gagal saat pemeriksaan. Tidak ada hak EXECUTE langsung untuk anon/authenticated. Bukti expiry-scheduler-results.json.
 - Pengujian akses ulang setelah migrasi 012/013: 156 PASS / 0 FAIL. Verifier read-only Sales/Purchase, Cashier dan Hold browser seluruhnya PASS.
 - PDF v1.3 enam halaman dirender dan diperiksa seluruhnya; memuat panduan transaksi dan kelima unsur video dosen. Dokumen tidak mengklaim seluruh ERP lengkap.
+
+
+## Navigasi atas dan Demo Login Accounts — 7 November 2026
+
+- Sidebar dihapus dari shell; satu Apps switcher pada topbar menampilkan menu sesuai role. Area kerja memakai lebar penuh. Breadcrumb, nama, role dan Logout tetap tersedia. Mobile menggunakan menu yang sama, bukan daftar izin terpisah.
+- CRM default List, Kanban tetap tersedia. Ringkasan Leads, Open Opportunities, Expected Revenue (tanpa Lost), dan Weighted Revenue peluang terbuka menampilkan nilai dari data aktual. Angka tidak meniru nominal pada foto referensi.
+- Halaman /login menampilkan enam kartu role + nama tokoh PDF. Pilih kartu untuk autentikasi Supabase nyata dengan QA account yang sudah ada; profil/id diperiksa setelah sign-in. Tidak membuat akun baru, mengubah password, role, RLS, migrasi, atau transaksi usaha.
+- Shortcut hanya development dengan hostname loopback, origin sama untuk action, dan file .env.role-accounts.local yang cocok dengan proyek. Password dibaca hanya di server; tidak dimasukkan ke HTML/props/bundle klien. Production menonaktifkan shortcut dan tetap meminta login biasa. Ini akun uji pada database bersama, bukan simulasi localStorage.
+- Uji HTTP native-form Server Actions: keenam role masuk dan identitas benar; enam kartu tampil; password tidak ada dalam HTML; Host eksternal tidak menampilkan shortcut. Production build tidak menampilkan shortcut; /pos anonim tetap redirect login. Bukti: quick-login-results.json. npm run test:quick-login dapat mengulang pengujian di preview development 3000 tanpa transaksi usaha.
+- Typecheck, lint, role-policy dan production build lulus. Pemeriksaan visual otomatis belum dapat diselesaikan: Browser Use tidak tersedia, dan Windows Computer Use menghentikan akses karena tidak dapat memverifikasi URL browser. Jangan menganggap seluruh viewport/state sudah diperiksa visual.
+- Preview aktif pada http://127.0.0.1:3000/login. Akun lengkap tersedia hanya di laptop yang memiliki file lokal akun uji tersebut; file kredensial tidak ikut Git. Pada laptop lain siapkan file akun secara privat atau gunakan login biasa.

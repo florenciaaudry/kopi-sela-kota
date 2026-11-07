@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
@@ -20,7 +20,8 @@
     "test:receipt": "node scripts/test-receipt-integrity.cjs",
     "verify:video": "node scripts/verify-video-ui.cjs",
     "verify:video:pos": "node scripts/verify-video-pos.cjs",
-    "verify:video:hold": "node scripts/verify-video-hold.cjs"
+    "verify:video:hold": "node scripts/verify-video-hold.cjs",
+    "test:quick-login": "node scripts/test-quick-login.cjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

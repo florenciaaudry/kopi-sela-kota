@@ -4,7 +4,7 @@ Pondasi aplikasi ERP pembelajaran untuk Sales/CRM, Purchase/Inventory, Accountin
 
 ## Status
 
-Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran pernah diverifikasi live. Tes login/akses enam role mencatat 120 PASS/0 FAIL; regresi transaksi RPC diuji dengan rollback. Aplikasi **belum dinyatakan lengkap atau siap produksi**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md), [panduan handoff](./docs/handoff.md), dan [panduan pengguna + hasil verifikasi PDF](./docs/Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf).
+Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran pernah diverifikasi live. Tes login/akses enam role mencatat 156 PASS/0 FAIL; regresi transaksi RPC diuji dengan rollback. Aplikasi **belum dinyatakan lengkap atau siap produksi**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md), [panduan handoff](./docs/handoff.md), dan [panduan pengguna + hasil verifikasi PDF](./docs/Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf).
 
 ## Stack sasaran
 
@@ -48,3 +48,10 @@ Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan 
 Script dev/build menggunakan Webpack untuk menghindari crash child-process Turbopack pada mesin pengembangan saat ini. Cache preview berada di `.next-preview`. Build verifikasi terpisah dapat dijalankan pada PowerShell dengan `$env:ERP_VERIFY_BUILD="1"` lalu `npm run build`; hasilnya berada di `.next-check`. Hapus variabel tersebut dari sesi terminal (`Remove-Item Env:ERP_VERIFY_BUILD`) sebelum kembali menjalankan preview normal. Jangan jalankan build default bersamaan dengan dev pada folder output yang sama.
 
 Validasi keranjang: `npm run test:pos-cart`. Halaman CRM memiliki Kanban, dan nomor struk pada POS membuka detail yang bisa dicetak melalui browser. Pengujian transaksi live penuh masih harus mengikuti fixture terisolasi dalam PDF.
+
+
+## Masuk cepat untuk pengujian lokal
+
+Buka http://127.0.0.1:3000/login pada development preview. Bagian **Demo Login Accounts** menyediakan Owner, Sales, Warehouse, Procurement, Finance dan Cashier apabila `.env.role-accounts.local` tersedia dan cocok dengan proyek. Klik role untuk masuk memakai QA account yang sudah disiapkan. Akun ini membaca/menulis database bersama; transaksi uji tidak dibuang otomatis.
+
+Password tetap di file lokal yang diabaikan Git. File itu tidak disertakan saat clone; laptop teman dapat memakai login biasa atau menyiapkan akun lokal secara privat. Shortcut tidak tersedia pada build production atau hostname non-lokal. `npm run test:quick-login` menguji sign-in keenam kartu melalui Server Actions pada server development port 3000.

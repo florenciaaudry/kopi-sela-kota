@@ -335,9 +335,16 @@ export async function ModulePage({
     const customerNames = new Map(customers.data.map((item) => [item.id, item.name]));
     const productNames = new Map(products.data.map((item) => [item.sku, item.name]));
     const leadOptions = leads.data.map((item) => option(item.number, `${item.number} · ${item.stage}`));
+    const crmSummary = <section className="crm-summary" aria-label="CRM Summary">
+      <article><span>Leads</span><strong>{leads.data.length}</strong><small>Seluruh peluang tercatat</small></article>
+      <article><span>Open Opportunities</span><strong>{leads.data.filter(l => !["Won", "Lost"].includes(l.stage)).length}</strong><small>Perlu tindak lanjut</small></article>
+      <article><span>Expected Revenue</span><strong>{money(leads.data.filter(l => l.stage !== "Lost").reduce((n,l) => n + Number(l.expected_revenue), 0))}</strong><small>Termasuk Won, tanpa Lost</small></article>
+      <article><span>Weighted Revenue</span><strong>{money(leads.data.filter(l => !["Won", "Lost"].includes(l.stage)).reduce((n,l) => n + Math.round(Number(l.expected_revenue) * Number(l.probability_percent) / 100), 0))}</strong><small>Peluang terbuka × Probability</small></article>
+    </section>;
     return (
       <ModuleWorkspace role={profile.role}>
         <PageTitle module={module} /><MessageBanner message={message} />
+        {crmSummary}
         <Panel title="Buat Lead">
           <Form action={createLeadAction} submitLabel="Simpan Lead">
             <Select label="Pelanggan" name="customer_id" options={customers.data.map((item) => option(item.id, `${item.id} · ${item.name}`))} />
@@ -353,6 +360,13 @@ export async function ModulePage({
             <TextInput label="Alasan Lost (wajib saat Lost)" name="lost_reason" required={false} />
           </Form>
         </Panel>
+        <Panel title="Daftar peluang">
+          <DataTable headers={["Reference", "Customer", "Product", "Quantity", "Stage", "Expected Revenue", "Probability", "Weighted Revenue", "Lost Reason"]} rows={leads.data.map((item) => [
+            item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
+            `${item.sku} · ${productNames.get(item.sku) ?? "—"}`, item.quantity, item.stage,
+            money(item.expected_revenue), `${item.probability_percent}%`, money(Math.round(Number(item.expected_revenue) * Number(item.probability_percent) / 100)), item.lost_reason ?? "—",
+          ])} />
+        </Panel>
         <Panel title="Pipeline peluang · Kanban">
           <CrmPipeline opportunities={leads.data.map((item) => ({
             number: item.number,
@@ -364,13 +378,6 @@ export async function ModulePage({
             probability: Number(item.probability_percent),
             lostReason: item.lost_reason,
           }))} />
-        </Panel>
-        <Panel title="Daftar peluang">
-          <DataTable headers={["Reference", "Customer", "Product", "Quantity", "Stage", "Expected Revenue", "Probability", "Weighted Revenue", "Lost Reason"]} rows={leads.data.map((item) => [
-            item.number, `${item.customer_id} · ${customerNames.get(item.customer_id) ?? "—"}`,
-            `${item.sku} · ${productNames.get(item.sku) ?? "—"}`, item.quantity, item.stage,
-            money(item.expected_revenue), `${item.probability_percent}%`, money(Math.round(Number(item.expected_revenue) * Number(item.probability_percent) / 100)), item.lost_reason ?? "—",
-          ])} />
         </Panel>
       </ModuleWorkspace>
     );

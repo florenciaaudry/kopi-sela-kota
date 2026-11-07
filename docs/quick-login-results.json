@@ -1,0 +1,36 @@
+{
+  "scope": "Development localhost native-form sign-in for six QA accounts, expected profile, role-scoped Apps switcher and no sidebar; no business mutations.",
+  "results": [
+    {
+      "role": "owner",
+      "status": "PASS"
+    },
+    {
+      "role": "sales",
+      "status": "PASS"
+    },
+    {
+      "role": "warehouse",
+      "status": "PASS"
+    },
+    {
+      "role": "procurement",
+      "status": "PASS"
+    },
+    {
+      "role": "finance",
+      "status": "PASS"
+    },
+    {
+      "role": "cashier",
+      "status": "PASS"
+    }
+  ],
+  "passwords_in_html": false,
+  "external_hostname_quick_login": false,
+  "verified_at": "2026-11-07T01:48:13.944Z",
+  "production_shortcut_available": false,
+  "production_pos_requires_login": true,
+  "role_scoped_apps_menu": true,
+  "old_sidebar_rendered": false
+}

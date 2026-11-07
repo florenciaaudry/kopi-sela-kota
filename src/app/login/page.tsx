@@ -1,3 +1,7 @@
+import { readLocalTestAccounts } from "@/lib/local-test-accounts";
+import { roleLabels } from "@/lib/roles";
+import names from "@/lib/scenario-identities.json";
+import { TestAccountPicker } from "./test-account-picker";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
@@ -15,7 +19,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const testAccounts = await readLocalTestAccounts();
+  const tasks = { owner: "Seluruh aplikasi & persetujuan", sales: "Sales Order & CRM", warehouse: "Delivery, Receipt & Inventory", procurement: "Purchase Order & pemasok", finance: "Invoice, Payment & Reporting", cashier: "POS, Hold & sesi kasir" };
   const demoMode = isDemoMode();
   const configurationInvalid = hasPartialSupabaseConfig();
   const configured = Boolean(
@@ -69,6 +75,7 @@ export default function LoginPage() {
           </Suspense>
 
           <LoginForm disabled={!configured} />
+          {testAccounts.length ? <TestAccountPicker accounts={testAccounts.map(a => ({ role: a.role, label: roleLabels[a.role], name: names[a.role], task: tasks[a.role] }))} /> : null}
           <p className="login-footnote">
             Akses hanya untuk pengguna yang akunnya dibuat oleh administrator.
             Pendaftaran publik tidak tersedia.

@@ -19,14 +19,8 @@ export function WorkspaceShell({ children, fullName, role, demo = false }: { chi
   </>;
   return <div className="erp-shell ksk-shell">
     <a className="ksk-skip-link" href="#main-content">Langsung ke isi halaman</a>
-    <aside className="ksk-sidebar">
-      <Link className="ksk-brand" aria-label="Kopi Sela Kota beranda" href="/"><span className="ksk-monogram">ks<span>.</span></span><span><strong>Kopi Sela Kota</strong><small>Ruang kerja operasional</small></span></Link>
-      <div className="ksk-company"><span>Kopi Sela Kota<small>Tebet, Jakarta</small></span><span>IDR</span></div>
-      <nav aria-label="Aplikasi" className="ksk-sidebar-nav">{navigation}</nav>
-      <div className="ksk-sidebar-footer"><span className="ksk-location-dot" aria-hidden="true" /><span>Satu tim, satu alur kerja.<small>Waktu operasional ditampilkan dalam WIB.</small></span></div>
-    </aside>
     <div className="ksk-main-column">
-      <header className="ksk-topbar"><MobileNavigation>{navigation}</MobileNavigation><WorkspaceBreadcrumb /><div className="ksk-user"><span className="ksk-avatar" aria-hidden="true">{fullName.trim().slice(0, 1).toUpperCase()}</span><span className="ksk-user-name">{fullName}</span><span className="role-pill">{demo ? "Demo lokal" : roleLabels[role]}</span>{demo ? <Link className="logout-button" href="/login">Info login</Link> : <form action={signOutAction}><button className="logout-button" type="submit">Keluar</button></form>}</div></header>
+      <header className="ksk-topbar"><Link href="/" className="ksk-top-brand" aria-label="Kopi Sela Kota beranda">ks<span>.</span></Link><MobileNavigation>{navigation}</MobileNavigation><WorkspaceBreadcrumb /><div className="ksk-user"><span className="ksk-avatar" aria-hidden="true">{fullName.trim().slice(0, 1).toUpperCase()}</span><span className="ksk-user-name">{fullName}</span><span className="role-pill">{demo ? "Demo lokal" : roleLabels[role]}</span>{demo ? <Link className="logout-button" href="/login">Info login</Link> : <form action={signOutAction}><button className="logout-button" type="submit">Keluar</button></form>}</div></header>
       {demo ? <div className="demo-mode-banner" role="status">MODE DEMO · Perubahan hanya tersimpan di browser ini.</div> : null}
       <main id="main-content" className="main-content ksk-content">{children}</main>
       <footer className="ksk-page-footer"><span>Kopi Sela Kota</span><span>Tebet, Jakarta · Rupiah (IDR)</span></footer>

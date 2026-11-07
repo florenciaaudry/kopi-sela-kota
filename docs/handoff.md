@@ -2,7 +2,7 @@
 
 ## Status handoff
 
-Status diperbarui 6 November 2026 pada baseline `main` / `b40a0d9`. Login Owner, dashboard Supabase, serta alur Sales dan Purchase sampai pembayaran pernah berhasil diverifikasi live. UI terbaru menyediakan app directory berbasis peran, sidebar konsisten, CRM Kanban, pencarian/filter/grouping, dialog transaksi, dynamic POS cart, detail struk yang dapat dicetak, dan pemisahan akses enam role. Ini bukan sertifikasi seluruh aplikasi: T-01–T-36 belum dijalankan penuh dan daftar gap di bawah tetap berlaku.
+Status diperbarui 7 November 2026. Login enam role, alur browser Sales/Purchase/POS, Reporting dan integritas Hold memiliki bukti pengujian. Navigasi memakai Apps switcher pada topbar dan area kerja lebar penuh; CRM menyediakan List dan Kanban. Seluruh PDF/T-01–T-36 belum lengkap; lihat gap dan hasil terbaru di bawah.
 
 Tes role terbaru mencatat 120 PASS / 0 FAIL untuk login, profil, nama tokoh skenario, akses route, RLS, batas aksi lintas-role, logout, dan redirect. Regresi CRM/Sales/payment/POS lewat RPC dan rollback juga lulus pada data bersama yang sedang berjalan; regresi tersebut bukan fixture PDF bersih atau uji seluruh UI Cashier. Transaksi uji historis telah diposting ke database bersama dan tetap persisten. Jangan mengulang seed atau menghapus transaksi. Rincian ada di [hasil pengujian](./test-results.md) dan [laporan role](./role-test-results.json).
 
@@ -87,3 +87,14 @@ Kelompok masih perlu merekam maksimal 10 menit, upload YouTube Unlisted, menguji
 ## Petunjuk sesi berikutnya
 
 Pull versi Git terbaru; baca PROGRESS.md, test-results.md dan requirements-traceability.md. Pertahankan perubahan teman, jangan membuat ulang proyek atau seed database bersama. Untuk fixture PDF bersih gunakan project uji terisolasi. Simpan kredensial hanya pada file lokal yang diabaikan Git; jangan memasukkan key administrator ke server aplikasi, PDF atau video.
+
+
+## Navigasi atas dan Demo Login Accounts — 7 November 2026
+
+- Sidebar dihapus dari shell; satu Apps switcher pada topbar menampilkan menu sesuai role. Area kerja memakai lebar penuh. Breadcrumb, nama, role dan Logout tetap tersedia. Mobile menggunakan menu yang sama, bukan daftar izin terpisah.
+- CRM default List, Kanban tetap tersedia. Ringkasan Leads, Open Opportunities, Expected Revenue (tanpa Lost), dan Weighted Revenue peluang terbuka menampilkan nilai dari data aktual. Angka tidak meniru nominal pada foto referensi.
+- Halaman /login menampilkan enam kartu role + nama tokoh PDF. Pilih kartu untuk autentikasi Supabase nyata dengan QA account yang sudah ada; profil/id diperiksa setelah sign-in. Tidak membuat akun baru, mengubah password, role, RLS, migrasi, atau transaksi usaha.
+- Shortcut hanya development dengan hostname loopback, origin sama untuk action, dan file .env.role-accounts.local yang cocok dengan proyek. Password dibaca hanya di server; tidak dimasukkan ke HTML/props/bundle klien. Production menonaktifkan shortcut dan tetap meminta login biasa. Ini akun uji pada database bersama, bukan simulasi localStorage.
+- Uji HTTP native-form Server Actions: keenam role masuk dan identitas benar; enam kartu tampil; password tidak ada dalam HTML; Host eksternal tidak menampilkan shortcut. Production build tidak menampilkan shortcut; /pos anonim tetap redirect login. Bukti: quick-login-results.json. npm run test:quick-login dapat mengulang pengujian di preview development 3000 tanpa transaksi usaha.
+- Typecheck, lint, role-policy dan production build lulus. Pemeriksaan visual otomatis belum dapat diselesaikan: Browser Use tidak tersedia, dan Windows Computer Use menghentikan akses karena tidak dapat memverifikasi URL browser. Jangan menganggap seluruh viewport/state sudah diperiksa visual.
+- Preview aktif pada http://127.0.0.1:3000/login. Akun lengkap tersedia hanya di laptop yang memiliki file lokal akun uji tersebut; file kredensial tidak ikut Git. Pada laptop lain siapkan file akun secara privat atau gunakan login biasa.
