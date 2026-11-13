@@ -22,7 +22,9 @@ export async function workflowAction(f:FormData){
  if(kind==="quotation")await requireRole(["sales","owner"]);else if(kind==="rfq")await requireRole(["procurement","owner"]);else if(kind==="return-inspection")await requireRole(["warehouse","finance","owner"]);else message(back,"Jenis dokumen tidak valid.");
  const c=await createSupabaseServerClient();let result:{data:string|null;error:{message:string}|null};
  try {
-  if(op==="save"&&kind==="quotation")result=await c.rpc("save_quotation",{p_number:ref||null,p_customer_id:text(f,"customer_id"),p_sku:text(f,"sku"),p_quantity:number(f,"quantity"),p_discount_percent:number(f,"discount_percent"),p_source_lead_number:text(f,"source_lead_number")||null,p_expected_revision:ref?number(f,"revision"):null,p_idempotency_key:key});
+  if(op==="save"&&kind==="quotation"&&f.has("order_lines"))result=await c.rpc("save_quotation_lines",{p_number:ref||null,p_customer_id:text(f,"customer_id"),p_lines:JSON.parse(text(f,"order_lines")) as Json,p_source_lead_number:text(f,"source_lead_number")||null,p_expected_revision:ref?number(f,"revision"):null,p_idempotency_key:key});
+  else if(op==="save"&&kind==="rfq"&&f.has("order_lines"))result=await c.rpc("save_rfq_lines",{p_number:ref||null,p_vendor_id:text(f,"vendor_id"),p_lines:JSON.parse(text(f,"order_lines")) as Json,p_expected_revision:ref?number(f,"revision"):null,p_idempotency_key:key});
+  else if(op==="save"&&kind==="quotation")result=await c.rpc("save_quotation",{p_number:ref||null,p_customer_id:text(f,"customer_id"),p_sku:text(f,"sku"),p_quantity:number(f,"quantity"),p_discount_percent:number(f,"discount_percent"),p_source_lead_number:text(f,"source_lead_number")||null,p_expected_revision:ref?number(f,"revision"):null,p_idempotency_key:key});
   else if(op==="save"&&kind==="rfq")result=await c.rpc("save_rfq",{p_number:ref||null,p_vendor_id:text(f,"vendor_id"),p_sku:text(f,"sku"),p_quantity:number(f,"quantity"),p_expected_revision:ref?number(f,"revision"):null,p_idempotency_key:key});
   else if(op==="approve"&&kind==="quotation")result=await c.rpc("approve_quotation_discount",{p_number:ref,p_revision:number(f,"revision"),p_idempotency_key:key});
   else if(op==="confirm"&&kind==="quotation")result=await c.rpc("confirm_quotation",{p_number:ref,p_idempotency_key:key});
@@ -60,4 +62,12 @@ export async function addNoteAction(_previous:NoteState,f:FormData):Promise<Note
  if(!knownDocumentKind(kind))return {error:"Jenis dokumen tidak valid."};
  const c=await createSupabaseServerClient();const result=await c.rpc("add_document_note",{p_kind:kind,p_reference:ref,p_body:text(f,"body"),p_idempotency_key:text(f,"idempotency_key")});
  if(result.error)return {error:result.error.message};revalidatePath(documentHref(kind,ref));return {success:"Log Note tersimpan."};
+}
+
+export async function fulfillLinesAction(f:FormData){
+ await requireRole(["warehouse","owner"]);const kind=text(f,"kind"),reference=text(f,"reference");
+ if(kind!=="sales"&&kind!=="purchase")message("/sales","Jenis dokumen tidak valid.");
+ const back=safeReturn(f,documentHref(kind,reference));const c=await createSupabaseServerClient();let result:{data:string|null;error:{message:string}|null};
+ try{const lines=JSON.parse(text(f,"order_lines")) as Json;const key=text(f,"idempotency_key");result=kind==="sales"?await c.rpc("deliver_sales_order_lines",{p_sales_order_number:reference,p_lines:lines,p_idempotency_key:key}):await c.rpc("receive_purchase_order_lines",{p_purchase_order_number:reference,p_lines:lines,p_idempotency_key:key});}catch(e){message(back,e instanceof Error?e.message:"Order Lines tidak valid.");}
+ if(result.error||!result.data)message(back,result.error?.message??"Dokumen belum tersimpan.");revalidatePath("/","layout");redirect(documentHref(kind==="sales"?"delivery":"receipt",result.data)+"?from="+encodeURIComponent(back));
 }

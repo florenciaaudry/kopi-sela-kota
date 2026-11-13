@@ -20,10 +20,15 @@ export async function WorkflowRecordControls({kind,row}:{kind:string;row:Record<
  if(["Confirmed","Cancelled"].includes(String(row.status)))return <p className="notice notice-info">Dokumen {String(row.status)} terkunci. Harga dan kuantitas dokumen asal tetap dipertahankan.</p>;
  const c=await createSupabaseServerClient();const [customers,products,vendors,prices]=await Promise.all([c.from("customers").select("id,name"),c.from("products").select("sku,name,sales_price"),c.from("vendors").select("id,name"),kind==="rfq"?c.from("vendor_pricelist").select("vendor_id,sku,purchase_price,minimum_quantity"):Promise.resolve({data:[],error:null})]);
  if(customers.error||products.error||vendors.error||prices.error)return <p role="alert">Data untuk perubahan draft belum tersedia.</p>;
+ const savedLines=kind==="quotation"?await c.from("quotation_lines").select("sku,quantity,discount_percent").eq("quotation_number",String(row.number)):await c.from("rfq_lines").select("sku,quantity").eq("rfq_number",String(row.number));
+ const missingLines=savedLines.error&&["42P01","PGRST205"].includes(savedLines.error.code);
+ if(savedLines.error&&!missingLines)return <p role="alert">Order Lines belum dapat dimuat. Muat ulang sebelum mengedit.</p>;
+ const multilineReady=!savedLines.error;
+ if(multilineReady&&!savedLines.data?.length)return <p role="alert">Order Lines tidak ditemukan. Hubungi administrator sebelum mengedit.</p>;
  const approvalNeeded=kind==="quotation"&&Number(row.discount_percent)>5&&(!row.approved_by||row.approved_revision!==row.revision);
  return <section className="section-card"><h2>Actions</h2>{approvalNeeded?<p className="notice notice-warning">Menunggu persetujuan Owner untuk Discount {String(row.discount_percent)}%. Konfirmasi belum diizinkan.</p>:null}<div className="workflow-actions">
  {approvalNeeded&&p.role==="owner"?<WorkflowForm kind={kind} row={row} operation="approve" label="Approve Discount"/>:null}
  {!approvalNeeded?<><WorkflowForm kind={kind} row={row} operation="confirm" label={kind==="quotation"?"Confirm Sales Order":"Confirm Purchase Order"}/>{row.status!=="Sent"?<WorkflowForm kind={kind} row={row} operation="Sent" label={kind==="quotation"?"Mark Quotation Sent":"Mark RFQ Sent"}/>:null}</>:null}
  <WorkflowForm kind={kind} row={row} operation="Cancelled" label="Cancel Draft"/></div>
- <details className="document-action-form"><summary>Edit</summary><EditSession><WorkflowForm kind={kind} row={row} operation="save" label="Save Draft"><DraftFields kind={kind} customers={customers.data??[]} products={products.data??[]} vendors={vendors.data??[]} prices={prices.data??[]} initial={row}/><p>Perubahan draft memakai harga katalog saat disimpan dan membatalkan approval versi sebelumnya.</p></WorkflowForm></EditSession></details></section>;
+ <details className="document-action-form"><summary>Edit</summary><EditSession><WorkflowForm kind={kind} row={row} operation="save" label="Save Draft"><DraftFields multilineReady={multilineReady} initialLines={savedLines.data??undefined} kind={kind} customers={customers.data??[]} products={products.data??[]} vendors={vendors.data??[]} prices={prices.data??[]} initial={row}/><p>Perubahan draft memakai harga katalog saat disimpan dan membatalkan approval versi sebelumnya.</p></WorkflowForm></EditSession></details></section>;
 }

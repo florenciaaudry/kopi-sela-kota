@@ -1,5 +1,12 @@
 # Progress
 
+## Audit browser terbaru — 13 November 2026
+
+42 kondisi layar diperiksa langsung melalui Edge pada aplikasi lokal yang terhubung ke Supabase. Tiga temuan UI diperbaiki: tautan Credit Note dari Reporting, duplikasi Return Inspections, dan kontras label role. Lihat [laporan audit](browser-audit-2026-11-13.md). Role Auth/HTTP 180/0, fixture PostgreSQL 36/36, multi-line 7/7, compact UI, typecheck, lint, dan production build lulus. Ini **bukan** bukti 36/36 skenario klik browser. Seluruh state visual dan fixture browser belum lengkap; deployment publik belum diverifikasi.
+
+Catatan lama di bawah adalah snapshot historis. Keterbatasan satu Product serta user management tulis pada snapshot 7 November awal telah digantikan implementasi 019–021 dan bukti multi-line/user-management terpisah. Jangan menafsirkan semua catatan historis sebagai status terbaru. Audit ini tidak menjalankan seed/reset atau migrasi. RFQ00004 disimpan lalu dibatalkan; audit dipertahankan, tanpa PO/stok/jurnal/payment baru.
+
+
 ## Verifikasi terbaru — workflow PDF (7 November 2026)
 
 - Migrasi 014–018 aktif: pengguna menjalankan bundle incremental, lalu kelima tabel baru dan RPC diverifikasi langsung lewat Supabase. Jangan jalankan bundle/seed ulang.

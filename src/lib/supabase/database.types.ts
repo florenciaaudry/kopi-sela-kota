@@ -76,6 +76,8 @@ export type OwnerDashboard = {
 export type Database = {
   public: {
     Tables: {
+      quotation_lines: Table<{quotation_number:string;sku:string;quantity:number;unit_price:number;discount_percent:number;subtotal:number;tax_amount:number}>;
+      rfq_lines: Table<{rfq_number:string;sku:string;quantity:number;unit_price:number;purchase_tax:string;subtotal:number}>;
       quotations: Table<{ number:string;customer_id:string;sku:string;quantity:number;unit_price:number;discount_percent:number;tax_rate:number;subtotal:number;tax_total:number;total:number;source_lead_number:string|null;status:string;revision:number;approved_revision:number|null;approved_by:string|null;approved_at:string|null;approved_label:string|null;sales_order_number:string|null;created_by:string;created_at:string;updated_at:string }>;
       rfqs: Table<{ number:string;vendor_id:string;sku:string;quantity:number;unit_price:number;purchase_tax:string;total:number;status:string;revision:number;purchase_order_number:string|null;created_by:string;created_at:string;updated_at:string }>;
       document_notes: Table<{id:string;document_kind:string;document_reference:string;body:string;actor_id:string;actor_label:string;created_at:string;idempotency_key:string}>;
@@ -401,6 +403,13 @@ export type Database = {
       };
     };
     Functions: {
+      get_purchase_policy_version: Rpc<Record<string,never>,number>;
+      list_app_users: Rpc<Record<string,never>,Json>;
+      manage_user_profile: Rpc<{p_user_id:string;p_full_name:string;p_role:AppRole;p_expected_role:AppRole|null;p_expected_name:string|null;p_idempotency_key:string},string>;
+      save_quotation_lines: Rpc<{p_number:string|null;p_customer_id:string;p_lines:Json;p_source_lead_number:string|null;p_expected_revision:number|null;p_idempotency_key:string},string>;
+      save_rfq_lines: Rpc<{p_number:string|null;p_vendor_id:string;p_lines:Json;p_expected_revision:number|null;p_idempotency_key:string},string>;
+      deliver_sales_order_lines: Rpc<{p_sales_order_number:string;p_lines:Json;p_idempotency_key:string},string>;
+      receive_purchase_order_lines: Rpc<{p_purchase_order_number:string;p_lines:Json;p_idempotency_key:string},string>;
       list_returnable_invoice_lines: Rpc<Record<string,never>,{invoice_number:string;sku:string;product_name:string;delivered_quantity:number;remaining_quantity:number}[]>;
       save_vendor_price: Rpc<{p_vendor_id:string;p_sku:string;p_minimum_quantity:number;p_purchase_price:number;p_purchase_tax:string;p_idempotency_key:string},string>;
       create_vendor_bill_for_quantity: Rpc<{p_purchase_order_number:string;p_quantity:number;p_idempotency_key:string},string>;

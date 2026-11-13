@@ -106,7 +106,7 @@ function ModuleWorkspace({ children, role, module }: { children: ReactNode; role
     (isAction ? actions : views).push(section);
   });
   add(children);
-  return <div className="page-stack module-workspace">{Children.toArray(intro)}<nav className="document-smart-buttons" aria-label="Workflow Links">{["sales","crm"].includes(module)&&["sales","owner"].includes(role)?<Link href="/quotations" className="secondary-button">Quotations</Link>:null}{module==="purchase"&&["procurement","owner"].includes(role)?<Link href="/rfqs" className="secondary-button">Requests for Quotation</Link>:null}{["sales","crm","purchase","invoicing"].includes(module)&&["sales","procurement","finance","owner"].includes(role)?<Link href="/master-data" className="secondary-button">Master Data</Link>:null}{["returns","invoicing"].includes(module)&&["warehouse","finance","owner"].includes(role)?<Link href="/inspections" className="secondary-button">Return Inspections</Link>:null}</nav><WorkspaceViews actions={actions} views={views} /></div>;
+  return <div className="page-stack module-workspace">{Children.toArray(intro)}<nav className="document-smart-buttons" aria-label="Workflow Links">{["sales","crm"].includes(module)&&["sales","owner"].includes(role)?<Link href="/quotations" className="secondary-button">Quotations</Link>:null}{module==="purchase"&&["procurement","owner"].includes(role)?<Link href="/rfqs" className="secondary-button">Requests for Quotation</Link>:null}{["sales","crm","purchase","invoicing"].includes(module)&&["sales","procurement","finance","owner"].includes(role)?<Link href="/master-data" className="secondary-button">Master Data</Link>:null}{module==="invoicing"&&["warehouse","finance","owner"].includes(role)?<Link href="/inspections" className="secondary-button">Return Inspections</Link>:null}</nav><WorkspaceViews actions={actions} views={views} /></div>;
 }
 
 function Form({
@@ -294,7 +294,7 @@ export async function ModulePage({
           remainingQuantity,
         };
       })
-      .filter((item) => item.remainingQuantity > 0);
+      .filter((item) => item.remainingQuantity > 0 && orderLines.data.filter(l=>l.sales_order_number===item.number).length===1);
     return (
       <ModuleWorkspace role={profile.role} module={module}>
         <PageTitle module={module} /><MessageBanner message={message} />
@@ -311,7 +311,7 @@ export async function ModulePage({
         </>}
         <Panel title="Pengiriman dari Sales Order">
           <Form action={deliverSalesOrderAction} submitLabel="Posting pengiriman">
-            <DeliveryOrderFields orders={deliverableOrders} />
+            <DeliveryOrderFields orders={deliverableOrders} /><p className="muted-copy">Untuk pesanan beberapa Product, buka nomor Sales Order dan isi Done Quantity per baris.</p>
           </Form>
         </Panel>
         <Panel title="Sales Order">
@@ -455,7 +455,7 @@ export async function ModulePage({
         </>}
         <Panel title="Penerimaan barang">
           <Form action={receivePurchaseOrderAction} submitLabel="Posting penerimaan">
-            <Select label="Purchase Order" name="purchase_order_number" options={orders.data.filter((item) => ["Purchase Order", "Partial Receipt"].includes(item.status)).map((item) => {
+            <Select label="Purchase Order" name="purchase_order_number" options={orders.data.filter((item) => ["Purchase Order", "Partial Receipt"].includes(item.status)&&orderLines.data.filter(l=>l.purchase_order_number===item.number).length===1).map((item) => {
               const totals = orderLineTotals.get(item.number) ?? { ordered: 0, accepted: 0, rejected: 0 };
               return option(item.number, `${item.number} · order ${dateLabel(item.order_date)} · sisa ${totals.ordered - totals.accepted - totals.rejected}`);
             })} />

@@ -1,6 +1,6 @@
 {
   "scope": "Isolated real PostgreSQL (PGlite) backend fixtures using production migration functions and fresh PDF seed per test transaction. Auth identities are a test harness, not real Supabase login; pg_cron registration stubbed, not background execution. Calendar uses current clock; expiry tested by elapsed time. UI visual and live deployment verification remain separate.",
-  "checked_at": "2026-11-07T02:57:35.041Z",
+  "checked_at": "2026-11-13T11:09:25.015Z",
   "results": [
     {
       "id": "T-01",

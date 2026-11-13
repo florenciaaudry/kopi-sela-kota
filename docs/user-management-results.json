@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-11-07T09:17:12.705Z",
+  "scope": "Isolated real PostgreSQL profile/RLS/role/audit tests; no actual Auth provisioning or shared database mutation.",
+  "results": [
+    {
+      "name": "Only Owner lists emails/roles; five non-Owner roles cannot manage access",
+      "status": "PASS"
+    },
+    {
+      "name": "Owner changes existing role with audit; stale version and direct writes rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Owner self-demotion blocked; role change affects authorization without token claims",
+      "status": "PASS"
+    },
+    {
+      "name": "Profile registration for Auth account, exact replay and changed replay guard",
+      "status": "PASS"
+    }
+  ]
+}

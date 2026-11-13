@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-07T02:59:46.471Z",
+  "generatedAt": "2026-11-07T09:19:11.862Z",
   "scope": "Isolated PostgreSQL; production migrations; test auth identities; no shared database changes. Not a browser/production deployment test.",
   "results": [
     {
@@ -15,7 +15,7 @@
       "status": "PASS"
     },
     {
-      "name": "RFQ cancellation prevents confirmation and Vendor Price does not rewrite PO",
+      "name": "RFQ cancellation and Standard Cost purchase-price policy",
       "status": "PASS"
     },
     {

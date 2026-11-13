@@ -1,0 +1,35 @@
+{
+  "run": "qa-multi-return-1794043823945",
+  "references": {
+    "quotation": "Q00006",
+    "approval": "Q00006",
+    "salesOrder": "S00016",
+    "delivery0": "DN00021",
+    "invoice0": "INV00035",
+    "inspection0": "RI00002",
+    "credit0": "CN00002",
+    "delivery1": "DN00022",
+    "invoice1": "INV00036",
+    "inspection1": "RI00003",
+    "credit1": "CN00003"
+  },
+  "status": "PASS",
+  "checkedAt": "2026-11-07T09:30:41.238Z",
+  "scope": "Actual Auth, per-line native Delivery Server Action, partial invoices and sealed returns for two SKUs. All eight QA journals net zero by account; both invoices fully credited; one unit each restocked. Documents/audit retained. No payment/seed/reset. Not browser visual automation.",
+  "netLedgerEffect": {
+    "1201": 0,
+    "1301": 0,
+    "2102": 0,
+    "4101": 0,
+    "5101": 0
+  },
+  "checks": [
+    "Second-line Discount6 Owner approval",
+    "Single SO has two SKUs",
+    "Native Delivery posts first SKU only; first invoice keeps Partial Delivery",
+    "Second native Delivery handles remaining SKU",
+    "Finance invoices each Delivered line once",
+    "Warehouse sealed return and Finance Credit Note for each invoice",
+    "Eight journals sum to zero by every account; AR zero; both stock units returned"
+  ]
+}

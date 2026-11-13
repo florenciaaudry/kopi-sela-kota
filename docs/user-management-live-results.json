@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-11-07T09:23:59.381Z",
+  "status": "PASS",
+  "scope": "Actual Owner native Server Actions/Auth create and profile edit; new user login and role authorization. Only temporary unused QA account removed; audit retained. Existing accounts untouched; no business posting. Not visual browser automation.",
+  "checks": [
+    "Owner native New User form creates confirmed Auth account and Finance profile; no password/key in HTML",
+    "New user actual password login; Finance account reads Accounting, cannot administer users",
+    "Owner native role edit changes Finance to Warehouse; existing session loses Accounting and gains Inventory",
+    "Existing users, roles and scenario names unchanged"
+  ]
+}

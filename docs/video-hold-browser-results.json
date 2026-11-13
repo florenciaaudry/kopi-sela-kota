@@ -25,15 +25,15 @@
     "5101": 2000
   },
   "snapshot": {
-    "bank": 10074130,
+    "bank": 10107130,
     "cash": 580300,
-    "on_hand": 457,
+    "on_hand": 456,
     "payables": 300000,
     "reserved": 0,
     "sku_count": 15,
     "receivables": 549670,
     "location_count": 2,
-    "inventory_value": 4101000
+    "inventory_value": 4086000
   },
-  "verified_at": "2026-11-07T05:20:01.180Z"
+  "verified_at": "2026-11-13T11:07:23.078Z"
 }

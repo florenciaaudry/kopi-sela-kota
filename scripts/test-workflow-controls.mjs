@@ -31,9 +31,9 @@ await test('Quotation stale approval invalidated; snapshot price retained on con
  await reject(()=>rpc('confirm_quotation',[q,'q-stale-confirm']),/persetujuan|approval/i);
  await actor('owner');await rpc('approve_quotation_discount',[q,2,'owner-approve2']);await db.exec("update public.products set sales_price=99000 where sku='CBW-250'");await actor('sales');const so=await rpc('confirm_quotation',[q,'q-confirm']);assert.equal(Number(await scalar('select unit_price from public.sales_order_lines where sales_order_number=$1',[so])),30000);
 });
-await test('RFQ cancellation prevents confirmation and Vendor Price does not rewrite PO',async()=>{
+await test('RFQ cancellation and Standard Cost purchase-price policy',async()=>{
  await actor('procurement');const rfq=await rpc('save_rfq',[null,'V01','CBW-250',20,null,'r-new']);await rpc('change_draft_status',['rfq',rfq,'Cancelled','r-cancel']);await reject(()=>rpc('confirm_rfq',[rfq,'r-invalid-confirm']),/terkunci|status|Cancelled|tidak aktif/i);
- const q2=await rpc('save_rfq',[null,'V01','CBW-250',20,null,'r-new2']);const po=await rpc('confirm_rfq',[q2,'r-confirm2']);await rpc('save_vendor_price',['V01','CBW-250',1,20000,'BUY0','price-update']);assert.equal(Number(await scalar('select unit_price from public.purchase_order_lines where purchase_order_number=$1',[po])),15000);await reject(()=>rpc('save_vendor_price',['V01','CBW-250',1,20000,'BUY10','invalid-tax']),/tidak valid/);
+ const q2=await rpc('save_rfq',[null,'V01','CBW-250',20,null,'r-new2']);const po=await rpc('confirm_rfq',[q2,'r-confirm2']);await reject(()=>rpc('save_vendor_price',['V01','CBW-250',1,20000,'BUY0','price-update']),/Standard Cost/);await rpc('save_vendor_price',['V01','CBW-250',2,15000,'BUY0','price-standard']);assert.equal(Number(await scalar('select unit_price from public.purchase_order_lines where purchase_order_number=$1',[po])),15000);await reject(()=>rpc('save_vendor_price',['V01','CBW-250',1,20000,'BUY10','invalid-tax']),/tidak valid/);
 });
 await test('Log Notes persist once with actor; invalid payload and master deletion blocked',async()=>{
  await actor('sales');const n=await rpc('add_document_note',['sales','S00001','Fixture note','note-once']);assert.equal(await rpc('add_document_note',['sales','S00001','Fixture note','note-once']),n);

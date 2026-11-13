@@ -1,0 +1,34 @@
+{
+  "checkedAt": "2026-11-13T11:09:28.733Z",
+  "scope": "Isolated real PostgreSQL using all production migrations; SQL role/RLS and atomic posting tests. No shared database mutation. Not browser/live deployment verification.",
+  "results": [
+    {
+      "name": "Two-line quotation sums per-line PBJT and requires approval for second line",
+      "status": "PASS"
+    },
+    {
+      "name": "Delivery/invoice partial across two SKUs then remainder matches locked quotation total",
+      "status": "PASS"
+    },
+    {
+      "name": "Second-SKU overdelivery rolls back first SKU, header and journal; canonical replay exact once",
+      "status": "PASS"
+    },
+    {
+      "name": "RFQ snapshot retained; mixed accepted/rejected Receipt and Bill include both SKUs",
+      "status": "PASS"
+    },
+    {
+      "name": "Invalid second receipt atomically preserves stock and quantities; legacy scalar RPC fails closed",
+      "status": "PASS"
+    },
+    {
+      "name": "Duplicate, empty, fractional, negative or unknown SKU rejected; protected line RLS",
+      "status": "PASS"
+    },
+    {
+      "name": "Price variance blocked before PO/Receipt/Bill; inventory stays at Standard Cost",
+      "status": "PASS"
+    }
+  ]
+}

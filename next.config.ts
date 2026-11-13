@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   allowedDevOrigins: ["127.0.0.1", "localhost"],
   // Keep verification builds separate from an already running preview server.
-  distDir: process.env.ERP_VERIFY_BUILD === "1" ? ".next-check" : ".next-preview",
+  distDir: process.env.ERP_VERIFY_BUILD === "1" ? ".next-check" : process.env.NODE_ENV === "production" ? ".next" : ".next-preview",
   turbopack: {
     rules: {
       "*.css": {

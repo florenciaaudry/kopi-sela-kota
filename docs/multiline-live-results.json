@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-11-07T09:25:32.687Z",
+  "status": "PASS",
+  "scope": "Actual Auth/RPC and native Quotation/RFQ Server Action forms. QA drafts and approval/audit retained as Cancelled; no SO, PO, fulfillment, payment or journal posted. Not visual browser automation.",
+  "references": {
+    "quotation": "Q00005",
+    "rfq": "RFQ00003"
+  },
+  "checks": [
+    "Migration021 active; differing Purchase Price rejected; Vendor Pricelist unchanged",
+    "Sales native New Quotation saves two Product lines; actual detail and edit form load both lines",
+    "Native edit of second-line discount invalidates Owner approval; confirmation blocked without creating SO",
+    "Procurement native New RFQ saves two vendor-specific Product lines"
+  ]
+}

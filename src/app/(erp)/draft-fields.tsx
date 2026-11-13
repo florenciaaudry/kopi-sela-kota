@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { MultiDraftFields, type DraftLine } from "./multi-draft-fields";
+import { useState, type ComponentProps } from "react";
 import { formatRupiah } from "@/lib/format";
-export function DraftFields({kind,customers,products,vendors,prices,initial={}}:{kind:"quotation"|"rfq";customers:{id:string;name:string}[];products:{sku:string;name:string;sales_price:number}[];vendors:{id:string;name:string}[];prices:{vendor_id:string;sku:string;purchase_price:number;minimum_quantity:number}[];initial?:Record<string,unknown>}){
+function SingleDraftFields({kind,customers,products,vendors,prices,initial={}}:{kind:"quotation"|"rfq";customers:{id:string;name:string}[];products:{sku:string;name:string;sales_price:number}[];vendors:{id:string;name:string}[];prices:{vendor_id:string;sku:string;purchase_price:number;minimum_quantity:number}[];initial?:Record<string,unknown>}){
  const [party,setParty]=useState(String(initial.customer_id??initial.vendor_id??""));const [sku,setSku]=useState(String(initial.sku??""));const [quantity,setQuantity]=useState(Number(initial.quantity??1));const [discount,setDiscount]=useState(Number(initial.discount_percent??0));
  const price=kind==="quotation"?Number(products.find(p=>p.sku===sku)?.sales_price??0):Number(prices.find(p=>p.sku===sku&&p.vendor_id===party)?.purchase_price??0);const net=Math.round(price*(Number.isFinite(quantity)?quantity:0)*(1-(kind==="quotation"?discount:0)/100));const tax=kind==="quotation"?Math.round(net*.1):0;
  return <><label className="demo-field"><span>{kind==="quotation"?"Customer":"Vendor"}</span><select name={kind==="quotation"?"customer_id":"vendor_id"} value={party} onChange={e=>setParty(e.target.value)} required><option value="">Pilih…</option>{(kind==="quotation"?customers:vendors).map(p=><option value={p.id} key={p.id}>{p.id} · {p.name}</option>)}</select></label>
@@ -10,3 +11,5 @@ export function DraftFields({kind,customers,products,vendors,prices,initial={}}:
  {kind==="quotation"?<><label className="demo-field"><span>Discount (%) · di atas 5% perlu persetujuan Owner</span><input name="discount_percent" type="number" min={0} max={10} step={.01} required value={Number.isNaN(discount)?"":discount} onChange={e=>setDiscount(e.target.valueAsNumber)}/></label><label className="demo-field"><span>Source Opportunity (optional)</span><input name="source_lead_number" defaultValue={String(initial.source_lead_number??"")}/></label></>:null}
  <dl className="cart-summary" aria-live="polite"><div><dt>Unit Price</dt><dd>{formatRupiah(price)}</dd></div><div><dt>Untaxed Amount</dt><dd>{formatRupiah(net)}</dd></div><div><dt>PBJT</dt><dd>{formatRupiah(tax)}</dd></div><div><dt>Total</dt><dd>{formatRupiah(net+tax)}</dd></div></dl></>;
 }
+
+export function DraftFields(props:ComponentProps<typeof SingleDraftFields>&{multilineReady?:boolean;initialLines?:DraftLine[]}){return props.multilineReady?<MultiDraftFields {...props}/>:<SingleDraftFields {...props}/>;}

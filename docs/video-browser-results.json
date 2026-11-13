@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "checked_at": "2026-11-07T05:19:51.913Z",
+  "checked_at": "2026-11-13T11:07:07.920Z",
   "scope": "Actual Owner browser submissions for full Sales/Purchase qty 1, independently reconciled read-only against database; separate from six-role RPC rehearsal and PDF fixtures.",
   "references": {
     "sales": "S00008",
@@ -30,14 +30,14 @@
     "5101": 15000
   },
   "snapshot": {
-    "bank": 10074130,
+    "bank": 10107130,
     "cash": 580300,
-    "on_hand": 457,
+    "on_hand": 456,
     "payables": 300000,
     "reserved": 0,
     "sku_count": 15,
     "receivables": 549670,
     "location_count": 2,
-    "inventory_value": 4101000
+    "inventory_value": 4086000
   }
 }

@@ -1,3 +1,4 @@
+import { MultiFulfillment } from "../../../multi-fulfillment";
 import { DocumentHeading } from "../../../document-heading";
 import { moduleTitles } from "@/lib/erp-terminology";
 import { MasterRecordControls } from "../../../master-controls";
@@ -59,6 +60,10 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
   sections.push({title,fields,rows:(result.data??[]) as unknown as Row[],kind:target,error:Boolean(result.error)});
  }
  if("lines" in definition)await related(kind==="journal"?"Journal Items":"Order Lines",definition.lines.table,definition.lines.foreign,kind==="journal"?String(row.id):number,definition.lines.fields);
+ if(kind==="quotation"||kind==="rfq"){
+  const draftLines=kind==="quotation"?await client.from("quotation_lines").select("*").eq("quotation_number",number):await client.from("rfq_lines").select("*").eq("rfq_number",number);
+  if(!draftLines.error||!["42P01","PGRST205"].includes(draftLines.error.code))sections.push({title:"Order Lines",fields:[{key:"sku",label:"Product",document:"product"},{key:"quantity",label:"Quantity"},{key:"unit_price",label:"Unit Price",format:"money"},...(kind==="quotation"?[{key:"discount_percent",label:"Discount (%)"}]:[]),{key:"subtotal",label:"Untaxed Amount",format:"money"},...(kind==="quotation"?[{key:"tax_amount",label:"PBJT",format:"money"} as Column]:[])],rows:(draftLines.data??[]) as unknown as Row[],error:Boolean(draftLines.error)});
+ }
  if(kind==="credit-note")await related("Return Inspection","return_inspections","credit_note_number",number,[{key:"number",label:"Reference"},{key:"sku",label:"Product",document:"product"},{key:"quantity",label:"Return Quantity"},{key:"item_condition",label:"Inspection"},{key:"status",label:"Status"}],"return-inspection");
  if(kind==="return-inspection")await related("Return Stock Moves","return_stock_moves","inspection_number",number,[{key:"number",label:"Reference"},{key:"restock_quantity",label:"Restocked Quantity"},{key:"rejected_quantity",label:"Rejected Quantity"},{key:"stock_value",label:"Stock Value",format:"money"}],"return-move");
  if(kind==="sales") {
@@ -136,7 +141,7 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
   const totalOrdered=(ordered?.rows??[]).reduce((n,l)=>n+Number(l.quantity),0);
   const totalDelivered=(delivered?.data??[]).reduce((n,l)=>n+l.quantity,0);
   const remaining=totalOrdered-totalDelivered;
-  if(!ordered?.error&&!delivered?.error&&remaining>0&&["warehouse","owner"].includes(profile.role))actions.push(<ActionForm key="delivery" title="Validate Delivery" action={deliverSalesOrderAction} fields={{sales_order_number:number}}><label className="demo-field"><span>Done Quantity · Remaining {remaining}</span><input name="quantity" type="number" min={1} max={remaining} step={1} defaultValue={remaining} required/></label></ActionForm>);
+  if(!ordered?.error&&!delivered?.error&&remaining>0&&(ordered?.rows.length??0)<=1&&["warehouse","owner"].includes(profile.role))actions.push(<ActionForm key="delivery" title="Validate Delivery" action={deliverSalesOrderAction} fields={{sales_order_number:number}}><label className="demo-field"><span>Done Quantity · Remaining {remaining}</span><input name="quantity" type="number" min={1} max={remaining} step={1} defaultValue={remaining} required/></label></ActionForm>);
   if(profile.role==="owner"&&totalDelivered>0){
    const inv=sections.find(s=>s.title==="Customer Invoices");const ids=inv?.rows.map(i=>String(i.number))??[];
    const invoiced=ids.length?await client.from("customer_invoice_lines").select("quantity").in("invoice_number",ids):null;
@@ -147,7 +152,7 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
   const lines=sections.find(s=>s.title==="Order Lines");const quantities=lines?.rows??[];
   const remaining=quantities.reduce((n,l)=>n+Number(l.quantity)-Number(l.received_quantity)-Number(l.rejected_quantity),0);
   const unbilled=quantities.reduce((n,l)=>n+Number(l.received_quantity)-Number(l.billed_quantity),0);
-  if(!lines?.error&&remaining>0&&["warehouse","owner"].includes(profile.role))actions.push(<ActionForm key="receipt" title="Validate Receipt" action={receivePurchaseOrderAction} fields={{purchase_order_number:number}}><label className="demo-field"><span>Accepted Quantity · Remaining {remaining}</span><input name="accepted_quantity" type="number" min={0} max={remaining} step={1} defaultValue={remaining} required/></label><label className="demo-field"><span>Rejected Quantity</span><input name="rejected_quantity" type="number" min={0} max={remaining} step={1} defaultValue={0} required/></label></ActionForm>);
+  if(!lines?.error&&remaining>0&&quantities.length<=1&&["warehouse","owner"].includes(profile.role))actions.push(<ActionForm key="receipt" title="Validate Receipt" action={receivePurchaseOrderAction} fields={{purchase_order_number:number}}><label className="demo-field"><span>Accepted Quantity · Remaining {remaining}</span><input name="accepted_quantity" type="number" min={0} max={remaining} step={1} defaultValue={remaining} required/></label><label className="demo-field"><span>Rejected Quantity</span><input name="rejected_quantity" type="number" min={0} max={remaining} step={1} defaultValue={0} required/></label></ActionForm>);
   if(!lines?.error&&unbilled>0&&profile.role==="owner")actions.push(<ActionForm key="bill" title="Create Vendor Bill" action={createVendorBillAction} fields={{purchase_order_number:number}}><p>{unbilled} unit diterima baik belum ditagih. Barang ditolak tidak masuk Vendor Bill.</p></ActionForm>);
  }
  if(kind==="bill"&&Number(row.total)>Number(row.amount_paid))actions.push(<ActionForm key="payment" title="Register Payment" action={recordVendorPaymentAction} fields={{bill_number:number}}><CurrencyInput label="Amount" name="amount" defaultValue={Number(row.total)-Number(row.amount_paid)}/><label className="demo-field"><span>Payment Journal</span><select name="account_code" required><option value="1102">Bank</option><option value="1101">Cash</option></select></label></ActionForm>);
@@ -161,6 +166,10 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
  if(kind==="session"&&row.status==="Open"&&row.opened_by===profile.id)actions.push(<ActionForm key="close" title="Close Session" action={closePosSessionAction} fields={{session_number:number}} idempotent={false}><CurrencyInput label="Counted Cash" name="counted_cash" allowZero defaultValue={Number(row.expected_cash??row.opening_cash)}/><label className="demo-field"><span>Variance Reason · wajib jika ada selisih</span><input name="variance_reason"/></label></ActionForm>);
  if(kind==="session"&&row.status==="Pending Approval"&&profile.role==="owner")actions.push(<ActionForm key="approve" title="Approve Cash Difference" action={approvePosVarianceAction} fields={{session_number:number}} idempotent={false}><p>Setujui selisih setelah memeriksa Expected Cash, Counted Cash dan alasan kasir.</p></ActionForm>);
  const history=profile.role==="owner" ? await client.from("audit_events").select("actor_label,action,occurred_at").eq("document_number",number).order("occurred_at",{ascending:false}).limit(100) : null;
+ if((kind==="sales"||kind==="purchase")&&["warehouse","owner"].includes(profile.role)){
+  const section=sections.find(s=>s.title==="Order Lines");const lines=(section?.rows??[]).map(l=>({sku:String(l.sku),remaining:Number(l.remaining_quantity)})).filter(l=>l.remaining>0);
+  if(!section?.error&&(section?.rows.length??0)>1&&lines.length)actions.unshift(<MultiFulfillment key="multiline" kind={kind} reference={number} lines={lines} transactionKey={crypto.randomUUID()}/>);
+ }
  const status=row.status??row.stage;
  return <div className="page-stack module-workspace">
   <DocumentHeading back={definition.back==="/"&&["sales","finance","procurement","owner"].includes(profile.role)?"/master-data":definition.back} backLabel={definition.back==="/"?(["sales","finance","procurement","owner"].includes(profile.role)?"Master Data":"Dashboard"):moduleTitles[definition.back.slice(1)]??definition.title} title={definition.title} reference={number} status={status?String(status):undefined}/>
@@ -168,7 +177,7 @@ export default async function BusinessDocument({params,searchParams}:{params:Pro
   <WorkflowNotice message={message}/><WorkflowRecordControls kind={kind} row={row}/><MasterRecordControls kind={kind} row={row}/>
   {actions.length?<section className="section-card document-actions-panel" aria-label="Document Actions"><h2>Actions</h2>{actions}</section>:null}
   <nav className="document-smart-buttons" aria-label="Related Documents">{sections.map((s,i)=>({s,i})).filter(({s})=>s.kind).map(({s,i})=><a className="secondary-button" key={i} href={"#related-"+i}>{s.title}{!s.error ? ` (${s.rows.length>500?"500+":s.rows.length})`:""}</a>)}</nav>
-  <section className="section-card"><h2>Details</h2><dl className="receipt-meta">{definition.fields.map(col=>{
+  <section className="section-card"><h2>Details</h2><dl className="receipt-meta">{definition.fields.filter(col=>!((kind==="quotation"||kind==="rfq")&&sections.some(s=>s.title==="Order Lines"&&!s.error)&&["sku","quantity","unit_price","discount_percent"].includes(col.key))).map(col=>{
    let target=col.document;if(target==="source")target=sourceDocumentKind(String(row.source_type));
    const raw=value(row,col.key);const label=formatted(row,col);const href=target&&target!=="source"&&canOpenDocument(target,profile.role)&&raw!=="—" ? documentHref(target as DocumentKind,raw):null;
    return <div key={col.key}><dt>{col.label}</dt><dd>{href?<Link className="record-link" href={href}>{label}</Link>:label}</dd></div>;
