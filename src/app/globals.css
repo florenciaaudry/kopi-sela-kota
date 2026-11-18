@@ -1486,3 +1486,6 @@ a.primary-button, a.secondary-button { display:inline-flex; align-items:center; 
 .managed-user-summary > span:first-child { min-width:0; }
 .managed-user-summary .role-pill { flex-shrink:0; color:#493c32; background:#eee5d8; border-color:#d8c8b7; font-size:12px; }
 .managed-user-summary small { display:block; font-size:12px; font-weight:400; color:#776d62; margin-top:4px; overflow-wrap:anywhere; }
+
+/* Receipt source navigation stays on screen and is omitted from customer prints. */
+@media print { .receipt-source-links { display:none!important; } }

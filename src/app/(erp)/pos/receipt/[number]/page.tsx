@@ -1,6 +1,8 @@
 import { ContextualBackLink } from "../../../contextual-back-link";
 import { DocumentNotes } from "../../../document-notes";
 import Link from "next/link";
+import RecordLink from "../../../record-link";
+import { documentHref } from "@/lib/document-navigation";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { formatRupiah } from "@/lib/format";
@@ -32,6 +34,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ number
   const productNames=new Map((products.data??[]).map(product=>[product.sku,product.name]));
   return <div className="page-stack">
     <div className="receipt-toolbar"><nav className="record-breadcrumb"><ContextualBackLink fallback="/pos" label="Point of Sale"/><span aria-hidden="true">/</span><span>{receipt.number}</span></nav><PrintButton /></div>
+    <nav className="document-smart-buttons receipt-source-links" aria-label="Related Documents">
+      <RecordLink className="secondary-button" href={documentHref("session", receipt.session_number)}>POS Session · {receipt.session_number}</RecordLink>
+      {receipt.customer_id ? <RecordLink className="secondary-button" href={documentHref("customer", receipt.customer_id)}>Customer · {receipt.customer_id}</RecordLink> : null}
+      {holdNumber ? <RecordLink className="secondary-button" href={documentHref("hold", holdNumber)}>Order on Hold · {holdNumber}</RecordLink> : null}
+    </nav>
     <article className="section-card printable-receipt">
       <header className="receipt-heading"><p className="eyebrow">SALES RECEIPT</p><h1>Kopi Sela Kota</h1><p>Tebet, Jakarta</p><span className="demo-status">Paid</span></header>
       <dl className="receipt-meta"><div><dt>Reference</dt><dd>{receipt.number}</dd></div><div><dt>Date &amp; Time</dt><dd>{new Date(receipt.sold_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB</dd></div><div><dt>POS Session</dt><dd>{receipt.session_number}</dd></div><div><dt>Customer</dt><dd>{receipt.customer_id ? `${receipt.customer_id} · ${customer.data?.name ?? ""}` : "Pembeli umum"}</dd></div>{holdNumber ? <div><dt>Order on Hold</dt><dd>{holdNumber}</dd></div> : null}</dl>
