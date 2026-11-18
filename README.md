@@ -4,7 +4,7 @@ Pondasi aplikasi ERP pembelajaran untuk Sales/CRM, Purchase/Inventory, Accountin
 
 ## Status
 
-Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. Dashboard Owner serta satu alur Sales dan Purchase sampai pembayaran pernah diverifikasi live. Tes login/akses enam role mencatat 156 PASS/0 FAIL; regresi transaksi RPC diuji dengan rollback. Aplikasi **belum dinyatakan lengkap atau siap produksi**: T-01–T-36 belum seluruhnya diuji dan sejumlah fitur masih memiliki gap. Lihat [progres](./docs/PROGRESS.md), [panduan handoff](./docs/handoff.md), dan [panduan pengguna + hasil verifikasi PDF](./docs/Panduan-Penggunaan-dan-Verifikasi-Kopi-Sela-Kota.pdf).
+Aplikasi Next.js terhubung ke Supabase Auth dan PostgreSQL. **Web publik: https://kopi-sela-kota.vercel.app**. Deployment dan login Owner melalui browser terverifikasi 18 November 2026; pengujian Auth/HTTP/RLS enam role di URL publik: **180 PASS / 0 FAIL**. Pengujian browser dengan baseline PDF dilanjutkan pada Supabase QA terpisah. Aplikasi **belum dinyatakan lengkap atau siap produksi**: seluruh T-01–T-36 dan state visual belum selesai dibuktikan melalui browser. Lihat [progres](./docs/PROGRESS.md), [hasil akses publik](./docs/public-role-test-results.json), dan [deployment](./docs/deployment.md).
 
 ## Stack sasaran
 
@@ -21,7 +21,7 @@ Mode demo hanya untuk lingkungan lokal tanpa konfigurasi Supabase dan selalu dib
 
 ## Environment
 
-Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan publishable/anon key; akses data dibatasi oleh RLS. Jangan gunakan service-role key di aplikasi.
+Lihat [.env.example](./.env.example). Aplikasi hanya memerlukan Project URL dan publishable/anon key; akses data dibatasi oleh RLS. Key admin opsional untuk Owner New User hanya boleh dipakai server melalui `SUPABASE_SECRET_KEY`/`SUPABASE_SERVICE_ROLE_KEY`; jangan memakai prefix `NEXT_PUBLIC`, menaruhnya di browser, atau memasukkannya ke Git.
 
 ## Dokumentasi
 

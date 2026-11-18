@@ -1,6 +1,8 @@
 # Deployment publik
 
-Status: build produksi lokal disiapkan; aplikasi **belum dipublikasikan**. Akun/platform hosting belum tersedia dari pengguna. Panduan ini tidak menyatakan deployment berhasil.
+Status 18 November 2026: **deployment Production berhasil** di https://kopi-sela-kota.vercel.app dari branch `main`, commit awal publik `947b475`. Login Owner melalui browser berhasil. Suite Auth/HTTP/RLS enam role pada URL publik: **180 PASS / 0 FAIL**, tanpa posting transaksi bisnis. Bukti: [hasil pengujian publik](public-role-test-results.json). Ini bukan klaim seluruh T-01–T-36 lulus browser atau siap produksi.
+
+Production menggunakan Supabase bersama; QA terpisah memakai proyek `kopi-sela-kota-qa`. Reset baseline hanya di QA. Tiga variabel Production sudah dikonfigurasi: dua konfigurasi publik Supabase dan key admin **server-only** yang disetujui pemilik untuk New User. Nilai rahasia tidak dicantumkan di dokumentasi/Git.
 
 ## Jalur Vercel melalui GitHub
 

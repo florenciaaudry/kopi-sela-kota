@@ -1,5 +1,13 @@
 # Progress
 
+## Verifikasi 18 November 2026
+
+- Production aktif: https://kopi-sela-kota.vercel.app; login Owner browser berhasil. Auth/HTTP/RLS enam role pada URL publik: 180/0, tanpa posting transaksi bisnis.
+- QA terpisah telah dibuat, migrasi 001–022 dan baseline PDF terpasang, enam akun QA terpisah aktif. Pemulihan baseline QA mengarsipkan histori privat dan mempertahankan Auth/profiles; database bersama tidak di-reset. Migrasi 022 hanya diterapkan di QA untuk grant service bootstrap pada proyek baru.
+- Browser QA: kontrol master, kredit, CRM, Quotation, reservasi, Delivery 8, Invoice Rp264.000, pembayaran Bank Rp100.000 dan Reporting cocok dengan angka PDF. Tanggal transaksi mengikuti 18 November; bukan rekayasa tanggal baseline. Bukti browser T-01–T-36 masih dikumpulkan, belum klaim 36/36.
+- Perbaikan sesi: pengunjung baru diarahkan ke login tanpa pesan kedaluwarsa palsu; cookie sesi yang diperbarui/dihapus dipertahankan saat redirect. Regresi proxy, typecheck, lint dan build produksi lulus.
+
+
 ## Audit browser terbaru — 13 November 2026
 
 42 kondisi layar diperiksa langsung melalui Edge pada aplikasi lokal yang terhubung ke Supabase. Tiga temuan UI diperbaiki: tautan Credit Note dari Reporting, duplikasi Return Inspections, dan kontras label role. Lihat [laporan audit](browser-audit-2026-11-13.md). Role Auth/HTTP 180/0, fixture PostgreSQL 36/36, multi-line 7/7, compact UI, typecheck, lint, dan production build lulus. Ini **bukan** bukti 36/36 skenario klik browser. Seluruh state visual dan fixture browser belum lengkap; deployment publik belum diverifikasi.

@@ -34,7 +34,11 @@ async function main() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key || new URL(url).hostname !== project) throw new Error("Konfigurasi akun dan Supabase tidak cocok.");
   const base = process.env.ERP_TEST_BASE_URL || "http://127.0.0.1:3000";
-  if (!["127.0.0.1", "localhost"].includes(new URL(base).hostname)) throw new Error("Tes halaman dibatasi pada server lokal.");
+  const target = new URL(base);
+  const local = ["127.0.0.1", "localhost"].includes(target.hostname);
+  // Credentials may leave localhost only for this explicitly verified deployment.
+  const publicDeployment = process.env.ERP_PUBLIC_ROLE_TEST === "1" && target.origin === "https://kopi-sela-kota.vercel.app" && target.pathname === "/" && !target.search && !target.hash && !target.username && !target.password;
+  if (!local && !publicDeployment) throw new Error("Tes hanya untuk localhost atau deployment ERP terverifikasi dengan ERP_PUBLIC_ROLE_TEST=1.");
   const anonymous = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const anonymousJournal = await anonymous.from("journal_entries").select("id").limit(1);
   record("anonymous", "jurnal tidak dapat dibaca", Boolean(anonymousJournal.error) || anonymousJournal.data?.length === 0, anonymousJournal.error?.code || "RLS");
@@ -91,8 +95,8 @@ async function main() {
     const afterLogout = await fetch(base + "/", { headers: { cookie: clearedCookies }, redirect: "manual", signal: AbortSignal.timeout(20000) });
     record(role, "URL internal setelah logout diarahkan ke login", [302, 303, 307, 308].includes(afterLogout.status) && (afterLogout.headers.get("location") || "").includes("/login"), `HTTP ${afterLogout.status}`);
   }
-  const report = { checkedAt: new Date().toISOString(), scope: "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.", results };
-  fs.writeFileSync("docs/role-test-results.json", JSON.stringify(report, null, 2));
+  const report = { checkedAt: new Date().toISOString(), base, project, scope: "Login Auth, profile, SSR URL access, RLS reads, direct profile grant, logout. No business transactions posted.", results };
+  fs.writeFileSync(publicDeployment ? "docs/public-role-test-results.json" : "docs/role-test-results.json", JSON.stringify(report, null, 2));
   console.log(`Hasil: ${results.filter((item) => item.status === "PASS").length} lulus; ${results.filter((item) => item.status === "FAIL").length} gagal. Laporan tidak memuat password/token.`);
   if (results.some((item) => item.status === "FAIL")) process.exitCode = 1;
 }

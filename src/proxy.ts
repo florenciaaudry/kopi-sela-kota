@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/lib/supabase/database.types";
@@ -54,18 +55,25 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
   const isLoginPage = request.nextUrl.pathname === "/login";
 
-  if (error && !isLoginPage) {
+  // Preserve refreshed or cleared auth cookies when navigation is redirected.
+  const redirectWithCookies = (url: URL) => {
+    const redirect = NextResponse.redirect(url);
+    for (const cookie of response.cookies.getAll()) redirect.cookies.set(cookie);
+    return redirect;
+  };
+
+  if (error && !isAuthSessionMissingError(error) && !isLoginPage) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("session", "expired");
-    return NextResponse.redirect(loginUrl);
+    return redirectWithCookies(loginUrl);
   }
 
   if (!user && !isLoginPage) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return redirectWithCookies(new URL("/login", request.url));
   }
 
   if (user && isLoginPage) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return redirectWithCookies(new URL("/", request.url));
   }
 
   return response;
