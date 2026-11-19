@@ -47,8 +47,8 @@ export default async function LoginPage() {
       <section className="login-panel">
         <div className="login-card">
           <p className="eyebrow">ERP KOPI SELA KOTA</p>
-          <h2>Selamat datang</h2>
-          <p className="muted-copy">Masuk dengan akun kerja yang telah disiapkan.</p>
+          <h2>QA · Latihan Demo</h2>
+          <p className="muted-copy">Pilih akun latihan. Data QA terpisah dari aplikasi presentasi.</p>
 
           {demoMode ? (
             <div className="notice notice-warning" role="status">

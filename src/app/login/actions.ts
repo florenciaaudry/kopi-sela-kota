@@ -38,7 +38,7 @@ export async function signInAction(
 export async function signInTestAccountAction(_previous: SignInState, form: FormData): Promise<SignInState> {
   const accounts = await readLocalTestAccounts(true);
   const account = accounts.find(item => item.role === form.get("role"));
-  if (!account) return { error: "Login akun uji hanya tersedia pada preview lokal yang telah disiapkan." };
+  if (!account) return { error: "Login akun uji belum tersedia pada alamat ini." };
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email: account.email, password: account.password });
   if (error) return { error: "Akun uji belum dapat masuk. Gunakan login biasa atau periksa akun uji." };

@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireRole } from "@/lib/auth";
+import { documentHref } from "@/lib/document-navigation";
 import type { AppRole, Json } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -80,6 +81,7 @@ async function submitRpc(
   path: ModulePath,
   roles: AppRole[],
   invoke: (client: Awaited<ReturnType<typeof createSupabaseServerClient>>) => PromiseLike<RpcResponse>,
+  destination?: (reference: string) => string,
 ) {
   await requireRole(roles);
   const client = await createSupabaseServerClient();
@@ -88,6 +90,11 @@ async function submitRpc(
   if (!data) showMessage(path, "error", "Database tidak mengembalikan nomor dokumen.");
   revalidatePath(path);
   revalidatePath("/");
+  if (destination) {
+    const target = destination(data);
+    revalidatePath(target);
+    redirect(`${target}?success=${encodeURIComponent(`Transaksi tersimpan: ${data}`)}`);
+  }
   showMessage(path, "success", `Transaksi tersimpan: ${data}`);
 }
 
@@ -233,6 +240,7 @@ export async function createInvoiceAction(form: FormData) {
       p_sales_order_number: salesOrder,
       p_idempotency_key: key,
     }),
+    (reference) => documentHref("invoice", reference),
   );
 }
 
@@ -258,7 +266,7 @@ export async function recordCustomerPaymentAction(form: FormData) {
       };
     }
     return result;
-  });
+  }, () => documentHref("invoice", invoice));
 }
 
 export async function createVendorBillAction(form: FormData) {

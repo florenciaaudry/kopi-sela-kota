@@ -665,6 +665,7 @@ a.application-card:hover {
 }
 
 .table-scroll {
+  position: relative;
   overflow-x: auto;
 }
 
@@ -1128,7 +1129,7 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3p
 .document-workspace [role=tabpanel] { padding-top:18px; outline-offset:3px; }
 .document-workspace .section-card { box-shadow:none; border-radius:8px; }
 .document-workspace .section-heading h2 { font-size:16px; letter-spacing:-.015em; }
-.workflow-dialog { width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow:visible; padding:0; margin:auto; border:1px solid #d8d0c6; border-radius:12px; color:var(--ink); background:white; box-shadow:0 24px 100px #281b1838; }
+.workflow-dialog { width:min(760px,calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow-y:auto; overscroll-behavior:contain; padding:0; margin:auto; border:1px solid #d8d0c6; border-radius:12px; color:var(--ink); background:white; box-shadow:0 24px 100px #281b1838; }
 .workflow-dialog::backdrop { background:#1d17134d; }
 .workflow-dialog-body { padding:26px; overflow:visible; }
 .workflow-dialog-content { overflow:visible; }
@@ -1489,3 +1490,12 @@ a.primary-button, a.secondary-button { display:inline-flex; align-items:center; 
 
 /* Receipt source navigation stays on screen and is omitted from customer prints. */
 @media print { .receipt-source-links { display:none!important; } }
+
+/* Invoice payment state remains visible after payment and in browser print. */
+.invoice-settlement { display:flex; align-items:center; gap:22px; padding:18px 24px; border:1px solid #c7ddcf; border-radius:12px; background:#f2f8f4; color:#22613d; }
+.invoice-settlement p { margin:0; line-height:1.5; }
+.invoice-payment-stamp { display:inline-block; flex-shrink:0; padding:6px 18px; border:2px solid currentColor; border-radius:5px; font-size:24px; font-weight:700; letter-spacing:1px; text-transform:uppercase; transform:rotate(-5deg); }
+.invoice-settlement.is-partial { background:#fffbef; border-color:#e5d6b4; color:#795c22; }
+.invoice-settlement.is-partial .invoice-payment-stamp { font-size:17px; letter-spacing:0; transform:none; }
+@media(max-width:600px) { .invoice-settlement { align-items:flex-start; flex-direction:column; gap:14px; } }
+@media print { .invoice-settlement { break-inside:avoid; } .invoice-payment-stamp { border:2px solid currentColor; } }

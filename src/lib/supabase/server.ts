@@ -11,6 +11,9 @@ export async function createSupabaseServerClient() {
     throw new Error("Supabase belum dikonfigurasi. Periksa environment variable.");
   }
 
+  if (new URL(supabaseUrl).hostname !== "pokgfkiiomyonpyzvwcn.supabase.co") {
+    throw new Error("QA requires the isolated test database.");
+  }
   const cookieStore = await cookies();
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
