@@ -6,8 +6,29 @@ import type { AppRole } from "./supabase/database.types";
 const roles: AppRole[] = ["owner", "sales", "warehouse", "procurement", "finance", "cashier"];
 type TestAccount = { role: AppRole; email: string; password: string; id: string };
 
-// Credentials remain on this development machine; production never reads this file.
+// Hosted demo credentials stay in server configuration; local development reads the ignored local file.
 export async function readLocalTestAccounts(requireOrigin = false): Promise<TestAccount[]> {
+  if (process.env.DEMO_LOGIN_HOST && process.env.DEMO_LOGIN_ACCOUNTS) {
+    try {
+      const url = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+      if (url.hostname !== "tswkkutgqayvxwzepqfs.supabase.co") return [];
+      const expected = process.env.DEMO_LOGIN_HOST;
+      if (expected !== "kopi-sela-kota.vercel.app") return [];
+      const h = await headers();
+      if (h.get("host") !== expected) return [];
+      const forwarded = h.get("x-forwarded-host");
+      if (forwarded && forwarded !== expected) return [];
+      const origin = h.get("origin");
+      if (requireOrigin && !origin) return [];
+      if (origin && new URL(origin).origin !== `https://${expected}`) return [];
+      const stored: {project:string;accounts:TestAccount[]} = JSON.parse(process.env.DEMO_LOGIN_ACCOUNTS);
+      if (stored.project !== url.hostname) return [];
+      return roles.flatMap(role => {
+        const account = stored.accounts.find(a => a.role === role && a.email === `qa-${role}@kopiselakota.test`);
+        return account?.password && account.id ? [account] : [];
+      });
+    } catch { return []; }
+  }
   if (process.env.NODE_ENV !== "development") return [];
   const h = await headers();
   const host = h.get("host");
